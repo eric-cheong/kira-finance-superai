@@ -28,6 +28,8 @@ const config = {
         bg: "rgb(var(--bg) / <alpha-value>)",
         surface: "rgb(var(--surface) / <alpha-value>)",
         "surface-2": "rgb(var(--surface-2) / <alpha-value>)",
+        "wash-blue": "rgb(var(--wash-blue) / <alpha-value>)",
+        "wash-beige": "rgb(var(--wash-beige) / <alpha-value>)",
         border: "rgb(var(--border) / <alpha-value>)",
         "border-strong": "rgb(var(--border-strong) / <alpha-value>)",
         ink: "rgb(var(--ink) / <alpha-value>)",
@@ -50,15 +52,15 @@ const config = {
         mono: ["var(--font-mono)"],
       },
       borderRadius: {
-        xl: "14px",
-        lg: "10px",
+        xl: "12px",
+        lg: "8px",
       },
       fontSize: {
         "2xs": ["0.6875rem", { lineHeight: "0.875rem" }],
       },
       boxShadow: {
-        card: "0 1px 1px rgb(15 23 42 / 0.04), 0 18px 34px -28px rgb(15 23 42 / 0.24)",
-        pop: "0 24px 56px -30px rgb(15 23 42 / 0.32)",
+        card: "0 1px 1px rgb(15 23 42 / 0.03), 0 16px 28px -26px rgb(15 23 42 / 0.18)",
+        pop: "0 20px 46px -30px rgb(15 23 42 / 0.26)",
       },
       maxWidth: {
         content: "1180px",
@@ -71,13 +73,13 @@ const config = {
       {
         kira: {
           "color-scheme": "light",
-          primary: "#0e1218",
-          "primary-content": "#ffffff",
-          secondary: "#0e1218",
-          "secondary-content": "#ffffff",
+          primary: "#2f5f98",
+          "primary-content": "#0e1218",
+          secondary: "#eef5ff",
+          "secondary-content": "#0e1218",
           accent: "#2f5f98",
-          "accent-content": "#ffffff",
-          neutral: "#0e1218",
+          "accent-content": "#0e1218",
+          neutral: "#212936",
           "neutral-content": "#ffffff",
           "base-100": "#ffffff",
           "base-200": "#f3f6fa",

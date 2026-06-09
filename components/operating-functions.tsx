@@ -67,9 +67,9 @@ function ListBlock({
 
 export function OperatingFunctionsLandingSection() {
   return (
-    <section className="card overflow-hidden border border-base-300 bg-base-100/80 shadow-sm">
+    <section className="overflow-hidden rounded-lg border border-border bg-surface/85 shadow-card">
       <div className="grid gap-0 lg:grid-cols-[1fr_360px]">
-        <div className="card-body p-5 sm:p-6">
+        <div className="p-5 sm:p-6">
           <div className="max-w-3xl">
             <h2 className="text-[26px] font-semibold text-ink sm:text-[32px]">
               One platform. Every operating function.
@@ -110,7 +110,7 @@ export function OperatingFunctionsLandingSection() {
           </div>
           <div className="grid grid-cols-2 gap-2">
             {OPERATING_FUNCTIONS.slice(0, 4).map((fn) => (
-              <div key={fn.id} className="card border border-base-300 bg-base-100 px-3 py-2.5 shadow-none">
+              <div key={fn.id} className="rounded-lg border border-border bg-surface px-3 py-2.5 shadow-none">
                 <div className="text-[12px] font-semibold text-ink">{fn.shortName}</div>
                 <div className="mt-1 tnum text-[12px] text-brand">{fn.impactMetric}</div>
                 <div className="mt-0.5 text-[10.5px] text-faint">{fn.financialImpact}</div>
@@ -170,10 +170,10 @@ function ModuleList({ functions }: { functions: readonly OperatingFunction[] }) 
       <div className="border-b border-border px-4 py-4">
         <CardHeader title="Modules" subtitle="Functions KIRA can benchmark and operate" icon="module" />
       </div>
-      <ul className="menu menu-sm divide-y divide-base-300 p-0">
+      <ul className="divide-y divide-border p-0">
         {functions.map((fn) => (
           <li key={fn.id}>
-            <Link href={`#${fn.id}`} className="group rounded-none px-4 py-3">
+            <Link href={`#${fn.id}`} className="group flex min-h-11 px-4 py-3 hover:bg-surface-2/70">
               <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
                 <div className="min-w-0">
                   <div className="truncate text-[13px] font-semibold text-ink group-hover:text-brand">{fn.function}</div>
@@ -294,7 +294,7 @@ export function OperatingFunctionsModulePage() {
 
   return (
     <>
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatTile label="Functions" value={OPERATING_FUNCTIONS.length} sub="operating modules" icon="module" tone="brand" />
         <StatTile label="Detected risks" value={totalRisks} sub="open across functions" icon="alert" tone="neutral" />
         <StatTile label="Running workflows" value={running} sub={`${approval} approval-gated`} icon="workflow" tone="info" />

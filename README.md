@@ -11,9 +11,10 @@ Peppol/InvoiceNow) with an embedded **multi-agent intelligence layer**.
 
 This repository is a runnable Next.js reference implementation of that product:
 the screens, the data model, realistic SG/MY SME seed data, and a working
-multi-agent orchestration engine. It runs **fully offline** — the agent logic is
-deterministic ("rule-based AI") so there are no API keys to set, with clean seams
-where a real LLM slots in.
+multi-agent orchestration engine. It is **offline-first** with optional live
+OpenAI + Exa provider seams: without keys it stays deterministic, and with keys
+it can run read-only OpenAI Agents / Exa consumer research for trip quotes and
+reviews.
 
 ## Quick start
 
@@ -23,6 +24,14 @@ npm run dev      # http://localhost:3000
 ```
 
 Other scripts: `npm run build`, `npm start`, `npm run typecheck`.
+
+Optional live providers:
+
+```bash
+OPENAI_API_KEY=...      # enables OpenAI Responses + Agents SDK flows
+OPENAI_MODEL=gpt-5.5   # optional override
+EXA_API_KEY=...         # enables live Exa consumer search for trips/reviews
+```
 
 ## What's in here
 
@@ -48,6 +57,7 @@ the loop **Observe → Analyze → Plan → Act → Verify → Summarize → Esc
 |---|---|
 | `/onboarding` | Onboarding wizard — org, tax, connectors, feeds, policy, team |
 | `/` | Daily Briefing — runs the live agent orchestration |
+| `/erp-foundation` | ERP Foundation — canonical MVP map across accounting, AR, AP, banking, reconciliation, approvals, workflows, reports, agents, and audit evidence |
 | `/operating-functions` | Operating Functions — benchmark gaps, financial impact, workflow execution, approvals, and audit trails across AR, FP&A, sales, lead gen, service, onboarding, and ops |
 | `/capture` | Capture / Inbox — OCR receipt capture + suggested coding |
 | `/approvals` | Approvals queue — tier-3/4 human-in-the-loop sign-off |
@@ -56,8 +66,16 @@ the loop **Observe → Analyze → Plan → Act → Verify → Summarize → Esc
 | `/compliance` | E-invoicing console — MyInvois + Peppol/InvoiceNow |
 | `/analytics` | Spend analytics — FX-normalised dashboards |
 | `/portfolio` | Portfolio (Phase 2) — read-only, advice-separated |
-| `/audit` | Audit & agents — reasoning + immutable hash-chained log |
+| `/audit` | Audit & agents — decision traces + immutable hash-chained log |
 | `/settings` | Settings — automation thresholds, connectors, RBAC |
+
+**ERP foundation coverage** (`/erp-foundation`) is the canonical MVP boundary:
+Kira has a structured finance control plane for source documents, record
+entries, e-invoices, AP close, read-only banking, reconciliation, approvals,
+workflows, reports, agents, and audit evidence. It proves AI can explain,
+recommend, and execute permissioned finance operations safely. A full
+double-entry GL, AR aging/cash application, statutory financial statements, and
+multi-entity consolidation remain Phase 3.
 
 **Data model** (`lib/types.ts`, `lib/data/`): the record store is a *system of
 record-keeping, not a money ledger*. Seed data models "Kira Roasters Sdn Bhd," a
@@ -70,12 +88,17 @@ KL coffee roaster with a Singapore outlet (SST-registered, MyInvois Phase 2).
 - **Local backend included** — `app/api/**` exposes the product workflows over
   HTTP, backed by a deterministic runtime state store seeded from
   `lib/data/seed.ts`. Local mutations persist to `.kira-data/state.json`.
+- **OpenAI + Exa provider layer** — `lib/backend/openai-consumer-agents.ts`
+  uses the OpenAI Agents SDK for read-only trip research and direct OpenAI
+  Responses calls for review synthesis. `lib/backend/consumer-search.ts` uses
+  Exa when `EXA_API_KEY` is present and falls back cleanly when it is not.
 - **Orchestrate, never settle** — every feature is designed to stay above the
   regulated perimeter (Singapore PSA, Malaysia FSA/BNM).
 
 ## Local backend
 
-The backend is offline-first and needs no API keys or external services.
+The backend is offline-first and needs no API keys or external services for the
+core demo. Optional OpenAI/Exa keys enable live read-only intelligence.
 
 - `lib/backend/state.ts` owns the local runtime store and hash-chained audit
   materialization.
@@ -87,6 +110,9 @@ The backend is offline-first and needs no API keys or external services.
 
 See [docs/backend-api.md](docs/backend-api.md) for route contracts and safety
 constraints.
+
+See [docs/agentic-saas-design.md](docs/agentic-saas-design.md) for the durable
+UI/product guidance added from the latest design note.
 
 ## Roadmap (per the build spec)
 
@@ -104,8 +130,8 @@ constraints.
 
 ## Notes
 
-- The agent layer is deterministic for reproducibility; `lib/agents/agents.ts`
-  marks where real model calls (extraction, summarisation, ranking) would slot in.
-  De-identify before any external LLM call — a hard rule in the spec.
-- `next@14.2.18` carries a published security advisory; bump to the latest patched
-  14.2.x before any non-local deployment.
+- The daily briefing agent layer remains deterministic for reproducibility;
+  provider-backed trip/review intelligence lives behind explicit backend seams.
+  De-identify before external model calls whenever financial/customer data is
+  introduced.
+- `next` is pinned to the patched `14.2.35` line.

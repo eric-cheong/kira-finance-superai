@@ -242,3 +242,7 @@ export const OPERATING_FUNCTIONS: OperatingFunction[] = [
 export function getOperatingFunction(id: OperatingFunctionId) {
   return OPERATING_FUNCTIONS.find((fn) => fn.id === id) ?? OPERATING_FUNCTIONS[0];
 }
+
+export function findOperatingFunction(id: string) {
+  return OPERATING_FUNCTIONS.find((fn) => fn.id === id);
+}

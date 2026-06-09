@@ -17,10 +17,10 @@ import { DisclaimerBanner } from "@/components/disclaimer-banner";
 export const metadata = { title: "Cashflow Forecast · Kira" };
 
 const KIND_STYLE: Record<ForecastItemKind, { icon: "arrowUpRight" | "arrowRight" | "clock" | "alert"; label: string; cls: string }> = {
-  income: { icon: "arrowUpRight", label: "inflow", cls: "text-pos-fg" },
-  expense: { icon: "arrowRight", label: "outflow", cls: "text-ink" },
-  committed: { icon: "clock", label: "committed", cls: "text-ink" },
-  pending: { icon: "alert", label: "pending approval", cls: "text-info-fg" },
+  income: { icon: "arrowUpRight", label: "inflow", cls: "text-brand/60" },
+  expense: { icon: "arrowRight", label: "outflow", cls: "text-muted" },
+  committed: { icon: "clock", label: "committed", cls: "text-muted" },
+  pending: { icon: "alert", label: "pending approval", cls: "text-brand/60" },
 };
 
 function ForecastItemRow({ item }: { item: ForecastItem }) {
@@ -31,11 +31,11 @@ function ForecastItemRow({ item }: { item: ForecastItem }) {
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-2">
           <span className="text-[13px] font-medium text-ink">{item.label}</span>
-          <span className={cn("tnum text-[13px] font-semibold shrink-0", k.cls)}>
+          <span className="tnum shrink-0 text-[13px] font-semibold text-ink">
             {item.kind === "income" ? "+" : "−"}{money(item.amountMinor, item.currency)}
           </span>
         </div>
-        <div className="mt-0.5 flex items-center gap-2 text-[11.5px] text-muted">
+        <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[11.5px] text-muted">
           <span>Due {fmtDate(item.dueDate)}</span>
           <span className="text-faint">·</span>
           <span>{item.source}</span>
@@ -65,16 +65,16 @@ function BucketCard({ bucket }: { bucket: ForecastBucket }) {
       <div className="mb-4 grid grid-cols-2 gap-3">
         <div className="rounded-lg border border-border px-3 py-2.5">
           <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-faint">Inflow</div>
-          <div className="tnum text-[17px] font-semibold text-pos-fg">{money(bucket.inflow, "MYR", { compact: true })}</div>
+          <div className="tnum text-[17px] font-semibold text-ink">{money(bucket.inflow, "MYR", { compact: true })}</div>
           <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-surface-2">
-            <div className="h-full rounded-full bg-pos-fg" style={{ width: `${(bucket.inflow / maxFlow) * 100}%` }} />
+            <div className="h-full rounded-full bg-brand/55" style={{ width: `${(bucket.inflow / maxFlow) * 100}%` }} />
           </div>
         </div>
         <div className="rounded-lg border border-border px-3 py-2.5">
           <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-faint">Outflow</div>
           <div className="tnum text-[17px] font-semibold text-ink">{money(bucket.outflow, "MYR", { compact: true })}</div>
           <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-surface-2">
-            <div className="h-full rounded-full bg-ink" style={{ width: `${(bucket.outflow / maxFlow) * 100}%` }} />
+            <div className="h-full rounded-full bg-faint/70" style={{ width: `${(bucket.outflow / maxFlow) * 100}%` }} />
           </div>
         </div>
       </div>
@@ -110,7 +110,7 @@ export default function ForecastPage() {
 
       <DisclaimerBanner />
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatTile
           label="90-day inflow"
           value={money(totalInflow, "MYR", { compact: true })}
@@ -146,13 +146,13 @@ export default function ForecastPage() {
           <CardHeader title="Pending approval items affect the forecast" icon="alert" />
           <div className="space-y-2">
             {pendingItems.map((p) => (
-              <div key={p.id} className="flex items-start justify-between gap-3 rounded-lg border border-info-fg/20 bg-info-bg px-3 py-2.5">
+              <div key={p.id} className="flex flex-col items-start gap-2 rounded-lg border border-info-fg/20 bg-info-bg px-3 py-2.5 sm:flex-row sm:justify-between">
                 <div className="min-w-0">
                   <div className="text-[13px] font-medium text-ink">{p.label}</div>
                   <div className="mt-0.5 text-[12px] text-muted">Due {fmtDate(p.dueDate)} · {p.source}</div>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
-                  <span className="tnum text-[13px] font-semibold text-info-fg">{money(p.amountMinor, p.currency)}</span>
+                  <span className="tnum text-[13px] font-semibold text-ink">{money(p.amountMinor, p.currency)}</span>
                   <Badge variant="info">pending</Badge>
                 </div>
               </div>
@@ -176,7 +176,7 @@ export default function ForecastPage() {
               <div key={b.label}>
                 <div className="mb-1.5 flex items-baseline justify-between gap-3">
                   <span className="text-[13px] font-medium text-ink">{b.label}</span>
-                  <span className={cn("tnum text-[12.5px] font-semibold", b.net >= 0 ? "text-pos-fg" : "text-crit-fg")}>
+                  <span className="tnum text-[12.5px] font-semibold text-ink">
                     {b.net >= 0 ? "+" : ""}{money(b.net, "MYR", { compact: true })} net
                   </span>
                 </div>
@@ -184,14 +184,14 @@ export default function ForecastPage() {
                   <div className="flex items-center gap-2">
                     <span className="w-14 shrink-0 text-right text-[11px] text-faint">in</span>
                     <div className="flex-1 overflow-hidden rounded-full bg-surface-2" style={{ height: 8 }}>
-                      <div className="h-full rounded-full bg-pos-fg" style={{ width: `${(b.inflow / maxFlow) * 100}%` }} />
+                      <div className="h-full rounded-full bg-brand/55" style={{ width: `${(b.inflow / maxFlow) * 100}%` }} />
                     </div>
-                    <span className="tnum w-20 shrink-0 text-right text-[11.5px] text-pos-fg">{money(b.inflow, "MYR", { compact: true })}</span>
+                    <span className="tnum w-20 shrink-0 text-right text-[11.5px] text-ink">{money(b.inflow, "MYR", { compact: true })}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="w-14 shrink-0 text-right text-[11px] text-faint">out</span>
                     <div className="flex-1 overflow-hidden rounded-full bg-surface-2" style={{ height: 8 }}>
-                      <div className="h-full rounded-full bg-ink" style={{ width: `${(b.outflow / maxFlow) * 100}%` }} />
+                      <div className="h-full rounded-full bg-faint/70" style={{ width: `${(b.outflow / maxFlow) * 100}%` }} />
                     </div>
                     <span className="tnum w-20 shrink-0 text-right text-[11.5px] text-ink">{money(b.outflow, "MYR", { compact: true })}</span>
                   </div>

@@ -90,7 +90,13 @@ export function budgetSpendAgent(_ctx: RunContext): AgentResult {
     for (let b = a + 1; b < db.TRANSACTIONS.length; b++) {
       const x = db.TRANSACTIONS[a], y = db.TRANSACTIONS[b];
       const dt = Math.abs(new Date(x.occurredAt).getTime() - new Date(y.occurredAt).getTime());
-      if (x.merchant === y.merchant && x.amountMinor === y.amountMinor && x.currency === y.currency && dt <= 48 * 3600e3) {
+      if (
+        x.merchant === y.merchant &&
+        x.amountMinor === y.amountMinor &&
+        x.currency === y.currency &&
+        dt <= 48 * 3600e3 &&
+        (x.status !== "matched" || y.status !== "matched")
+      ) {
         dupes.push(`${x.merchant} ${money(x.amountMinor, x.currency)} (${x.id}, ${y.id})`);
       }
     }
@@ -405,30 +411,30 @@ export function bookingAgent(_ctx: RunContext): AgentResult {
       findings.push(mk({
         id: `bk-quote-${q.id}`, agent: "Booking", kind: "approval",
         title: `Quote ready — ${q.description}`,
-        detail: `${q.options.length} options found. Cheapest: ${cheapest.label} at ${money(cheapest.amountMinor, cheapest.currency)}. Research sources: ${q.researchSources.slice(0, 2).join("; ")}. Awaiting selection and approval before booking.`,
+        detail: `${q.options.length} options found. Cheapest: ${cheapest.label} at ${money(cheapest.amountMinor, cheapest.currency)}. Research sources: ${q.researchSources.slice(0, 2).join("; ")}. Awaiting selection and approval before committed spend is recorded.`,
         confidence: 85, sources: q.researchSources.slice(0, 2),
-        rationale: "Quote presented; booking requires explicit user approval. No charge until confirmed.",
+        rationale: "Quote presented; committed spend requires explicit user approval. Supplier execution stays outside Kira.",
         actionClass: "human-approved", tier: 3, moneyTouching: true, escalate: true,
         relatedId: q.id, relatedHref: "/bookings",
       }));
     }
   }
 
-  // Committed booking in the past — check it is linked to a transaction.
-  const unlinked = db.BOOKINGS.filter((b) => b.status === "booked" && !b.linkedTransactionId);
+  // Committed booking/spend in the past — check it is linked to a transaction.
+  const unlinked = db.BOOKINGS.filter((b) => (b.status === "booked" || b.status === "approved") && !b.linkedTransactionId);
   if (unlinked.length) {
     findings.push(mk({
       id: "bk-unlinked", agent: "Booking", kind: "insight",
-      title: `${unlinked.length} booking(s) awaiting transaction match`,
-      detail: `${unlinked.map((b) => b.description).join("; ")} — booked but no card transaction has been matched yet. Import the bank feed to close the loop.`,
+      title: `${unlinked.length} commitment(s) awaiting transaction match`,
+      detail: `${unlinked.map((b) => b.description).join("; ")} — approved or booked spend has no matched card transaction yet. Import the bank feed to close the loop.`,
       confidence: 78, sources: ["Booking records", "Transaction feed"],
-      rationale: "Booking recorded; match will complete reconciliation.",
+      rationale: "Committed spend is recorded; transaction match will complete reconciliation.",
       actionClass: "suggestion", tier: 2, relatedHref: "/bookings",
     }));
   }
 
   steps.push({ phase: "analyze", message: `${openQuotes.length} open quotes; ${unlinked.length} unlinked bookings.` });
-  steps.push({ phase: "act", message: "Raised quote approvals; no booking executed autonomously." });
+  steps.push({ phase: "act", message: "Raised quote approvals; no supplier execution happened autonomously." });
   steps.push({ phase: "summarize", message: "Booking agent complete. All actions require human approval." });
   return { agent: "Booking", phase: 1, status: "ok", findings, steps, durationMs: 310 };
 }

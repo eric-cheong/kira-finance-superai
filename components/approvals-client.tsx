@@ -52,13 +52,13 @@ export function ApprovalQueue({ initial }: { initial: ApprovalRequest[] }) {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-col items-start gap-2 sm:flex-row sm:flex-wrap sm:items-center">
         <Badge variant="warn" dot>
           {counts.open} open
         </Badge>
         <Badge variant="pos">{counts.approved} approved</Badge>
         <Badge variant="crit">{counts.rejected} rejected</Badge>
-        <span className="ml-auto text-[12px] text-muted">
+        <span className="text-[12px] text-muted sm:ml-auto">
           On timeout or ambiguity the default is <span className="font-medium text-ink-2">no action</span>.
         </span>
       </div>
@@ -113,21 +113,21 @@ export function ApprovalQueue({ initial }: { initial: ApprovalRequest[] }) {
                   </div>
                 </div>
 
-                <div className="flex shrink-0 flex-col gap-2 sm:w-40">
+                <div className="flex shrink-0 flex-col gap-2 border-t border-border pt-3 sm:w-40 sm:border-t-0 sm:pt-0">
                   {d === "open" ? (
                     confirming === a.id ? (
-                      <div className="rounded-lg border border-error/25 bg-error/5 p-2.5">
-                        <p className="text-[12px] font-medium leading-snug text-error">
+                      <div className="rounded-lg border border-crit-fg/20 bg-crit-bg p-2.5">
+                        <p className="text-[12px] font-medium leading-snug text-ink">
                           {a.reversible
                             ? "Tier-4 action. Confirm before changing this approval state."
                             : "Irreversible action. This cannot be undone after approval."}
                         </p>
-                        <div className="mt-2 grid grid-cols-2 gap-2">
+                        <div className="mt-3 flex flex-col gap-2 sm:grid sm:grid-cols-2">
                           <Button variant="outline" size="sm" disabled={pending === a.id} onClick={() => setConfirming(null)} className="w-full">
                             Cancel
                           </Button>
                           <Button variant="danger" size="sm" disabled={pending === a.id} onClick={() => decide(a.id, "approved", true)} className="w-full">
-                            {pending === a.id ? "Saving" : "Confirm"}
+                            {pending === a.id ? "Saving" : "Confirm approval"}
                           </Button>
                         </div>
                       </div>
@@ -154,15 +154,15 @@ export function ApprovalQueue({ initial }: { initial: ApprovalRequest[] }) {
                     <div
                       className={cn(
                         "flex flex-col items-center gap-1 rounded-lg border px-3 py-3 text-center",
-                        d === "approved" ? "border-pos-fg/20 bg-pos-bg text-pos-fg" : "border-crit-fg/20 bg-crit-bg text-crit-fg",
+                        d === "approved" ? "border-pos-fg/20 bg-pos-bg text-ink" : "border-crit-fg/20 bg-crit-bg text-ink",
                       )}
                     >
                       <Icon name={d === "approved" ? "check" : "alert"} size={18} />
                       <span className="text-[13px] font-semibold capitalize">{d}</span>
                       {(a.reversible || d === "rejected") && (
-                        <button onClick={() => decide(a.id, "open")} disabled={pending === a.id} className="text-[11px] text-muted underline-offset-2 hover:underline disabled:opacity-50">
-                          undo
-                        </button>
+                        <Button variant="outline" size="sm" disabled={pending === a.id} onClick={() => decide(a.id, "open")} className="mt-1 w-full">
+                          Reopen request
+                        </Button>
                       )}
                     </div>
                   )}

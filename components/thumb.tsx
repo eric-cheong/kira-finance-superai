@@ -1,20 +1,21 @@
 import { cn } from "./ui/cn";
+import { Icon, type IconName } from "./ui/icons";
 
 // Deterministic placeholder thumbnail for a captured receipt/invoice. In
 // production this is the stored document image; here it's a tinted tile with a
-// glyph + initials so lists stay visually consistent without binary assets.
+// line icon so lists stay visually consistent without binary assets.
 
-const GLYPH: Record<string, string> = {
-  beans: "☕",
-  bolt: "⚡",
-  car: "🚗",
-  box: "📦",
-  design: "✎",
-  grinder: "⚙",
-  cup: "🥤",
-  building: "🏢",
-  ads: "📣",
-  doc: "📄",
+const ICON: Record<string, IconName> = {
+  beans: "vendor",
+  bolt: "spark",
+  car: "transactions",
+  box: "module",
+  design: "doc",
+  grinder: "settings",
+  cup: "vendor",
+  building: "bank",
+  ads: "bell",
+  doc: "doc",
 };
 
 const TONE: Record<string, string> = {
@@ -37,10 +38,10 @@ export function Thumb({ hint, size = 40 }: { hint: string; size?: number }) {
         "inline-flex shrink-0 items-center justify-center rounded-lg border border-border",
         TONE[hint] ?? "bg-surface-2 text-ink",
       )}
-      style={{ width: size, height: size, fontSize: size * 0.45 }}
+      style={{ width: size, height: size }}
       aria-hidden="true"
     >
-      {GLYPH[hint] ?? "📄"}
+      <Icon name={ICON[hint] ?? "doc"} size={Math.max(16, Math.round(size * 0.45))} />
     </span>
   );
 }

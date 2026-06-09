@@ -8,7 +8,7 @@ export default function OnboardingPage() {
     <div className="animate-in">
       <PageHeader
         title="Get started"
-        description="Create your org, set the tax profile, connect accounting and feeds, and invite your team. Most SMEs are live in under a day — no money movement, no license required."
+        description="Create your org, set tax and accounting defaults, connect feeds, and invite your team. No money movement; setup stays approval-gated."
       />
       <OnboardingWizard />
     </div>

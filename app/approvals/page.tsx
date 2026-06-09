@@ -5,12 +5,12 @@ import { ApprovalQueue } from "@/components/approvals-client";
 export const metadata = { title: "Approvals · Kira" };
 
 export default function ApprovalsPage() {
-  const approvals = db.openApprovals();
+  const approvals = db.listApprovals();
   return (
     <div className="animate-in">
       <PageHeader
         title="Approvals"
-        description="Tier-3 and tier-4 items the agents prepared but will never execute on their own — money-touching actions, e-invoice submissions, and abnormal activity. Each shows evidence, confidence, and whether it can be undone."
+        description="Human approval is required for money-touching, irreversible, or abnormal actions. Each request shows evidence, confidence, and whether it can be undone."
       />
       <ApprovalQueue initial={approvals} />
     </div>

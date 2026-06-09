@@ -1,4 +1,4 @@
-import { getOperatingFunction, KIRA_LOOP, OPERATING_FUNCTIONS } from "@/lib/operating-functions";
+import { findOperatingFunction, KIRA_LOOP, OPERATING_FUNCTIONS } from "@/lib/operating-functions";
 import {
   canExportRecord,
   getExportBlockers,
@@ -27,8 +27,15 @@ import type {
   VendorRisk,
 } from "@/lib/types";
 import { chainHash } from "@/lib/hash";
-import { NOW } from "@/lib/data/seed";
 import { ApiError } from "./http";
+import { searchConsumerSources } from "./consumer-search";
+import {
+  researchTripWithOpenAIAgents,
+  summarizeReviewsWithOpenAI,
+  tripResearchInputSchema,
+  type TripResearchInput,
+} from "./openai-consumer-agents";
+import { providerStatus } from "./provider-config";
 import { appendAudit, confirmationRef, nextId, resetState, snapshotPath, state, type OnboardingRun } from "./state";
 
 type ApprovalDecision = "approved" | "rejected" | "open";
@@ -38,14 +45,7 @@ type CaptureSource = "mobile" | "email" | "upload";
 const SUPPORTED_ACCOUNTING = new Set(["AutoCount", "SQL Account", "Xero"]);
 const RISK = new Set<UserPreference["riskTolerance"]>(["conservative", "balanced", "growth"]);
 const CHANNELS = ["push", "email", "slack", "whatsapp"] as const;
-const CONNECTORS = [
-  { name: "AutoCount", kind: "Accounting (local)", state: "connected" },
-  { name: "Xero", kind: "Accounting (SG entity)", state: "connected" },
-  { name: "SQL Account", kind: "Accounting (local)", state: "available" },
-  { name: "LHDN MyInvois", kind: "E-invoicing (MY)", state: "connected" },
-  { name: "Peppol / InvoiceNow", kind: "E-invoicing (SG)", state: "connected" },
-  { name: "Maybank / CIMB / DBS", kind: "Transaction feed (CSV)", state: "connected" },
-] as const;
+const EXPORT_DESTINATIONS = ["AutoCount", "SQL Account", "Xero", "LHDN MyInvois"] as const;
 
 export interface CaptureField {
   key: "account" | "taxCode" | "costCentre";
@@ -62,11 +62,13 @@ export interface CaptureDraft {
 }
 
 export function health() {
+  const providers = providerStatus();
   return {
     status: "ok",
-    mode: "local-offline",
+    mode: providers.openai.configured || providers.exa.configured ? "hybrid-live-ready" : "local-offline",
     persistence: "json-file",
     snapshotPath,
+    providers,
     counts: {
       users: state.users.length,
       transactions: state.transactions.length,
@@ -104,7 +106,7 @@ export function settings() {
     org: state.org,
     taxProfile: state.org.taxProfile,
     preferences: state.preferences,
-    connectors: CONNECTORS,
+    connectors: state.connectors,
     users: state.users,
     residency: {
       primary: "Malaysia (ap-southeast)",
@@ -118,23 +120,24 @@ export function settings() {
 }
 
 export function connectors() {
-  return { connectors: CONNECTORS };
+  return { connectors: state.connectors };
 }
 
 export function connectConnector(name: string, input: unknown = {}) {
   const decoded = decodeURIComponent(name);
-  const connector = CONNECTORS.find((item) => item.name.toLowerCase() === decoded.toLowerCase());
+  const connector = state.connectors.find((item) => item.name.toLowerCase() === decoded.toLowerCase());
   if (!connector) throw new ApiError(404, "CONNECTOR_NOT_FOUND", `Connector ${decoded} was not found.`);
+  connector.state = "connected";
   appendAudit({
     actor: state.currentUserId,
     action: "connector.connect",
     target: connector.name,
     detail: isRecord(input) && typeof input.credentialsRef === "string"
-      ? `Connected using credentials ref ${input.credentialsRef}. No secret value stored.`
+      ? "Connected using a provided credential reference. The reference value is not stored in audit."
       : "Connector connection simulated locally. No secret value stored.",
     tier: 2,
   });
-  return { connector: { ...connector, state: "connected" } };
+  return { connector };
 }
 
 export function users() {
@@ -216,7 +219,7 @@ export function listApprovals() {
 
 export function decideApproval(
   id: string,
-  input: { decision: ApprovalDecision; confirm?: boolean; actorId?: string; note?: string },
+  input: { decision: ApprovalDecision; confirm?: boolean; note?: string },
 ) {
   if (!input || !["approved", "rejected", "open"].includes(input.decision)) {
     throw new ApiError(400, "INVALID_DECISION", "Decision must be approved, rejected, or open.");
@@ -234,8 +237,9 @@ export function decideApproval(
       step.actedAt = undefined;
       step.note = undefined;
     }
+    resetWorkflowFromApprovalReopen(approval);
     appendAudit({
-      actor: input.actorId ?? state.currentUserId,
+      actor: state.currentUserId,
       action: "approval.reopen",
       target: approval.id,
       detail: `${approval.title} reopened. ${input.note ?? "No supplier or money action was taken."}`,
@@ -269,9 +273,10 @@ export function decideApproval(
   if (input.decision === "approved" && approval.linkedKind === "einvoice" && approval.linkedId) {
     submitEInvoiceFromApproval(approval);
   }
+  updateWorkflowFromApprovalDecision(approval, input.decision);
 
   appendAudit({
-    actor: input.actorId ?? state.currentUserId,
+    actor: state.currentUserId,
     action: input.decision === "approved" ? "approval.approved" : "approval.rejected",
     target: approval.id,
     detail: `${approval.title} ${input.decision}. Default on ambiguity remains no action.`,
@@ -348,10 +353,8 @@ export function postCapture(id: string) {
   if (receipt.status === "needs_review" || receipt.ocrConfidence < 85) {
     throw new ApiError(409, "REVIEW_REQUIRED", "Low-confidence capture must be reviewed before posting.");
   }
-  if (receipt.status === "confirmed") {
-    const existing = state.records.find((record) => record.sourceReceiptId === receipt.id);
-    return { receipt, record: existing };
-  }
+  const existing = state.records.find((record) => record.sourceReceiptId === receipt.id);
+  if (existing) return { receipt, record: existing };
   ensureAccount(receipt.suggestedAccount);
   ensureTaxCode(receipt.suggestedTaxCode);
   if (receipt.suggestedCostCentre) ensureCostCentre(receipt.suggestedCostCentre);
@@ -390,7 +393,7 @@ export function listBookings() {
 
 export function decideBooking(
   quoteId: string,
-  input: { decision: BookingDecision; selectedIndex?: number; confirm?: boolean; actorId?: string },
+  input: { decision: BookingDecision; selectedIndex?: number; confirm?: boolean },
 ) {
   if (!input || !["approve", "reject"].includes(input.decision)) {
     throw new ApiError(400, "INVALID_DECISION", "Booking decision must be approve or reject.");
@@ -402,7 +405,7 @@ export function decideBooking(
   if (input.decision === "reject") {
     quote.status = "expired";
     appendAudit({
-      actor: input.actorId ?? state.currentUserId,
+      actor: state.currentUserId,
       action: "booking.quote.reject",
       target: quote.id,
       detail: "Quote declined. No supplier action, card charge, or reservation was placed.",
@@ -430,57 +433,126 @@ export function decideBooking(
     endDate: "2026-06-14",
     amountMinor: option.amountMinor,
     currency: option.currency,
-    status: "booked",
-    confirmationRef: confirmationRef(`${quote.id}|${option.index}`),
-    bookedAt: new Date().toISOString(),
+    status: "approved",
     travellerId: quote.requestedBy,
     departmentBudgetCode: "CC-HQ",
   };
   state.bookings.unshift(booking);
   appendAudit({
-    actor: input.actorId ?? state.currentUserId,
+    actor: state.currentUserId,
     action: "booking.approved",
     target: booking.id,
-    detail: `${option.label} approved from ${quote.id}. Booking record created; no money was moved or held by Kira.`,
+    detail: `${option.label} approved from ${quote.id}. Internal committed-spend record created; no supplier reservation, card charge, payment, or confirmation reference was created by Kira.`,
     tier: 3,
   });
   return { quote, booking };
 }
 
-export function createBookingQuote(input: unknown) {
-  if (!isRecord(input)) throw new ApiError(400, "INVALID_BODY", "Booking quote payload must be an object.");
-  const type = bookingTypeField(input.type ?? "flight");
-  const description = stringField(input.description, "description");
-  const budgetMinor = typeof input.budgetMinor === "number" ? Math.max(1000, Math.round(input.budgetMinor)) : 52000;
+export async function createBookingQuote(input: unknown) {
+  const request = parseTripResearchRequest(input);
+  try {
+    const research = await researchTripWithOpenAIAgents(request);
+    return createBookingQuoteFromResearch(request, research);
+  } catch (error) {
+    const reason = providerFailureCode(error);
+    return createOfflineBookingQuote(request, reason);
+  }
+}
+
+export async function researchConsumerTrip(input: unknown) {
+  const request = parseTripResearchRequest(input);
+  try {
+    const research = await researchTripWithOpenAIAgents(request);
+    return {
+      request,
+      providers: providerStatus(),
+      ...research,
+    };
+  } catch (error) {
+    const reason = providerFailureCode(error);
+    return {
+      request,
+      providers: providerStatus(),
+      provider: "local-fallback" as const,
+      model: null,
+      output: offlineTripResearchOutput(request, reason),
+      interruptions: 0,
+      error: reason,
+    };
+  }
+}
+
+export async function searchConsumerReviews(input: unknown) {
+  if (!isRecord(input)) throw new ApiError(400, "INVALID_BODY", "Review search payload must be an object.");
+  const subject = stringField(input.subject ?? input.query ?? input.supplier, "subject");
+  const userLocation = typeof input.userLocation === "string" ? input.userLocation : state.org.country;
+  const query = typeof input.query === "string" && input.query.trim().length > 0
+    ? input.query.trim()
+    : `${subject} consumer reviews hidden fees refund baggage change cancellation complaints`;
+  const search = await searchConsumerSources({
+    query,
+    kind: "review",
+    userLocation,
+    numResults: typeof input.numResults === "number" ? Math.min(Math.max(Math.round(input.numResults), 1), 10) : 8,
+  });
+  const summary = await summarizeReviewsWithOpenAI(subject, search).catch((error) => ({
+    subject,
+    summary: "Review synthesis is unavailable; inspect the returned sources directly.",
+    sentiment: "unknown" as const,
+    themes: [],
+    caveats: [providerFailureCode(error)],
+    sources: search.results.map((item) => item.url).filter(Boolean).slice(0, 12),
+  }));
+  return { providers: providerStatus(), search, summary };
+}
+
+export function aiProviderStatus() {
+  return providerStatus();
+}
+
+function providerFailureCode(error: unknown) {
+  const message = error instanceof Error ? error.message : "";
+  if (/OPENAI_API_KEY/i.test(message)) return "missing_openai_key";
+  if (/EXA_API_KEY/i.test(message)) return "missing_exa_key";
+  if (/timeout|timed out/i.test(message)) return "provider_timeout";
+  return "provider_unavailable";
+}
+
+function createOfflineBookingQuote(request: TripResearchInput, reason: string) {
+  const type = request.type;
+  const description = request.description;
+  const budgetMinor = request.budgetMinor;
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + 8 * 60 * 60 * 1000).toISOString();
   const quote: BookingQuote = {
     id: nextId("bq", state.bookingQuotes),
-    requestedBy: typeof input.requestedBy === "string" ? input.requestedBy : state.currentUserId,
+    requestedBy: request.requestedBy ?? state.currentUserId,
     type,
     description,
-    createdAt: new Date().toISOString(),
+    createdAt: now.toISOString(),
     options: [
       {
         index: 0,
         label: `${description} · standard`,
         supplier: type === "hotel" ? "Citadines" : type === "product" ? "Preferred vendor" : "AirAsia",
         amountMinor: budgetMinor,
-        currency: "MYR",
+        currency: request.currency,
         breakdown: [{ item: "Offline researched estimate", amountMinor: budgetMinor }],
         notes: ["Generated by local quote engine", "Supplier action requires explicit approval"],
-        expiresAt: "2026-06-09T23:59:00+08:00",
+        expiresAt,
       },
       {
         index: 1,
         label: `${description} · flexible`,
         supplier: type === "hotel" ? "Hotel Clover" : type === "product" ? "Alternate vendor" : "Malaysia Airlines",
         amountMinor: Math.round(budgetMinor * 1.18),
-        currency: "MYR",
+        currency: request.currency,
         breakdown: [{ item: "Flexible offline estimate", amountMinor: Math.round(budgetMinor * 1.18) }],
         notes: ["More flexible terms", "No card charge or reservation placed by Kira"],
-        expiresAt: "2026-06-09T23:59:00+08:00",
+        expiresAt,
       },
     ],
-    researchSources: ["Local offline quote generator", "Policy: explicit approval before booking"],
+    researchSources: ["Local offline quote generator", "Policy: explicit approval before booking", reason],
     status: "open",
   };
   state.bookingQuotes.unshift(quote);
@@ -491,7 +563,143 @@ export function createBookingQuote(input: unknown) {
     detail: `Created ${type} quote options for approval. No supplier action was taken.`,
     tier: 1,
   });
-  return { quote };
+  return { quote, research: { provider: "local-fallback", model: null, summary: reason, riskNotes: ["Live provider unavailable."], reviewThemes: [] } };
+}
+
+function createBookingQuoteFromResearch(
+  request: TripResearchInput,
+  research: Awaited<ReturnType<typeof researchTripWithOpenAIAgents>>,
+) {
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + 8 * 60 * 60 * 1000).toISOString();
+  const options = research.output.options.map((option, index): BookingQuoteOption => {
+    const amountMinor = Math.max(1000, Math.round(option.amountMinor));
+    return {
+      index,
+      label: option.label,
+      supplier: option.supplier,
+      amountMinor,
+      currency: option.currency,
+      breakdown: option.breakdown.length > 0 ? option.breakdown.map((item) => ({
+        item: item.item,
+        amountMinor: Math.max(0, Math.round(item.amountMinor)),
+      })) : [{ item: "AI researched estimate", amountMinor }],
+      notes: uniqueStrings([
+        ...option.notes,
+        `Confidence ${Math.round(option.confidence)}%`,
+        "Explicit approval required before booking.",
+        "No supplier action has been taken.",
+      ]).slice(0, 8),
+      expiresAt,
+    };
+  }).slice(0, 4);
+
+  if (options.length === 0) {
+    return createOfflineBookingQuote(request, "OpenAI returned no quote options.");
+  }
+
+  const quote: BookingQuote = {
+    id: nextId("bq", state.bookingQuotes),
+    requestedBy: request.requestedBy ?? state.currentUserId,
+    type: request.type,
+    description: request.description,
+    createdAt: now.toISOString(),
+    options,
+    researchSources: uniqueStrings([
+      `${research.provider}:${research.model}`,
+      ...research.output.researchSources,
+      ...research.output.options.flatMap((option) => option.sourceUrls),
+      "Policy: explicit approval before booking",
+    ]).slice(0, 18),
+    status: "open",
+  };
+  state.bookingQuotes.unshift(quote);
+  appendAudit({
+    actor: "Booking Agent",
+    action: "booking.quote.create",
+    target: quote.id,
+    detail: `Created ${request.type} quote options using OpenAI Agents + Exa research. Approval required; no supplier action was taken.`,
+    tier: 1,
+  });
+  return {
+    quote,
+    research: {
+      provider: research.provider,
+      model: research.model,
+      summary: research.output.summary,
+      riskNotes: research.output.riskNotes,
+      reviewThemes: research.output.reviewThemes,
+      interruptions: research.interruptions,
+    },
+  };
+}
+
+function parseTripResearchRequest(input: unknown): TripResearchInput {
+  if (!isRecord(input)) throw new ApiError(400, "INVALID_BODY", "Trip research payload must be an object.");
+  const type = bookingTypeField(input.type ?? "flight");
+  const description = stringField(input.description, "description");
+  const budgetMinor = typeof input.budgetMinor === "number" ? Math.max(1000, Math.round(input.budgetMinor)) : 52000;
+  const currency = input.currency == null ? "MYR" : currencyField(input.currency, "currency");
+  const travellers = typeof input.travellers === "number" ? Math.min(Math.max(Math.round(input.travellers), 1), 9) : 1;
+  const parsed = tripResearchInputSchema.safeParse({
+    type,
+    description,
+    budgetMinor,
+    currency,
+    requestedBy: typeof input.requestedBy === "string" ? input.requestedBy : state.currentUserId,
+    origin: optionalString(input.origin),
+    destination: optionalString(input.destination),
+    departDate: optionalString(input.departDate),
+    returnDate: optionalString(input.returnDate),
+    travellers,
+    userLocation: optionalString(input.userLocation) ?? state.org.country,
+  });
+  if (!parsed.success) {
+    throw new ApiError(400, "INVALID_TRIP_RESEARCH", "Trip research payload failed validation.", parsed.error.flatten());
+  }
+  return parsed.data;
+}
+
+function offlineTripResearchOutput(request: TripResearchInput, reason: string) {
+  const flexibleAmount = Math.round(request.budgetMinor * 1.18);
+  return {
+    summary: `Offline fallback generated because live research is unavailable: ${reason}`,
+    options: [
+      {
+        label: `${request.description} · standard`,
+        supplier: request.type === "hotel" ? "Citadines" : request.type === "product" ? "Preferred vendor" : "AirAsia",
+        amountMinor: request.budgetMinor,
+        currency: request.currency,
+        breakdown: [{ item: "Offline researched estimate", amountMinor: request.budgetMinor }],
+        notes: ["Generated by local quote engine", "Supplier action requires explicit approval"],
+        sourceUrls: ["kira://offline/consumer-search"],
+        confidence: 55,
+      },
+      {
+        label: `${request.description} · flexible`,
+        supplier: request.type === "hotel" ? "Hotel Clover" : request.type === "product" ? "Alternate vendor" : "Malaysia Airlines",
+        amountMinor: flexibleAmount,
+        currency: request.currency,
+        breakdown: [{ item: "Flexible offline estimate", amountMinor: flexibleAmount }],
+        notes: ["More flexible terms", "No card charge or reservation placed by Kira"],
+        sourceUrls: ["kira://offline/consumer-search"],
+        confidence: 52,
+      },
+    ],
+    reviewThemes: [],
+    researchSources: ["Local offline quote generator", "Policy: explicit approval before booking", reason],
+    riskNotes: ["Live OpenAI/Exa research unavailable; verify prices manually before approving."],
+    approvalRequired: true,
+    noSupplierActionTaken: true,
+  };
+}
+
+function optionalString(value: unknown) {
+  return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
+}
+
+function uniqueStrings(values: readonly string[]) {
+  return [...new Set(values.map((value) => value.trim()).filter(Boolean))];
 }
 
 export function getPreferences() {
@@ -646,7 +854,7 @@ export function confirmMatch(id: string, input: unknown = {}) {
   txn.status = "matched";
   if (rcp.status !== "confirmed") rcp.status = "confirmed";
   appendAudit({
-    actor: isRecord(input) && typeof input.actorId === "string" ? input.actorId : state.currentUserId,
+    actor: state.currentUserId,
     action: "match.confirm",
     target: id,
     detail: `Confirmed match ${txn.id} ↔ ${rcp.id} at ${match.score}% confidence.`,
@@ -698,7 +906,7 @@ export function requestEInvoiceSubmission(id: string, input: unknown = {}) {
     linkedId: invoice.id,
   });
   appendAudit({
-    actor: isRecord(input) && typeof input.actorId === "string" ? input.actorId : "Compliance/Safety Agent",
+    actor: state.currentUserId,
     action: "einvoice.submit.request",
     target: invoice.id,
     detail: `Created approval ${approval.id} for e-invoice submission.`,
@@ -710,23 +918,39 @@ export function requestEInvoiceSubmission(id: string, input: unknown = {}) {
 export function updateEInvoice(id: string, input: unknown) {
   if (!isRecord(input)) throw new ApiError(400, "INVALID_BODY", "E-invoice patch must be an object.");
   const invoice = getEInvoiceOrThrow(id);
+  if (invoice.state === "cancelled") {
+    throw new ApiError(409, "CANCELLED_EINVOICE_LOCKED", "Cancelled e-invoices cannot be edited.");
+  }
   if (invoice.state === "validated" && !input.correctionNote) {
     throw new ApiError(409, "VALIDATED_EINVOICE_LOCKED", "Validated e-invoices need a correction note before editing.");
   }
-  if (typeof input.counterpartyId === "string") invoice.counterpartyId = input.counterpartyId.trim();
+  const nextCounterpartyId = typeof input.counterpartyId === "string" ? input.counterpartyId.trim() : undefined;
+  let nextTaxMinor: number | undefined;
+  let nextGrossMinor: number | undefined;
   if (input.taxMinor !== undefined) {
-    const taxMinor = numberField(input.taxMinor, "taxMinor");
-    invoice.taxMinor = taxMinor;
-    invoice.grossMinor = invoice.netMinor + taxMinor;
+    nextTaxMinor = numberField(input.taxMinor, "taxMinor");
+    nextGrossMinor = invoice.netMinor + nextTaxMinor;
   }
-  if (typeof input.rejectionReason === "string") invoice.rejectionReason = input.rejectionReason.trim();
+  const nextRejectionReason = typeof input.rejectionReason === "string" ? input.rejectionReason.trim() : undefined;
+  let nextState: EInvoiceState | undefined;
   if (typeof input.state === "string") {
     const next = input.state as EInvoiceState;
     if (!["draft", "queued", "rejected"].includes(next)) {
       throw new ApiError(400, "INVALID_EINVOICE_STATE", "Patch can only move an invoice to draft, queued, or rejected.");
     }
-    invoice.state = next;
+    if (invoice.state === "submitted" || invoice.state === "validated") {
+      throw new ApiError(409, "EINVOICE_STATE_LOCKED", "Submitted or validated e-invoices cannot be moved back through the generic patch endpoint.");
+    }
+    nextState = next;
   }
+
+  if (nextCounterpartyId !== undefined) invoice.counterpartyId = nextCounterpartyId;
+  if (nextTaxMinor !== undefined && nextGrossMinor !== undefined) {
+    invoice.taxMinor = nextTaxMinor;
+    invoice.grossMinor = nextGrossMinor;
+  }
+  if (nextRejectionReason !== undefined) invoice.rejectionReason = nextRejectionReason;
+  if (nextState !== undefined) invoice.state = nextState;
   appendAudit({
     actor: state.currentUserId,
     action: "einvoice.correct",
@@ -873,27 +1097,28 @@ export function getCloseBookBill(id: string) {
 export function updateCloseBookBill(id: string, input: unknown) {
   if (!isRecord(input)) throw new ApiError(400, "INVALID_BODY", "Bill patch must be an object.");
   const record = getCloseBookRecordOrThrow(id);
-  if (typeof input.supplierTin === "string") record.supplierTin = input.supplierTin.trim();
-  if (typeof input.supplierSstRegistrationNo === "string") record.supplierSstRegistrationNo = input.supplierSstRegistrationNo.trim();
-  if (input.totalMinor !== undefined) record.totalMinor = numberField(input.totalMinor, "totalMinor");
-  if (input.taxMinor !== undefined) record.taxMinor = numberField(input.taxMinor, "taxMinor");
+  const nextSupplierTin = typeof input.supplierTin === "string" ? input.supplierTin.trim() : undefined;
+  const nextSupplierSstRegistrationNo =
+    typeof input.supplierSstRegistrationNo === "string" ? input.supplierSstRegistrationNo.trim() : undefined;
+  const nextTotalMinor = input.totalMinor !== undefined ? numberField(input.totalMinor, "totalMinor") : undefined;
+  const nextTaxMinor = input.taxMinor !== undefined ? numberField(input.taxMinor, "taxMinor") : undefined;
+  let nextTaxTreatment: VerifiedBillRecord["taxTreatment"] | undefined;
   if (
     input.taxTreatment === "sst_8_service" ||
     input.taxTreatment === "sst_exempt" ||
     input.taxTreatment === "imported_taxable_service" ||
     input.taxTreatment === "out_of_scope"
   ) {
-    record.taxTreatment = input.taxTreatment;
+    nextTaxTreatment = input.taxTreatment;
   }
+  let nextErpMapping: VerifiedBillRecord["erpMapping"] | undefined;
   if (isRecord(input.erpMapping)) {
-    record.erpMapping = {
-      destination:
-        input.erpMapping.destination === "AutoCount" ||
-        input.erpMapping.destination === "SQL Account" ||
-        input.erpMapping.destination === "Xero" ||
-        input.erpMapping.destination === "LHDN MyInvois"
-          ? input.erpMapping.destination
-          : record.erpMapping?.destination ?? state.closeBookClients[0]?.erp ?? "AutoCount",
+    const destination =
+      input.erpMapping.destination !== undefined
+        ? parseExportDestination(input.erpMapping.destination)
+        : record.erpMapping?.destination ?? state.closeBookClients[0]?.erp ?? "AutoCount";
+    nextErpMapping = {
+      destination,
       vendorId: typeof input.erpMapping.vendorId === "string" ? input.erpMapping.vendorId : record.erpMapping?.vendorId,
       apAccountCode: typeof input.erpMapping.apAccountCode === "string" ? input.erpMapping.apAccountCode : record.erpMapping?.apAccountCode,
       expenseAccountCode:
@@ -908,6 +1133,13 @@ export function updateCloseBookBill(id: string, input: unknown) {
           : record.erpMapping?.lhdnClassificationCode,
     };
   }
+
+  if (nextSupplierTin !== undefined) record.supplierTin = nextSupplierTin;
+  if (nextSupplierSstRegistrationNo !== undefined) record.supplierSstRegistrationNo = nextSupplierSstRegistrationNo;
+  if (nextTotalMinor !== undefined) record.totalMinor = nextTotalMinor;
+  if (nextTaxMinor !== undefined) record.taxMinor = nextTaxMinor;
+  if (nextTaxTreatment !== undefined) record.taxTreatment = nextTaxTreatment;
+  if (nextErpMapping !== undefined) record.erpMapping = nextErpMapping;
   record.auditTrail.push({
     id: confirmationRef(`${record.id}|patch`),
     at: new Date().toISOString(),
@@ -952,6 +1184,44 @@ export function resolveCloseBookException(id: string, input: unknown) {
   return getCloseBookBill(id);
 }
 
+export function approveCloseBookBill(id: string, input: unknown = {}) {
+  if (!isRecord(input)) throw new ApiError(400, "INVALID_BODY", "Approval payload must be an object.");
+  const record = getCloseBookRecordOrThrow(id);
+  if (record.approval.state === "approved") return getCloseBookBill(id);
+  if (input.confirm !== true) {
+    throw new ApiError(409, "CONFIRMATION_REQUIRED", "Bill export approval requires explicit confirmation.");
+  }
+  const nonApprovalBlockers = getExportBlockers(record).filter((reason) => reason.code !== "approval_required");
+  if (nonApprovalBlockers.length > 0) {
+    throw new ApiError(
+      409,
+      "BILL_EXPORT_BLOCKED",
+      "Resolve bill blockers before approving export.",
+      { blockers: nonApprovalBlockers },
+    );
+  }
+  record.approval.state = "approved";
+  record.approval.approver = state.currentUserId;
+  record.approval.approvedAt = new Date().toISOString();
+  if (typeof input.note === "string") record.approval.note = input.note.trim();
+  record.status = "approved";
+  record.auditTrail.push({
+    id: confirmationRef(`${record.id}|approval`),
+    at: record.approval.approvedAt,
+    actor: state.currentUserId,
+    action: "approval.approved",
+    detail: typeof input.note === "string" ? input.note : "Bill approved for ERP/LHDN export.",
+  });
+  appendAudit({
+    actor: state.currentUserId,
+    action: "close_book.bill.approve",
+    target: record.id,
+    detail: "Bill approved for ERP/LHDN export. No payment or settlement occurred.",
+    tier: 3,
+  });
+  return getCloseBookBill(id);
+}
+
 export function exportEvidencePack(input: unknown = {}) {
   const recordIds =
     isRecord(input) && Array.isArray(input.recordIds)
@@ -979,12 +1249,26 @@ export function exportEvidencePack(input: unknown = {}) {
 
 export function exportReadyBills(input: unknown) {
   if (!isRecord(input)) throw new ApiError(400, "INVALID_BODY", "Export payload must be an object.");
-  const destination = stringField(input.destination ?? state.closeBookClients[0]?.erp ?? "AutoCount", "destination") as ExportDestination;
+  const destination = parseExportDestination(input.destination ?? state.closeBookClients[0]?.erp ?? "AutoCount");
   const ids =
     Array.isArray(input.recordIds) && input.recordIds.length > 0
       ? input.recordIds.filter((id): id is string => typeof id === "string")
       : state.closeBookRecords.map((record) => record.id);
   const selected = state.closeBookRecords.filter((record) => ids.includes(record.id));
+  const missingIds = ids.filter((id) => !selected.some((record) => record.id === id));
+  if (missingIds.length > 0) {
+    throw new ApiError(404, "BILL_RECORD_NOT_FOUND", `Bill record(s) not found: ${missingIds.join(", ")}.`);
+  }
+  const destinationMismatch = selected.find(
+    (record) => record.erpMapping?.destination && record.erpMapping.destination !== destination,
+  );
+  if (destinationMismatch) {
+    throw new ApiError(
+      409,
+      "EXPORT_DESTINATION_MISMATCH",
+      `${destinationMismatch.id} is mapped to ${destinationMismatch.erpMapping?.destination}, not ${destination}.`,
+    );
+  }
   const exportedRecords: string[] = [];
   const blockedRecords: string[] = [];
   for (const record of selected) {
@@ -1029,17 +1313,21 @@ export function exportReadyBills(input: unknown) {
 }
 
 export function operatingFunctions(id?: string) {
+  const selected = id ? findOperatingFunction(id) : undefined;
+  if (id && !selected) {
+    throw new ApiError(404, "OPERATING_FUNCTION_NOT_FOUND", `Function ${id} was not found.`);
+  }
   return {
     loop: KIRA_LOOP,
     functions: OPERATING_FUNCTIONS,
-    selected: id ? getOperatingFunction(id as Parameters<typeof getOperatingFunction>[0]) : undefined,
+    selected,
   };
 }
 
 export function startOperatingWorkflow(id: string, input: unknown) {
   if (!isRecord(input)) throw new ApiError(400, "INVALID_BODY", "Workflow payload must be an object.");
-  const fn = getOperatingFunction(id as Parameters<typeof getOperatingFunction>[0]);
-  if (fn.id !== id) throw new ApiError(404, "OPERATING_FUNCTION_NOT_FOUND", `Function ${id} was not found.`);
+  const fn = findOperatingFunction(id);
+  if (!fn) throw new ApiError(404, "OPERATING_FUNCTION_NOT_FOUND", `Function ${id} was not found.`);
   const action = stringField(input.action ?? fn.recommendedActions[0], "action");
   const requireApproval = input.requireApproval === true || fn.approvalsRequired > 0;
   const approval = requireApproval
@@ -1243,6 +1531,18 @@ function submitEInvoiceFromApproval(approval: ApprovalRequest) {
   invoice.validationResponse = "SUBMITTED · awaiting regulator validation · explicit approval captured";
 }
 
+function updateWorkflowFromApprovalDecision(approval: ApprovalRequest, decision: Exclude<ApprovalDecision, "open">) {
+  const run = state.workflowRuns.find((item) => item.approvalId === approval.id);
+  if (!run || run.status !== "approval_required") return;
+  run.status = decision === "approved" ? "queued" : "rejected";
+}
+
+function resetWorkflowFromApprovalReopen(approval: ApprovalRequest) {
+  const run = state.workflowRuns.find((item) => item.approvalId === approval.id);
+  if (!run || (run.status !== "queued" && run.status !== "rejected")) return;
+  run.status = "approval_required";
+}
+
 function captureFields(): CaptureField[] {
   return [
     { key: "account", label: "Account", value: "5010 · COGS - Coffee & Raw Materials", confidence: 96 },
@@ -1252,7 +1552,10 @@ function captureFields(): CaptureField[] {
 }
 
 function captureDraft(receipt: Receipt): CaptureDraft {
-  const fields = captureFields();
+  const reviewed = receipt.status !== "needs_review" && receipt.ocrConfidence >= 85;
+  const fields = captureFields().map((field) => (
+    reviewed && field.confidence < 85 ? { ...field, confidence: receipt.ocrConfidence } : field
+  ));
   return {
     receipt,
     fields,
@@ -1331,7 +1634,7 @@ function ensureCostCentre(code?: string) {
 }
 
 function ensureOptionNotExpired(option: BookingQuoteOption) {
-  if (option.expiresAt && new Date(option.expiresAt).getTime() < new Date(NOW).getTime()) {
+  if (option.expiresAt && new Date(option.expiresAt).getTime() < Date.now()) {
     throw new ApiError(409, "QUOTE_EXPIRED", "This booking option is expired; request fresh quotes before approving.");
   }
 }
@@ -1351,6 +1654,13 @@ function currencyField(value: unknown, field: string): CurrencyCode {
 function bookingTypeField(value: unknown): BookingType {
   if (value === "flight" || value === "hotel" || value === "rail" || value === "car" || value === "product") return value;
   throw new ApiError(400, "INVALID_BOOKING_TYPE", "Booking type must be flight, hotel, rail, car, or product.");
+}
+
+function parseExportDestination(value: unknown): ExportDestination {
+  if (typeof value === "string" && (EXPORT_DESTINATIONS as readonly string[]).includes(value)) {
+    return value as ExportDestination;
+  }
+  throw new ApiError(400, "INVALID_EXPORT_DESTINATION", "Export destination must be AutoCount, SQL Account, Xero, or LHDN MyInvois.");
 }
 
 function ensureMaskedSourceRef(value: string) {

@@ -15,19 +15,22 @@ and file-backed for development. It persists mutable demo state to
 - E-invoice submission is approval-gated and stores UUID / validation response
   evidence.
 - All meaningful mutations append to the hash-chained audit stream.
-- No full PANs, API keys, or secrets are required or stored.
+- No full PANs, API keys, or secrets are stored in app state. OpenAI/Exa keys are
+  read from environment variables only.
 
 ## Core Routes
 
 | Route | Method | Purpose |
 |---|---:|---|
 | `/api/health` | `GET` | Backend status, persistence mode, entity counts. |
+| `/api/ai/status` | `GET` | OpenAI/Exa provider configuration status and booking boundary. |
 | `/api/session` | `GET` | Current user, org, preferences, nav badges. |
 | `/api/reference` | `GET` | Accounts, tax codes, cost centres, country configs, FX rates. |
 | `/api/connectors` | `GET` | Connector catalogue and local statuses. |
 | `/api/connectors/:name/connect` | `POST` | Simulate connector connection without storing secrets. |
 | `/api/users` | `GET` | Team users and roles. |
 | `/api/summary` | `GET` | Backend stats plus latest deterministic briefing. |
+| `/api/erp-foundation` | `GET` | Canonical ERP MVP coverage map: modules, data spine, permissioned action contracts, grounded answers, and audit coverage. |
 | `/api/briefing/latest?phase=1` | `GET` | Latest briefing run. |
 | `/api/briefing/runs` | `POST` | Run a deterministic briefing pass. |
 | `/api/agents/roster` | `GET` | Agent autonomy boundaries. |
@@ -44,8 +47,10 @@ and file-backed for development. It persists mutable demo state to
 | `/api/capture/:id/review` | `POST` | Review/update coding before posting. |
 | `/api/capture/:id/post` | `POST` | Post reviewed receipt to record store. |
 | `/api/bookings` | `GET` | Quotes and booking history. |
-| `/api/booking-quotes` | `POST` | Generate offline quote options for approval. |
+| `/api/booking-quotes` | `POST` | Generate quote options for approval. Uses OpenAI Agents + Exa when configured; otherwise deterministic fallback. |
 | `/api/bookings/:quoteId/decision` | `POST` | `{ decision, selectedIndex?, confirm? }`; approve or reject a quote. |
+| `/api/consumer/trip-search` | `POST` | Read-only OpenAI Agents + Exa trip research without creating a quote or booking. |
+| `/api/consumer/reviews/search` | `POST` | Read-only Exa review search plus direct OpenAI review synthesis. |
 | `/api/transactions/import` | `POST` | Import masked read-only transaction rows. Rejects unmasked PAN-like refs. |
 | `/api/matches/:id/confirm` | `POST` | Confirm a suggested transaction/receipt match. |
 | `/api/einvoices/:id` | `PATCH` | Correct draft/queued/rejected e-invoice metadata. |
@@ -88,6 +93,17 @@ and file-backed for development. It persists mutable demo state to
   e-invoice submission, and operating workflows create records, approvals, audit
   evidence, or local export refs. They do not charge, settle, pay, submit to a
   live regulator, or touch external systems.
+
+## Optional Live AI Providers
+
+- `OPENAI_API_KEY` enables the OpenAI Agents SDK trip-research flow and direct
+  Responses API review synthesis.
+- `OPENAI_MODEL` overrides the model; default is `gpt-5.5`.
+- `EXA_API_KEY` enables live Exa consumer search for flights, hotels, policies,
+  trip sources, and reviews.
+- Provider-backed booking quote generation still creates only quote records.
+  The only route that can create a booking record is
+  `/api/bookings/:quoteId/decision`, and it still requires `{ confirm: true }`.
 
 ## Dev Utility
 

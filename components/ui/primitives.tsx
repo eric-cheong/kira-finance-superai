@@ -18,8 +18,8 @@ export function Card({
   return (
     <div
       className={cn(
-        "card min-w-0 border border-base-300 bg-base-100 text-base-content shadow-none",
-        pad && "p-5",
+        "min-w-0 rounded-lg border border-border bg-surface text-ink shadow-none",
+        pad && "p-4 sm:p-5",
         className,
       )}
     >
@@ -48,8 +48,8 @@ export function CardHeader({
           </span>
         )}
         <div className="min-w-0">
-          <h3 className="card-title text-[15px] font-semibold text-ink">{title}</h3>
-          {subtitle && <p className="mt-0.5 text-[13px] text-muted">{subtitle}</p>}
+          <h3 className="min-w-0 text-[15px] font-semibold leading-snug text-ink">{title}</h3>
+          {subtitle && <p className="mt-0.5 min-w-0 text-[12.5px] leading-snug text-muted sm:text-[13px]">{subtitle}</p>}
         </div>
       </div>
       {right && <div className="shrink-0">{right}</div>}
@@ -62,12 +62,21 @@ export function CardHeader({
 type Variant = "neutral" | "pos" | "warn" | "crit" | "info" | "brand";
 
 const VARIANT: Record<Variant, string> = {
-  neutral: "badge-outline border-base-300 bg-base-100 text-ink",
-  pos: "badge-outline border-brand/20 bg-brand-soft text-ink",
-  warn: "badge-outline border-brand/20 bg-base-100 text-ink",
-  crit: "badge-outline border-error/30 bg-error/5 text-error",
-  info: "badge-outline border-brand/20 bg-brand-soft text-ink",
-  brand: "badge-outline border-brand/25 bg-brand-soft text-ink",
+  neutral: "border-border bg-surface text-ink",
+  pos: "border-pos-fg/20 bg-pos-bg text-ink",
+  warn: "border-warn-fg/20 bg-warn-bg text-ink",
+  crit: "border-crit-fg/20 bg-crit-bg text-ink",
+  info: "border-info-fg/20 bg-info-bg text-ink",
+  brand: "border-brand/20 bg-brand-soft text-ink",
+};
+
+const DOT_VARIANT: Record<Variant, string> = {
+  neutral: "bg-faint",
+  pos: "bg-pos-fg",
+  warn: "bg-warn-fg",
+  crit: "bg-crit-fg",
+  info: "bg-info-fg",
+  brand: "bg-brand",
 };
 
 export function Badge({
@@ -75,23 +84,32 @@ export function Badge({
   variant = "neutral",
   className,
   dot = false,
+  mobileLabel,
 }: {
   children: ReactNode;
   variant?: Variant;
   className?: string;
   dot?: boolean;
+  mobileLabel?: ReactNode;
 }) {
+  const hasMobileLabel = mobileLabel != null;
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-2xs font-medium",
-        "badge badge-sm min-h-0 h-auto",
+        "inline-flex h-auto min-h-0 max-w-full shrink-0 items-center gap-1.5 rounded-full border px-2 py-0.5 text-2xs font-medium",
         VARIANT[variant],
         className,
       )}
     >
-      {dot && <span className="h-1.5 w-1.5 rounded-full bg-current opacity-70" />}
-      {children}
+      {dot && <span className={cn("h-1.5 w-1.5 rounded-full", DOT_VARIANT[variant])} />}
+      {hasMobileLabel ? (
+        <>
+          <span className="truncate sm:hidden">{mobileLabel}</span>
+          <span className="hidden truncate sm:inline">{children}</span>
+        </>
+      ) : (
+        <span className="truncate">{children}</span>
+      )}
     </span>
   );
 }
@@ -102,7 +120,7 @@ export function ConfidenceChip({ value, showWord = true }: { value: number; show
   const word = band === "high" ? "high" : band === "medium" ? "medium" : "low";
   return (
     <Badge variant={variant} className="tnum">
-      {value}%{showWord && <span className="font-normal opacity-70">· {word}</span>}
+      {value}%{showWord && <span className="hidden font-normal opacity-70 sm:inline"> · {word}</span>}
     </Badge>
   );
 }
@@ -111,7 +129,7 @@ const TIER_VARIANT: Record<ApprovalTier, Variant> = { 1: "neutral", 2: "info", 3
 
 export function TierBadge({ tier }: { tier: ApprovalTier }) {
   return (
-    <Badge variant={TIER_VARIANT[tier]}>
+    <Badge variant={TIER_VARIANT[tier]} mobileLabel={`T${tier}`}>
       T{tier} · {TIER_LABEL[tier]}
     </Badge>
   );
@@ -125,8 +143,16 @@ const ACTION_VARIANT: Record<ActionClass, Variant> = {
   prohibited: "crit",
 };
 
+const ACTION_SHORT: Record<ActionClass, string> = {
+  "read-only": "read",
+  suggestion: "suggest",
+  notification: "notify",
+  "human-approved": "approval",
+  prohibited: "blocked",
+};
+
 export function ActionBadge({ value }: { value: ActionClass }) {
-  return <Badge variant={ACTION_VARIANT[value]}>{value}</Badge>;
+  return <Badge variant={ACTION_VARIANT[value]} mobileLabel={ACTION_SHORT[value]}>{value}</Badge>;
 }
 
 // ── Stat tile ───────────────────────────────────────────────────────────────
@@ -144,25 +170,21 @@ export function StatTile({
   icon?: IconName;
   tone?: Variant;
 }) {
-  const toneText: Record<Variant, string> = {
-    neutral: "text-ink",
-    pos: "text-ink",
-    warn: "text-ink",
-    crit: "text-crit-fg",
-    info: "text-ink",
-    brand: "text-ink",
-  };
   return (
-    <div className="stats min-w-0 border border-base-300 bg-base-100 shadow-none">
-      <div className="stat min-w-0 p-4">
-        <div className="stat-figure text-ink">
-          {icon && <Icon name={icon} size={16} />}
+    <div className="min-w-0 rounded-lg border border-border bg-surface px-3.5 py-3.5 shadow-none sm:p-4">
+      <div className="flex min-w-0 items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="min-w-0 truncate text-[11.5px] font-medium leading-4 text-muted sm:text-[12px]">{label}</div>
+          <div className="tnum mt-1.5 min-w-0 truncate text-xl font-semibold leading-none text-ink sm:text-2xl">
+            {value}
+          </div>
+          {sub && <div className="mt-1 min-w-0 truncate text-[12px] leading-4 text-muted">{sub}</div>}
         </div>
-        <div className="stat-title text-[12px] font-medium uppercase tracking-wide text-muted">{label}</div>
-        <div className={cn("stat-value mt-1 text-2xl font-semibold tnum", toneText[tone])}>
-          {value}
-        </div>
-        {sub && <div className="stat-desc text-[12.5px] text-muted">{sub}</div>}
+        {icon && (
+          <span className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border", VARIANT[tone])}>
+            <Icon name={icon} size={15} />
+          </span>
+        )}
       </div>
     </div>
   );
@@ -175,17 +197,25 @@ export function Amount({ children, className }: { children: ReactNode; className
 }
 
 export function Bar({ value, tone = "brand" }: { value: number; tone?: Variant }) {
-  const bg: Record<Variant, string> = {
-    neutral: "progress-neutral",
-    pos: "progress-primary",
-    warn: "progress-primary",
-    crit: "progress-error",
-    info: "progress-info",
-    brand: "progress-info",
+  const fill: Record<Variant, string> = {
+    neutral: "bg-faint/50",
+    pos: "bg-pos-fg/75",
+    warn: "bg-warn-fg/75",
+    crit: "bg-crit-fg/70",
+    info: "bg-info-fg/75",
+    brand: "bg-brand/75",
   };
   const clamped = Math.max(2, Math.min(100, value));
   return (
-    <progress className={cn("progress h-1.5 w-full bg-base-200", bg[tone])} value={clamped} max={100} />
+    <div
+      className="h-1.5 w-full overflow-hidden rounded-full bg-surface-2"
+      role="progressbar"
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={clamped}
+    >
+      <div className={cn("h-full rounded-full", fill[tone])} style={{ width: `${clamped}%` }} />
+    </div>
   );
 }
 
@@ -195,9 +225,9 @@ export function Divider({ className }: { className?: string }) {
 
 export function KeyValue({ k, v }: { k: ReactNode; v: ReactNode }) {
   return (
-    <div className="flex items-baseline justify-between gap-4 py-1.5">
+    <div className="flex flex-col gap-0.5 py-1.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
       <span className="text-[13px] text-muted">{k}</span>
-      <span className="text-[13px] font-medium text-ink">{v}</span>
+      <span className="min-w-0 text-[13px] font-medium text-ink sm:text-right">{v}</span>
     </div>
   );
 }
@@ -232,6 +262,49 @@ export function EmptyState({ icon = "check", title, sub }: { icon?: IconName; ti
   );
 }
 
+export function PageSkeleton({ title = "Loading workspace" }: { title?: string }) {
+  return (
+    <div className="animate-in space-y-5">
+      <div className="border-b border-border pb-5">
+        <div className="h-7 w-48 rounded-md bg-surface-2" aria-label={title} />
+        <div className="mt-2 h-4 w-full max-w-xl rounded-md bg-surface-2" />
+      </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div key={index} className="h-24 rounded-lg border border-border bg-surface">
+            <div className="h-full animate-pulse rounded-lg bg-surface-2/55" />
+          </div>
+        ))}
+      </div>
+      <div className="rounded-lg border border-border bg-surface p-4">
+        <div className="h-5 w-36 rounded-md bg-surface-2" />
+        <div className="mt-4 space-y-2">
+          {Array.from({ length: 5 }).map((_, index) => (
+            <div key={index} className="h-10 rounded-md bg-surface-2/70" />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function InlineError({
+  title = "Something needs attention",
+  message = "The page could not finish loading. Try again, or inspect the audit trail if this keeps happening.",
+  action,
+}: {
+  title?: string;
+  message?: string;
+  action?: ReactNode;
+}) {
+  return (
+    <Card className="max-w-2xl">
+      <CardHeader title={title} subtitle={message} icon="alert" />
+      {action && <ActionBar>{action}</ActionBar>}
+    </Card>
+  );
+}
+
 // ── Page scaffold ───────────────────────────────────────────────────────────
 
 export function PageHeader({
@@ -247,14 +320,14 @@ export function PageHeader({
 }) {
   return (
     <div className="mb-6 flex flex-col gap-3 border-b border-border pb-5 sm:flex-row sm:items-end sm:justify-between">
-      <div>
-        <div className="flex items-center gap-2.5">
-          <h1 className="text-[22px] font-semibold text-ink">{title}</h1>
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <h1 className="min-w-0 text-[22px] font-semibold leading-tight text-ink">{title}</h1>
           {badge}
         </div>
         {description && <p className="mt-1.5 max-w-2xl text-[13.5px] leading-relaxed text-muted">{description}</p>}
       </div>
-      {actions && <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">{actions}</div>}
+      {actions && <ActionBar>{actions}</ActionBar>}
     </div>
   );
 }
@@ -283,23 +356,23 @@ export function Button({
   onClick?: () => void;
 }) {
   const base =
-    "btn inline-flex transform-gpu items-center justify-center gap-1.5 rounded-lg border border-transparent font-medium shadow-none transition disabled:pointer-events-none disabled:opacity-50 active:translate-y-[1px]";
+    "inline-flex min-w-0 transform-gpu items-center justify-center gap-1.5 rounded-lg border font-medium shadow-none transition disabled:pointer-events-none disabled:opacity-50 active:translate-y-[1px]";
   const sizes = {
     sm: "h-11 min-h-11 px-3 text-[13px] sm:h-8 sm:min-h-8 sm:px-2.5 sm:text-[12.5px]",
     md: "h-11 min-h-11 px-3.5 text-[13.5px] sm:h-9 sm:min-h-9",
   };
   const variants = {
-    primary: "bg-ink text-white hover:bg-ink-2",
-    ghost: "bg-transparent text-ink hover:bg-base-200",
-    outline: "bg-base-200 text-ink hover:bg-base-300",
-    danger: "bg-error text-white hover:bg-error/90",
+    primary: "border-brand/25 bg-gradient-to-r from-brand-soft to-surface text-ink hover:border-brand/40 hover:bg-brand-soft",
+    ghost: "border-transparent bg-transparent text-ink hover:bg-surface-2/70",
+    outline: "border-border bg-surface-2/65 text-ink hover:border-border-strong hover:bg-surface",
+    danger: "border-crit-fg/20 bg-crit-bg text-ink hover:border-crit-fg/35",
   };
   const classes = cn(base, sizes[size], variants[variant], className);
   const inner = (
     <>
-      {icon && <Icon name={icon} size={size === "sm" ? 14 : 16} />}
-      {children}
-      {iconRight && <Icon name={iconRight} size={size === "sm" ? 14 : 16} />}
+      {icon && <Icon name={icon} size={size === "sm" ? 14 : 16} className="shrink-0" />}
+      <span className="truncate">{children}</span>
+      {iconRight && <Icon name={iconRight} size={size === "sm" ? 14 : 16} className="shrink-0" />}
     </>
   );
   if (href) {
@@ -318,22 +391,59 @@ export function Button({
 
 // ── Simple table primitives (consistent across data screens) ────────────────
 
-export function Table({ children, className }: { children: ReactNode; className?: string }) {
+export function Notice({
+  children,
+  icon,
+  variant = "neutral",
+  className,
+}: {
+  children: ReactNode;
+  icon?: IconName;
+  variant?: Variant;
+  className?: string;
+}) {
   return (
-    <div className={cn("overflow-x-auto", className)}>
-      <table className="table table-sm w-full text-left text-[13px] text-ink">{children}</table>
+    <div className={cn("flex min-w-0 items-start gap-2 rounded-lg border px-3 py-2.5", VARIANT[variant], className)}>
+      {icon && (
+        <Icon name={icon} size={16} className="mt-0.5 shrink-0 text-muted" />
+      )}
+      <div className="min-w-0 text-[12.5px] leading-relaxed text-muted">{children}</div>
+    </div>
+  );
+}
+
+export function ActionBar({ children, className }: { children: ReactNode; className?: string }) {
+  return (
+    <div className={cn("flex w-full min-w-0 flex-col-reverse gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end [&>a]:w-full [&>button]:w-full sm:[&>a]:w-auto sm:[&>button]:w-auto", className)}>
+      {children}
+    </div>
+  );
+}
+
+export function Table({
+  children,
+  className,
+  tableClassName,
+}: {
+  children: ReactNode;
+  className?: string;
+  tableClassName?: string;
+}) {
+  return (
+    <div className={cn("w-full overflow-x-auto overscroll-x-contain", className)}>
+      <table className={cn("w-full min-w-[720px] border-collapse text-left text-[12.5px] leading-snug text-ink md:min-w-full md:text-[13px]", tableClassName)}>{children}</table>
     </div>
   );
 }
 
 export function Th({ children, className, ...props }: { children?: ReactNode; className?: string } & ThHTMLAttributes<HTMLTableCellElement>) {
   return (
-    <th className={cn("border-b border-base-300 px-3 py-2.5 text-2xs font-semibold uppercase tracking-wide text-ink", className)} {...props}>
+    <th className={cn("border-b border-border px-3 py-2.5 text-[11.5px] font-semibold text-ink", className)} {...props}>
       {children}
     </th>
   );
 }
 
 export function Td({ children, className, ...props }: { children?: ReactNode; className?: string } & TdHTMLAttributes<HTMLTableCellElement>) {
-  return <td className={cn("border-b border-base-300 px-3 py-3 align-middle text-ink", className)} {...props}>{children}</td>;
+  return <td className={cn("border-b border-border px-3 py-3 align-middle text-ink", className)} {...props}>{children}</td>;
 }

@@ -18,7 +18,7 @@ import {
 
 function AgentRow({ a }: { a: AgentResult }) {
   const last = a.steps[a.steps.length - 1];
-  const statusTone = a.status === "ok" ? "bg-pos-fg" : a.status === "degraded" ? "bg-warn-fg" : "bg-crit-fg";
+  const statusTone = a.status === "ok" ? "bg-brand/45" : a.status === "degraded" ? "bg-brand/30" : "bg-crit-fg/80";
   return (
     <div className="flex items-start gap-2.5 py-2">
       <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${statusTone}`} />
@@ -41,43 +41,46 @@ export default function BriefingPage() {
   const m = db.matchStats();
   const cr = db.closeReadiness();
   const ei = db.einvoiceStats();
+  const runDate = `${fmtDate(db.NOW)} · ${fmtTime(db.NOW)} MYT`;
+  const runShortId = run.runId.replace(/^run_/, "");
 
   return (
     <div className="animate-in space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <div className="flex items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2.5">
             <h1 className="text-[22px] font-semibold text-ink">Good morning, Amir</h1>
-            <Badge variant="brand" dot>
-              live run
+            <Badge variant="neutral" dot>
+              generated briefing
             </Badge>
           </div>
-          <p className="mt-1 text-[13.5px] text-muted">
-            {fmtDate(db.NOW)} · {fmtTime(db.NOW)} MYT · {run.context.orgName} ·{" "}
-            <span className="tnum">{run.runId}</span>
+          <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[13.5px] text-muted">
+            <span>{runDate}</span>
+            <span>{run.context.orgName}</span>
+            <span className="hidden min-w-0 max-w-full truncate sm:inline">
+              Run <span className="tnum">{runShortId}</span>
+            </span>
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" icon="audit" size="sm" href="/audit">
-            View agent reasoning
-          </Button>
-          <Button variant="primary" icon="approvals" size="sm" href="/approvals">
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+          <Button className="w-full sm:w-auto" variant="primary" icon="approvals" size="sm" href="/approvals">
             {run.topline.approvalsCount} approvals
+          </Button>
+          <Button className="w-full sm:w-auto" variant="outline" icon="audit" size="sm" href="/audit">
+            View run trace
           </Button>
         </div>
       </div>
 
-      <OperatingFunctionsLandingSection />
-
       {/* Topline */}
-      <div className="rounded-lg border border-border bg-surface p-4">
+      <div className="rounded-lg border border-brand/10 bg-brand-soft/55 px-3.5 py-3 sm:p-4">
         <p className="text-[14px] leading-relaxed text-ink-2">
-          <Icon name="spark" size={15} className="mr-1.5 inline -translate-y-px text-brand" />
+          <Icon name="spark" size={15} className="mr-1.5 inline -translate-y-px text-brand/70" />
           {run.topline.headline}
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatTile label="Imported" value={m.total} sub="transactions overnight" icon="transactions" />
         <StatTile label="Auto-matched" value={`${m.matchedPct}%`} sub={`${m.matched} of ${m.total} lines`} icon="check" tone="pos" />
         <StatTile label="Need approval" value={run.topline.approvalsCount} sub={`${run.topline.escalationsCount} escalations`} icon="approvals" tone="warn" />
@@ -93,9 +96,9 @@ export default function BriefingPage() {
           <section>
             <div className="mb-3 flex items-center justify-between">
               <h2 className="flex items-center gap-2 text-[15px] font-semibold text-ink">
-                <Icon name="approvals" size={17} className="text-warn-fg" />
+                <Icon name="approvals" size={17} className="text-brand/60" />
                 Needs your approval
-                <span className="rounded-full bg-warn-bg px-1.5 py-0.5 text-2xs font-semibold text-warn-fg">
+                <span className="rounded-full bg-brand-soft px-1.5 py-0.5 text-2xs font-semibold text-ink">
                   {run.approvals.length}
                 </span>
               </h2>
@@ -136,7 +139,7 @@ export default function BriefingPage() {
               ))}
             </div>
             <Link href="/audit" className="mt-3 inline-flex items-center gap-1 text-[12.5px] font-medium text-brand hover:underline">
-              Full reasoning & audit chain
+              Full trace & audit chain
               <Icon name="arrowRight" size={13} />
             </Link>
           </Card>
@@ -163,6 +166,10 @@ export default function BriefingPage() {
             <p className="text-[12.5px] leading-relaxed text-muted">{run.notificationNote}</p>
           </Card>
         </aside>
+      </div>
+
+      <div className="hidden lg:block">
+        <OperatingFunctionsLandingSection />
       </div>
     </div>
   );

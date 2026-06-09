@@ -18,30 +18,30 @@ const KIND_ICON: Record<FindingKind, IconName> = {
 function SourceLink({ href, label }: { href?: string; label: string }) {
   if (href && href.startsWith("http")) {
     return (
-      <a href={href} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-muted underline-offset-2 hover:text-ink-2 hover:underline">
-        {label}
+      <a href={href} target="_blank" rel="noreferrer" className="inline-flex min-w-0 items-center gap-1 text-muted underline-offset-2 hover:text-ink-2 hover:underline">
+        <span className="truncate">{label}</span>
         <Icon name="arrowUpRight" size={11} />
       </a>
     );
   }
-  return <span className="text-muted">{label}</span>;
+  return <span className="min-w-0 truncate text-muted">{label}</span>;
 }
 
 export function FindingCard({ finding: f }: { finding: Finding }) {
   const internalHref = f.relatedHref && !f.relatedHref.startsWith("http") ? f.relatedHref : undefined;
   const className = cn(
-    "block rounded-lg border border-border bg-surface p-4 transition-colors",
+    "block rounded-lg border border-border bg-surface p-3.5 transition-colors sm:p-4",
     internalHref && "hover:border-border-strong",
   );
 
   const body = (
     <>
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-start gap-2.5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex min-w-0 items-start gap-2.5">
           <span className={cn("mt-0.5 shrink-0", f.escalate ? "text-warn-fg" : "text-muted")}>
             <Icon name={KIND_ICON[f.kind]} size={17} />
           </span>
-          <div>
+          <div className="min-w-0">
             <h4 className="text-[14px] font-semibold leading-snug text-ink">{f.title}</h4>
             <p className="mt-1 text-[13px] leading-relaxed text-ink-2">{f.detail}</p>
           </div>
@@ -61,15 +61,19 @@ export function FindingCard({ finding: f }: { finding: Finding }) {
         {f.informational && <Badge variant="neutral">informational</Badge>}
       </div>
 
-      <div className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px]">
-        <span className="font-medium text-faint">Source:</span>
+      <div className="mt-2.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[12px]">
+        <span className="hidden font-medium text-faint sm:inline">Source:</span>
         {f.sources.map((s, i) => (
-          <span key={i} className="inline-flex items-center gap-2">
+          <span key={i} className="inline-flex min-w-0 items-center gap-2">
             <SourceLink href={i === 0 ? f.relatedHref : undefined} label={s} />
             {i < f.sources.length - 1 && <span aria-hidden className="text-faint">·</span>}
           </span>
         ))}
       </div>
+
+      <p className="mt-2 rounded-md border border-border bg-surface-2/55 px-2.5 py-2 text-[12px] leading-relaxed text-muted">
+        <span className="font-medium text-ink">Why this surfaced:</span> {f.rationale}
+      </p>
 
       {f.disclaimer && (
         <p className="mt-2 border-t border-border pt-2 text-[11.5px] italic text-faint">{f.disclaimer}</p>

@@ -71,9 +71,9 @@ export function AutomationControls({ prefs }: { prefs: UserPreference }) {
       <div className="space-y-6">
         {/* Threshold */}
         <div>
-          <div className="mb-2 flex items-baseline justify-between">
+          <div className="mb-2 flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
             <label className="text-[13px] font-medium text-ink">Auto-pass confidence threshold</label>
-            <span className="tnum text-[15px] font-semibold text-brand">{threshold}%</span>
+            <span className="tnum text-[15px] font-semibold text-ink">{threshold}%</span>
           </div>
           <input
             type="range"
@@ -103,7 +103,7 @@ export function AutomationControls({ prefs }: { prefs: UserPreference }) {
         {/* Risk tolerance */}
         <div>
           <label className="mb-2 block text-[13px] font-medium text-ink">Risk tolerance</label>
-          <div className="inline-flex rounded-lg border border-border bg-surface-2/60 p-0.5">
+          <div className="grid w-full grid-cols-3 rounded-lg border border-border bg-surface-2/60 p-0.5 sm:inline-flex sm:w-auto">
             {RISK.map((r) => (
               <button
                 key={r}
@@ -135,7 +135,7 @@ export function AutomationControls({ prefs }: { prefs: UserPreference }) {
                   aria-pressed={on}
                   className={cn(
                     "inline-flex min-h-11 transform-gpu items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12.5px] font-medium capitalize transition active:translate-y-[1px] sm:min-h-8",
-                    on ? "border-brand/20 bg-brand-soft text-brand" : "border-border bg-surface text-muted hover:text-ink-2",
+                    on ? "border-brand/20 bg-brand-soft text-ink" : "border-border bg-surface text-muted hover:text-ink-2",
                   )}
                 >
                   <span className={cn("h-1.5 w-1.5 rounded-full", on ? "bg-brand" : "bg-faint")} />
@@ -149,11 +149,11 @@ export function AutomationControls({ prefs }: { prefs: UserPreference }) {
           </p>
         </div>
 
-        <div className="flex items-center justify-end gap-2 border-t border-border pt-4">
-          <Button variant="ghost" disabled={!dirty || saving} onClick={reset}>
+        <div className="flex flex-col gap-2 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-end">
+          <Button className="w-full sm:w-auto" variant="ghost" disabled={!dirty || saving} onClick={reset}>
             Cancel
           </Button>
-          <Button variant="primary" disabled={!dirty || saving} onClick={save}>
+          <Button className="w-full sm:w-auto" variant="primary" disabled={!dirty || saving} onClick={save}>
             {saving ? "Saving" : "Save changes"}
           </Button>
         </div>

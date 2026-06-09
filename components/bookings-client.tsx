@@ -16,7 +16,7 @@ export function BookingApproval({
 }) {
   const router = useRouter();
   const [selected, setSelected] = useState<number | null>(null);
-  const [state, setState] = useState<"idle" | "confirmed" | "rejected">("idle");
+  const [state, setState] = useState<"idle" | "confirming" | "confirmed" | "rejected">("idle");
   const [booking, setBooking] = useState<Booking | null>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
@@ -49,16 +49,16 @@ export function BookingApproval({
     const opt = selectedOption;
     return (
       <div className="mt-4 flex flex-col gap-2 rounded-lg border border-pos-fg/20 bg-pos-bg p-4">
-        <div className="flex items-center gap-2 text-[13.5px] font-semibold text-pos-fg">
+        <div className="flex items-center gap-2 text-[13.5px] font-semibold text-ink">
           <Icon name="check" size={16} />
           Booking approved — {opt.label}
         </div>
         <p className="text-[12.5px] text-muted">
-          {money(opt.amountMinor, opt.currency)} · {opt.supplier}. The Booking Agent will confirm the reservation via the
-          supplier API. Finance tracker has been updated with committed spend.
+          {money(opt.amountMinor, opt.currency)} · {opt.supplier}. Finance tracker has been updated with approved
+          committed spend. A supplier reservation still requires a separate licensed execution path.
         </p>
         <p className="text-[11.5px] text-faint">
-          Ref: {booking?.confirmationRef ?? `${quoteId}-opt${selected}`} · Audit log entry created.
+          Internal record: {booking?.id ?? `${quoteId}-opt${selected}`} · Audit log entry created.
         </p>
       </div>
     );
@@ -66,15 +66,38 @@ export function BookingApproval({
 
   if (state === "rejected") {
     return (
-      <div className="mt-4 flex items-center gap-2 rounded-lg border border-crit-fg/20 bg-crit-bg px-3 py-2.5 text-[13px] text-crit-fg">
-        <Icon name="alert" size={15} />
-        Quote declined — no booking placed.
-        <button
-          className="ml-auto text-[12px] text-crit-fg/70 underline-offset-2 hover:underline"
-          onClick={() => setState("idle")}
-        >
-          undo
-        </button>
+      <div className="mt-4 flex flex-col items-start gap-1.5 rounded-lg border border-crit-fg/20 bg-crit-bg px-3 py-2.5 text-[13px] text-ink">
+        <span className="flex items-center gap-2">
+          <Icon name="alert" size={15} />
+          Quote declined — no booking placed and this quote is now closed.
+        </span>
+        <span className="text-[12px] text-muted">Create a fresh quote request if you want another comparison.</span>
+      </div>
+    );
+  }
+
+  if (state === "confirming" && selectedOption) {
+    const opt = selectedOption;
+    return (
+      <div className="mt-4 rounded-lg border border-brand/20 bg-brand-soft p-4">
+        <div className="flex items-start gap-2">
+          <Icon name="lock" size={16} className="mt-0.5 shrink-0 text-muted" />
+          <div className="min-w-0">
+            <h3 className="text-[13.5px] font-semibold text-ink">Review before approving spend</h3>
+            <p className="mt-1 text-[12.5px] leading-relaxed text-muted">
+              {opt.label} · {opt.supplier} · <span className="tnum font-medium text-ink">{money(opt.amountMinor, opt.currency)}</span>.
+              This records committed spend only; no payment, reservation, or supplier confirmation is made by Kira.
+            </p>
+          </div>
+        </div>
+        <div className="mt-3 flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end">
+          <Button className="w-full sm:w-auto" variant="outline" disabled={pending} onClick={() => setState("idle")}>
+            Cancel
+          </Button>
+          <Button className="w-full sm:w-auto" variant="primary" icon="check" disabled={pending} onClick={() => submitDecision("approve")}>
+            {pending ? "Approving" : "Approve spend"}
+          </Button>
+        </div>
       </div>
     );
   }
@@ -89,14 +112,14 @@ export function BookingApproval({
             onClick={() => setSelected(opt.index)}
             aria-pressed={selected === opt.index}
             className={cn(
-              "flex min-h-11 w-full transform-gpu items-center justify-between rounded-lg border px-3 py-2.5 text-left transition active:translate-y-[1px]",
+              "flex min-h-11 w-full transform-gpu flex-col items-start gap-1 rounded-lg border px-3 py-2.5 text-left transition active:translate-y-[1px] sm:flex-row sm:items-center sm:justify-between",
               selected === opt.index
                 ? "border-brand bg-brand-soft shadow-card"
                 : "border-border bg-surface hover:border-border-strong",
             )}
           >
             <span className="text-[13px] font-medium text-ink">{opt.label}</span>
-            <div className="flex items-center gap-2">
+            <div className="flex w-full items-center justify-between gap-2 sm:w-auto">
               <span className="tnum text-[13px] font-semibold text-ink">{money(opt.amountMinor, opt.currency)}</span>
               {selected === opt.index && <Icon name="check" size={15} className="text-brand" />}
             </div>
@@ -104,20 +127,21 @@ export function BookingApproval({
         ))}
       </div>
 
-      <div className="flex items-center gap-2 pt-1">
+      <div className="flex flex-col items-stretch gap-2 pt-1 sm:flex-row sm:items-center">
         <Button
+          className="w-full sm:w-auto"
           variant="primary"
           icon="check"
           disabled={selectedOption === null || pending}
-          onClick={() => submitDecision("approve")}
+          onClick={() => setState("confirming")}
         >
-          {pending ? "Confirming" : "Confirm booking"}
+          Review approval
         </Button>
-        <Button variant="danger" disabled={pending} onClick={() => submitDecision("reject")}>
+        <Button className="w-full sm:w-auto" variant="danger" disabled={pending} onClick={() => submitDecision("reject")}>
           {pending ? "Saving" : "Decline all"}
         </Button>
         {selected === null && (
-          <span className="ml-2 text-[12px] text-faint">Select an option first</span>
+          <span className="text-[12px] text-faint sm:ml-2">Select an option first</span>
         )}
       </div>
       {error && (

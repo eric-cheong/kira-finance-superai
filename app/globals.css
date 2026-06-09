@@ -12,12 +12,14 @@
   /* Colors are RGB channel triplets so Tailwind alpha modifiers work
      (e.g. bg-ink/20 -> rgb(var(--ink) / 0.2)). */
 
-  /* Minimal Braun / Apple inspired surface scale */
+  /* Minimal Apple / Notion inspired surface scale */
   --bg: 247 248 250;
   --surface: 255 255 255;
   --surface-2: 243 246 250;
   --border: 217 225 234;
   --border-strong: 177 191 207;
+  --wash-blue: 232 242 255;
+  --wash-beige: 248 239 224;
 
   /* Restrained graphite text scale. Hierarchy comes from tone, weight, and layout. */
   --ink: 14 18 24;
@@ -30,10 +32,10 @@
   --brand-soft: 240 245 251;
 
   /* Semantic status. Red is reserved for bad / critical states only. */
-  --pos-fg: 47 95 152;
-  --pos-bg: 240 245 251;
-  --warn-fg: 47 95 152;
-  --warn-bg: 240 245 251;
+  --pos-fg: 50 112 96;
+  --pos-bg: 239 248 244;
+  --warn-fg: 140 103 48;
+  --warn-bg: 251 247 238;
   --crit-fg: 176 27 46;
   --crit-bg: 255 245 246;
   --info-fg: 47 95 152;
@@ -52,12 +54,21 @@ html {
 
 body {
   background:
-    linear-gradient(180deg, rgb(var(--bg)) 0%, rgb(255 255 255) 46%, rgb(var(--bg)) 100%);
+    radial-gradient(circle at 10% -10%, rgb(var(--wash-blue) / 0.72), transparent 32rem),
+    radial-gradient(circle at 92% 0%, rgb(var(--wash-beige) / 0.7), transparent 34rem),
+    linear-gradient(180deg, rgb(var(--bg)) 0%, rgb(255 255 255) 48%, rgb(var(--bg)) 100%);
   color: rgb(var(--ink));
   font-family: var(--font-sans);
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.app-wash {
+  background:
+    radial-gradient(circle at 10% -10%, rgb(var(--wash-blue) / 0.72), transparent 32rem),
+    radial-gradient(circle at 92% 0%, rgb(var(--wash-beige) / 0.7), transparent 34rem),
+    linear-gradient(180deg, rgb(var(--bg)) 0%, rgb(255 255 255 / 0.94) 48%, rgb(var(--bg)) 100%);
 }
 
 /* Tabular, mono figures for money and IDs — consistency across the app */

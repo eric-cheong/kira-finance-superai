@@ -54,11 +54,11 @@ function Choice({
         active ? "border-brand bg-brand-soft shadow-card" : "border-border bg-surface hover:border-border-strong",
       )}
     >
-      <span>
-        <span className={cn("block text-[13px] font-medium", active ? "text-brand" : "text-ink")}>{label}</span>
+      <span className="min-w-0">
+        <span className="block text-[13px] font-medium text-ink">{label}</span>
         {sub && <span className="block text-[11.5px] text-muted">{sub}</span>}
       </span>
-      {active && <Icon name="check" size={16} className="text-brand" />}
+      {active && <Icon name="check" size={16} className="shrink-0 text-ink" />}
     </button>
   );
 }
@@ -122,9 +122,9 @@ export function OnboardingWizard() {
             <Badge variant="pos" dot>setup time: 18 min</Badge>
             <Badge variant="neutral">target: &lt; 1 day</Badge>
           </div>
-          <div className="mt-3 flex gap-2">
-            <Button variant="primary" icon="briefing" href="/">Go to briefing</Button>
-            <Button variant="outline" href="/settings">Review settings</Button>
+          <div className="mt-3 flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+            <Button className="w-full sm:w-auto" variant="primary" icon="briefing" href="/">Go to briefing</Button>
+            <Button className="w-full sm:w-auto" variant="outline" href="/settings">Review settings</Button>
           </div>
         </div>
       </Card>
@@ -143,7 +143,7 @@ export function OnboardingWizard() {
                 className={cn(
                   "mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-[12px] font-semibold",
                   state === "done" && "border-pos-fg/30 bg-pos-bg text-pos-fg",
-                  state === "active" && "border-brand bg-brand text-white",
+                  state === "active" && "border-brand/25 bg-brand-soft text-ink",
                   state === "todo" && "border-border bg-surface text-faint",
                 )}
               >
@@ -183,7 +183,7 @@ export function OnboardingWizard() {
                 <input className={inputCls} value={orgName} onChange={(event) => setOrgName(event.target.value)} required />
               </Field>
               <Field label="Country of incorporation">
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   <Choice label="Malaysia" sub="SST · MyInvois" active={country === "MY"} onClick={() => setCountry("MY")} />
                   <Choice label="Singapore" sub="GST · InvoiceNow" active={country === "SG"} onClick={() => setCountry("SG")} />
                 </div>
@@ -192,7 +192,7 @@ export function OnboardingWizard() {
                 <input className={inputCls} value={industry} onChange={(event) => setIndustry(event.target.value)} required />
               </Field>
               {!orgStepValid && (
-                <p className="rounded-lg border border-error/25 bg-error/5 px-3 py-2 text-[12px] text-error">
+                <p className="rounded-lg border border-crit-fg/20 bg-crit-bg px-3 py-2 text-[12px] text-ink">
                   Legal name and industry are required before continuing.
                 </p>
               )}
@@ -219,7 +219,7 @@ export function OnboardingWizard() {
 
           {step.key === "accounting" && (
             <Field label="Connect your accounting system (records sync here)">
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {["AutoCount", "SQL Account", "Xero"].map((a) => (
                   <Choice
                     key={a}
@@ -261,9 +261,9 @@ export function OnboardingWizard() {
                   { k: "Approval policy", v: "> RM2,000 → finance · e-invoices → explicit" },
                   { k: "Automation threshold", v: "Auto-pass ≥ 85% confidence" },
                 ].map((r) => (
-                  <div key={r.k} className="flex items-center justify-between rounded-lg border border-border px-3 py-2.5">
+                  <div key={r.k} className="flex flex-col items-start gap-1 rounded-lg border border-border px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between">
                     <span className="text-[13px] text-ink">{r.k}</span>
-                    <span className="text-[12px] text-muted">{r.v}</span>
+                    <span className="text-[12px] text-muted sm:text-right">{r.v}</span>
                   </div>
                 ))}
               </div>
@@ -280,7 +280,7 @@ export function OnboardingWizard() {
                   { n: "Wei Jian", r: "employee" },
                   { n: "Devi Menon", r: "auditor" },
                 ].map((m) => (
-                  <div key={m.n} className="flex items-center justify-between rounded-lg border border-border px-3 py-2.5">
+                  <div key={m.n} className="flex flex-col items-start gap-1 rounded-lg border border-border px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between">
                     <span className="text-[13px] text-ink">{m.n}</span>
                     <Badge variant="info">{m.r.replace("_", " ")}</Badge>
                   </div>
@@ -296,12 +296,13 @@ export function OnboardingWizard() {
           </p>
         )}
 
-        <div className="mt-6 flex items-center justify-between border-t border-border pt-4">
-          <Button variant="ghost" disabled={i === 0 || submitting} onClick={() => setI((n) => Math.max(0, n - 1))}>
+        <div className="mt-6 grid grid-cols-2 gap-2 border-t border-border pt-4 sm:flex sm:items-center sm:justify-between">
+          <Button className="w-full sm:w-auto" variant="ghost" disabled={i === 0 || submitting} onClick={() => setI((n) => Math.max(0, n - 1))}>
             Back
           </Button>
           {i < STEPS.length - 1 ? (
             <Button
+              className="w-full sm:w-auto"
               variant="primary"
               iconRight="arrowRight"
               disabled={i === 0 && !orgStepValid}
@@ -310,7 +311,7 @@ export function OnboardingWizard() {
               Continue
             </Button>
           ) : (
-            <Button variant="primary" icon="check" disabled={submitting} onClick={finishSetup}>
+            <Button className="w-full sm:w-auto" variant="primary" icon="check" disabled={submitting} onClick={finishSetup}>
               {submitting ? "Finishing" : "Finish setup"}
             </Button>
           )}

@@ -17,11 +17,10 @@ import {
 } from "@/components/ui";
 import type { IconName } from "@/components/ui/icons";
 import type { ReactNode } from "react";
+import { ErpCloseExportActions } from "@/components/erp-close-actions";
+import { state } from "@/lib/backend/state";
 import { fmtDate, fmtDateTime, money, relativeTo, shortId } from "@/lib/format";
 import {
-  CLOSE_BOOK_CLIENTS,
-  CLOSE_BOOK_SUPPLIERS,
-  VERIFIED_BILL_RECORDS,
   criticalConfidence,
   describeExportBlockers,
   formatBillAmount,
@@ -51,9 +50,22 @@ interface WorkflowCard {
 }
 
 const NOW = "2026-06-09T09:12:00+08:00";
-const records = VERIFIED_BILL_RECORDS;
-const dashboard = getWorkflowDashboard(records);
-const activeClient = CLOSE_BOOK_CLIENTS[0];
+
+function closeBookRecords() {
+  return state.closeBookRecords;
+}
+
+function closeBookDashboard() {
+  return getWorkflowDashboard(closeBookRecords());
+}
+
+function activeCloseBookClient() {
+  return state.closeBookClients[0];
+}
+
+const records = closeBookRecords();
+const dashboard = closeBookDashboard();
+const activeClient = activeCloseBookClient();
 
 const STATUS_TONE: Record<CloseBookStatus, Tone> = {
   received: "neutral",
@@ -97,11 +109,11 @@ const BLOCKER_COPY: Record<ExportBlockReasonCode, string> = {
 };
 
 function supplierFor(record: VerifiedBillRecord) {
-  return CLOSE_BOOK_SUPPLIERS.find((supplier) => supplier.id === record.supplierId);
+  return state.closeBookSuppliers.find((supplier) => supplier.id === record.supplierId);
 }
 
 function clientFor(record: VerifiedBillRecord) {
-  return CLOSE_BOOK_CLIENTS.find((client) => client.id === record.clientId);
+  return state.closeBookClients.find((client) => client.id === record.clientId);
 }
 
 function recordOwner(record: VerifiedBillRecord) {
@@ -290,7 +302,7 @@ function ExceptionQueue() {
                     <Badge variant="neutral">{CHANNEL_LABEL[record.intake.channel]}</Badge>
                   </div>
                 </div>
-                <div className="grid shrink-0 gap-2 text-[12px] sm:grid-cols-2 lg:w-[320px] lg:grid-cols-1">
+                <div className="grid w-full shrink-0 gap-2 text-[12px] sm:grid-cols-2 lg:w-[320px] lg:grid-cols-1">
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-muted">Amount</span>
                     <Amount className="font-semibold text-ink">{formatBillAmount(record)}</Amount>
@@ -321,7 +333,7 @@ function ExceptionQueue() {
                       </Badge>
                     ))}
                 </div>
-                <Button variant="outline" size="sm" icon="arrowRight">
+                <Button className="w-full sm:w-auto" variant="outline" size="sm" icon="arrowRight">
                   Open Bill Record
                 </Button>
               </div>
@@ -347,7 +359,53 @@ function BillRegister() {
           </div>
         }
       />
-      <Card pad={false}>
+      <div className="space-y-3 md:hidden">
+        {records.map((record) => {
+          const supplier = supplierFor(record);
+          const blockers = getExportBlockers(record).filter((reason) => reason.code !== "already_exported");
+          const client = clientFor(record);
+          return (
+            <Card key={`mobile-${record.id}`} className="space-y-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <StatusBadge status={record.status} />
+                    <Badge variant={record.intake.channel === "whatsapp" ? "brand" : record.intake.channel === "email" ? "info" : "neutral"}>
+                      {CHANNEL_LABEL[record.intake.channel]}
+                    </Badge>
+                  </div>
+                  <h3 className="mt-2 truncate text-[14px] font-semibold text-ink">{record.supplierName ?? "Unknown supplier"}</h3>
+                  <p className="mt-0.5 text-[12px] text-muted">
+                    <span className="tnum">{record.id}</span> · {record.invoiceNumber ?? "missing invoice no."}
+                  </p>
+                </div>
+                <Amount className="shrink-0 text-right text-[14px] font-semibold text-ink">{formatBillAmount(record)}</Amount>
+              </div>
+              <div className="grid gap-2 text-[12px]">
+                <KeyValue k="Client / owner" v={`${client?.tradingName ?? "Client"} · ${recordOwner(record)}`} />
+                <KeyValue k="Received" v={<span className="tnum">{fmtDate(record.intake.receivedAt)}</span>} />
+                <KeyValue k="Tax identity" v={`TIN ${record.supplierTin ?? supplier?.tin ?? "missing"} · MSIC ${supplier?.msic ?? client?.msic ?? "missing"}`} />
+                <KeyValue k="Confidence" v={<ConfidenceChip value={criticalConfidence(record)} showWord={false} />} />
+                <KeyValue k="Bank score" v={<span className="tnum">{record.bankMatch?.score ?? 0}%</span>} />
+              </div>
+              <div className="rounded-lg border border-border bg-surface-2/45 px-3 py-2">
+                {blockers.length === 0 ? (
+                  <div className="flex items-center justify-between gap-2">
+                    <Badge variant="pos" dot>exportable</Badge>
+                    <span className="text-[12px] text-muted">{record.erpMapping?.destination ?? client?.erp} ready</span>
+                  </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    <Badge variant="crit" dot>{blockers.length} blockers</Badge>
+                    <p className="text-[12px] leading-relaxed text-muted">{blockers[0]?.message}</p>
+                  </div>
+                )}
+              </div>
+            </Card>
+          );
+        })}
+      </div>
+      <Card pad={false} className="hidden md:block">
         <Table>
           <thead>
             <tr>
@@ -424,7 +482,31 @@ function SupplierReconciliation() {
   return (
     <section>
       <SectionTitle title="Supplier reconciliation" subtitle="Supplier statement tie-out against Bill Records and bank evidence." />
-      <Card pad={false}>
+      <div className="space-y-3 md:hidden">
+        {rows.map((record) => {
+          const match = record.supplierStatementMatch!;
+          const blockers = describeExportBlockers(record).filter((message) => !message.includes("already"));
+          return (
+            <Card key={`mobile-${record.id}-${match.statementId}`} className="space-y-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h3 className="truncate text-[14px] font-semibold text-ink">{record.supplierName ?? "Unknown supplier"}</h3>
+                  <p className="tnum mt-0.5 text-[12px] text-muted">{match.statementId} · {fmtDate(match.statementDate)}</p>
+                </div>
+                <Badge variant={STATEMENT_TONE[match.state]} dot>{match.state.replace("_", " ")}</Badge>
+              </div>
+              <div className="grid gap-2 text-[12px]">
+                <KeyValue k="Variance" v={<span className="tnum">{money(match.varianceMinor, record.currency ?? "MYR", { sign: true })}</span>} />
+                <KeyValue k="Matched invoices" v={match.matchedInvoiceRefs.join(", ") || "none"} />
+              </div>
+              <div className="rounded-lg border border-border bg-surface-2/45 px-3 py-2 text-[12px] leading-relaxed text-muted">
+                {blockers[0] ?? match.note}
+              </div>
+            </Card>
+          );
+        })}
+      </div>
+      <Card pad={false} className="hidden md:block">
         <Table>
           <thead>
             <tr>
@@ -583,7 +665,26 @@ function AuditTrail() {
   return (
     <section>
       <SectionTitle title="Audit Trail / Invoice History" subtitle="Recent close activity for Bill Records." />
-      <Card pad={false}>
+      <div className="space-y-0 md:hidden">
+        {entries.map(({ record, entry }, index) => (
+          <div key={`mobile-${entry.id}`} className="relative pl-5">
+            <span className="absolute left-1 top-4 h-2 w-2 rounded-full bg-brand/55" />
+            {index < entries.length - 1 && <span className="absolute bottom-0 left-[7px] top-6 w-px bg-border" />}
+            <Card className="mb-3 space-y-2">
+              <div className="flex flex-wrap items-center gap-2 text-[11.5px] text-muted">
+                <span className="tnum">{fmtDateTime(entry.at)}</span>
+                <span aria-hidden>·</span>
+                <span>{entry.actor}</span>
+                <Badge variant="neutral">Bill {record.id}</Badge>
+              </div>
+              <h3 className="text-[13px] font-semibold text-ink">{entry.action}</h3>
+              <p className="text-[12px] leading-relaxed text-muted">{entry.detail}</p>
+              <div className="tnum text-[11px] text-faint">{shortId(entry.id, 12)}</div>
+            </Card>
+          </div>
+        ))}
+      </div>
+      <Card pad={false} className="hidden md:block">
         <Table>
           <thead>
             <tr>
@@ -628,19 +729,16 @@ export default function ErpClosePage() {
         description="Month-end close operations for Verified Bills, supplier tie-out, bank matching, and ERP/LHDN readiness. Built for finance owners working exceptions first."
         badge={<Badge variant={blockerCount > 0 ? "warn" : "pos"} dot>{blockerCount} blockers</Badge>}
         actions={
-          <>
-            <Button variant="outline" icon="doc" size="sm">
-              Export evidence pack
-            </Button>
-            <Button variant="primary" icon="lock" size="sm" disabled={blockerCount > 0}>
-              Export Ready Bills
-            </Button>
-          </>
+          <ErpCloseExportActions
+            disabled={blockerCount > 0}
+            destination={activeClient.erp}
+            readyRecordIds={dashboard.readyForExport.map((record) => record.id)}
+          />
         }
       />
 
-      <div className="grid gap-3 lg:grid-cols-[280px_repeat(4,minmax(0,1fr))]">
-        <Card>
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-[280px_repeat(4,minmax(0,1fr))]">
+        <Card className="col-span-2 lg:col-span-1">
           <div>
             <div className="flex items-center gap-2">
               <Icon name="check" size={18} className="text-brand" />

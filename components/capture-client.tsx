@@ -127,11 +127,11 @@ export function CaptureBox() {
             <p className="text-[14px] font-medium text-ink">Capture a receipt or invoice</p>
             <p className="mt-0.5 text-[12.5px] text-muted">Snap a photo, or forward to inbox@kiraroasters.kira.my</p>
           </div>
-          <div className="flex gap-2">
-            <Button variant="primary" icon="capture" disabled={busy} onClick={() => snap("mobile")}>
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+            <Button className="w-full sm:w-auto" variant="primary" icon="capture" disabled={busy} onClick={() => snap("mobile")}>
               {busy ? "Capturing" : "Snap receipt"}
             </Button>
-            <Button variant="outline" icon="doc" disabled={busy} onClick={() => snap("email")}>
+            <Button className="w-full sm:w-auto" variant="outline" icon="doc" disabled={busy} onClick={() => snap("email")}>
               Forward invoice
             </Button>
           </div>
@@ -157,8 +157,8 @@ export function CaptureBox() {
           <div className="flex items-start gap-3">
             <Thumb hint="beans" size={48} />
             <div className="min-w-0 flex-1">
-              <div className="flex items-center justify-between gap-2">
-                <h3 className="text-[15px] font-semibold text-ink">{draft.receipt.supplier}</h3>
+              <div className="flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:justify-between">
+                <h3 className="min-w-0 text-[15px] font-semibold text-ink">{draft.receipt.supplier}</h3>
                 <span className="tnum text-[15px] font-semibold text-ink">{money(draft.receipt.totalMinor, draft.receipt.currency)}</span>
               </div>
               <p className="text-[12.5px] text-muted">
@@ -187,23 +187,23 @@ export function CaptureBox() {
           )}
 
           {stage === "extracted" ? (
-            <div className="mt-4 flex items-center gap-2">
-              <Button variant="primary" icon="check" disabled={!canPost || busy} onClick={confirmPost}>
+            <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+              <Button className="w-full sm:w-auto" variant="primary" icon="check" disabled={!canPost || busy} onClick={confirmPost}>
                 {busy ? "Posting" : "Confirm & post"}
               </Button>
-              <Button variant={reviewed ? "outline" : "ghost"} disabled={busy} onClick={reviewCoding}>
-                {reviewed ? "Coding reviewed" : "Adjust coding"}
+              <Button className="w-full sm:w-auto" variant={reviewed ? "outline" : "ghost"} disabled={busy} onClick={reviewCoding}>
+                {reviewed ? "Coding reviewed" : "Mark coding reviewed"}
               </Button>
-              <button onClick={reset} className="ml-auto text-[12px] text-muted hover:underline">
-                discard
+              <button onClick={reset} className="text-[12px] text-muted hover:underline sm:ml-auto">
+                close draft
               </button>
             </div>
           ) : (
-            <div className="mt-4 flex items-center justify-between rounded-lg border border-pos-fg/20 bg-pos-bg px-3 py-2.5">
-              <span className="flex items-center gap-2 text-[13px] font-medium text-pos-fg">
+            <div className="mt-4 flex flex-col items-start gap-2 rounded-lg border border-pos-fg/20 bg-pos-bg px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between">
+              <span className="flex items-center gap-2 text-[13px] font-medium text-ink">
                 <Icon name="check" size={16} /> Posted to record store · queued for auto-match
               </span>
-              <button onClick={reset} className="text-[12px] text-pos-fg/80 hover:underline">
+              <button onClick={reset} className="text-[12px] text-muted hover:underline">
                 capture another
               </button>
             </div>

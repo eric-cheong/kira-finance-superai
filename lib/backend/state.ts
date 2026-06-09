@@ -35,6 +35,11 @@ import type {
 } from "@/lib/types";
 
 export type RawAuditEvent = (typeof seed.RAW_AUDIT)[number];
+export type ConnectorState = {
+  name: string;
+  kind: string;
+  state: "available" | "connected";
+};
 
 export interface OnboardingRun {
   id: string;
@@ -57,7 +62,7 @@ export interface WorkflowRun {
   id: string;
   functionId: string;
   action: string;
-  status: "queued" | "running" | "approval_required" | "completed";
+  status: "queued" | "running" | "approval_required" | "completed" | "rejected";
   createdAt: string;
   approvalId?: string;
 }
@@ -101,9 +106,19 @@ export interface BackendState {
   closeBookSuppliers: CloseBookSupplier[];
   closeBookRecords: VerifiedBillRecord[];
   exportBatches: ExportBatch[];
+  connectors: ConnectorState[];
   rawAudit: RawAuditEvent[];
   onboardingRuns: OnboardingRun[];
 }
+
+const INITIAL_CONNECTORS: ConnectorState[] = [
+  { name: "AutoCount", kind: "Accounting (local)", state: "connected" },
+  { name: "Xero", kind: "Accounting (SG entity)", state: "connected" },
+  { name: "SQL Account", kind: "Accounting (local)", state: "available" },
+  { name: "LHDN MyInvois", kind: "E-invoicing (MY)", state: "connected" },
+  { name: "Peppol / InvoiceNow", kind: "E-invoicing (SG)", state: "connected" },
+  { name: "Maybank / CIMB / DBS", kind: "Transaction feed (CSV)", state: "connected" },
+];
 
 export interface RuntimeState extends BackendState {
   audit: AuditLogEntry[];
@@ -151,6 +166,7 @@ function initialState(): RuntimeState {
     closeBookSuppliers: clone(CLOSE_BOOK_SUPPLIERS),
     closeBookRecords: clone(VERIFIED_BILL_RECORDS),
     exportBatches: [],
+    connectors: clone(INITIAL_CONNECTORS),
     rawAudit: clone(seed.RAW_AUDIT),
     onboardingRuns: [],
   };
@@ -192,6 +208,7 @@ function readSnapshot(): RuntimeState | null {
       closeBookSuppliers: parsed.closeBookSuppliers ?? fallback.closeBookSuppliers,
       closeBookRecords: parsed.closeBookRecords ?? fallback.closeBookRecords,
       exportBatches: parsed.exportBatches ?? fallback.exportBatches,
+      connectors: parsed.connectors ?? fallback.connectors,
       rawAudit: parsed.rawAudit,
       onboardingRuns: parsed.onboardingRuns ?? fallback.onboardingRuns,
     };
@@ -240,6 +257,7 @@ export function resetState() {
   replaceArray(state.closeBookSuppliers, next.closeBookSuppliers);
   replaceArray(state.closeBookRecords, next.closeBookRecords);
   replaceArray(state.exportBatches, next.exportBatches);
+  replaceArray(state.connectors, next.connectors);
   replaceArray(state.rawAudit, next.rawAudit);
   replaceArray(state.onboardingRuns, next.onboardingRuns);
   refreshAudit();

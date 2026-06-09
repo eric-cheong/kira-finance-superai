@@ -26,7 +26,7 @@ export default function CapturePage() {
         title="Capture"
         description="Snap a receipt or forward a supplier invoice. Document AI extracts the fields, suggests a GST/SST code, and auto-matches to the bank line. Low-confidence items wait for you."
         actions={
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Badge variant="pos">{rs.confirmed} confirmed</Badge>
             <Badge variant="warn">{rs.review} in review</Badge>
           </div>
@@ -49,7 +49,7 @@ export default function CapturePage() {
               const tc = db.taxCode(r.suggestedTaxCode);
               const st = STATUS[r.status];
               return (
-                <div key={r.id} className="flex items-center gap-3 px-5 py-3.5 hover:bg-surface-2/40">
+                <div key={r.id} className="flex flex-col gap-3 px-4 py-3.5 hover:bg-surface-2/40 sm:flex-row sm:items-center sm:px-5">
                   <Thumb hint={r.thumbHint} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
@@ -68,7 +68,7 @@ export default function CapturePage() {
                       )}
                     </div>
                   </div>
-                  <div className="flex flex-col items-end gap-1.5">
+                  <div className="flex flex-row flex-wrap items-center gap-1.5 sm:flex-col sm:items-end">
                     <span className="tnum text-[13.5px] font-semibold text-ink">{money(r.totalMinor, r.currency)}</span>
                     <ConfidenceChip value={r.ocrConfidence} showWord={false} />
                     <Badge variant={st.variant} dot>

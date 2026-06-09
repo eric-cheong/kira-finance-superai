@@ -18,9 +18,9 @@ import { Thumb } from "@/components/thumb";
 export const metadata = { title: "Transactions · Kira" };
 
 const STATUS_DOT: Record<TransactionEvent["status"], string> = {
-  matched: "bg-pos-fg",
-  unmatched: "bg-faint",
-  needs_review: "bg-warn-fg",
+  matched: "bg-brand/55",
+  unmatched: "bg-faint/45",
+  needs_review: "bg-brand/35",
 };
 const STATUS_LABEL: Record<TransactionEvent["status"], string> = {
   matched: "Matched",
@@ -44,6 +44,59 @@ function duplicateIds(): Set<string> {
   return set;
 }
 
+function TransactionMobileCard({ t, duplicate }: { t: TransactionEvent; duplicate: boolean }) {
+  const match = db.matchForTransaction(t.id);
+  const rcp = match ? db.receipt(match.receiptId) : undefined;
+
+  return (
+    <article className="px-4 py-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT[t.status]}`} />
+            <span className="text-[12px] font-medium text-muted">{STATUS_LABEL[t.status]}</span>
+            {duplicate && t.status !== "matched" && (
+              <Badge variant="crit" dot>
+                Possible duplicate
+              </Badge>
+            )}
+          </div>
+          <h3 className="mt-1 truncate text-[14px] font-semibold text-ink">{t.merchant}</h3>
+          <p className="mt-0.5 text-[12px] leading-snug text-muted">{t.description}</p>
+          <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11.5px] text-faint">
+            <span className="tnum">{fmtDateShort(t.occurredAt)}</span>
+            <span aria-hidden>·</span>
+            <span className="truncate">{t.sourceRef}</span>
+          </div>
+        </div>
+        <div className="shrink-0 text-right">
+          <div className="tnum text-[14px] font-semibold text-ink">{money(t.amountMinor, t.currency)}</div>
+          {t.currency !== "MYR" && (
+            <div className="tnum text-[11px] text-faint">≈ {money(db.toBase(t.amountMinor, t.currency), "MYR")}</div>
+          )}
+        </div>
+      </div>
+      <div className="mt-3 rounded-lg border border-border bg-surface-2/45 px-3 py-2">
+        {rcp ? (
+          <div className="flex items-center gap-2">
+            <Thumb hint={rcp.thumbHint} size={28} />
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-[12.5px] font-medium text-ink">{rcp.supplier}</div>
+              <div className="text-[11.5px] text-muted">Receipt match</div>
+            </div>
+            <Badge variant={match!.score >= 90 ? "pos" : "warn"}>{match!.score}%</Badge>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 text-[12px] text-muted">
+            <Icon name="doc" size={14} className="shrink-0 text-faint" />
+            No receipt matched yet
+          </div>
+        )}
+      </div>
+    </article>
+  );
+}
+
 export default function TransactionsPage() {
   const m = db.matchStats();
   const cr = db.closeReadiness();
@@ -57,19 +110,24 @@ export default function TransactionsPage() {
         description="Bank and card lines imported read-only — Kira never originates or moves this money. The matching engine pairs each line to a receipt; unmatched and ambiguous items are surfaced for close."
       />
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatTile label="Imported" value={m.total} sub="this period" icon="transactions" />
         <StatTile label="Matched" value={m.matched} sub={`${m.matchedPct}% auto`} icon="check" tone="pos" />
         <StatTile label="In review" value={m.review} sub="FX / asset ambiguity" icon="alert" tone="warn" />
         <StatTile label="Unmatched" value={m.unmatched} sub="missing receipts" icon="search" tone="neutral" />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
         <Card pad={false}>
           <div className="px-5 pt-5">
             <CardHeader title="Ledger lines" subtitle="Read-only · system of record-keeping, not a money ledger" icon="transactions" />
           </div>
-          <Table>
+          <div className="divide-y divide-border md:hidden">
+            {rows.map((t) => (
+              <TransactionMobileCard key={t.id} t={t} duplicate={dupes.has(t.id)} />
+            ))}
+          </div>
+          <Table className="hidden md:block">
             <thead>
               <tr>
                 <Th>Status</Th>

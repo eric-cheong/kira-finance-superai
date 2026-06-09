@@ -34,7 +34,7 @@ export default function AuditPage() {
     <div className="animate-in space-y-8">
       <PageHeader
         title="Audit & agents"
-        description="The transparency layer: every agent's reasoning, the autonomy boundaries it operates inside, and an immutable hash-chained record of what happened. This is what an auditor or admin sees."
+        description="The transparency layer: every agent plan, tool call, policy check, autonomy boundary, and immutable hash-chained record of what happened. This is what an auditor or admin sees."
         badge={<Badge variant="pos" dot>chain verified</Badge>}
       />
 
@@ -67,10 +67,10 @@ export default function AuditPage() {
         </Card>
       </section>
 
-      {/* Latest run reasoning */}
+      {/* Latest run trace */}
       <section>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-[15px] font-semibold text-ink">Latest run — agent reasoning</h2>
+          <h2 className="text-[15px] font-semibold text-ink">Latest run — decision trace</h2>
           <span className="tnum text-[12px] text-faint">
             {run.runId} · {run.durationMs}ms · {fmtDateTime(run.startedAt)}
           </span>
