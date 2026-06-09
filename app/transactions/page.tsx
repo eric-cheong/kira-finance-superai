@@ -1,0 +1,165 @@
+import * as db from "@/lib/data/store";
+import { fmtDateShort, money } from "@/lib/format";
+import type { TransactionEvent } from "@/lib/types";
+import {
+  Badge,
+  Bar,
+  Card,
+  CardHeader,
+  Icon,
+  PageHeader,
+  StatTile,
+  Table,
+  Td,
+  Th,
+} from "@/components/ui";
+import { Thumb } from "@/components/thumb";
+
+export const metadata = { title: "Transactions · Kira" };
+
+const STATUS_DOT: Record<TransactionEvent["status"], string> = {
+  matched: "bg-pos-fg",
+  unmatched: "bg-faint",
+  needs_review: "bg-warn-fg",
+};
+const STATUS_LABEL: Record<TransactionEvent["status"], string> = {
+  matched: "Matched",
+  unmatched: "Unmatched",
+  needs_review: "Review",
+};
+
+function duplicateIds(): Set<string> {
+  const set = new Set<string>();
+  const txns = db.TRANSACTIONS;
+  for (let a = 0; a < txns.length; a++) {
+    for (let b = a + 1; b < txns.length; b++) {
+      const x = txns[a], y = txns[b];
+      const dt = Math.abs(new Date(x.occurredAt).getTime() - new Date(y.occurredAt).getTime());
+      if (x.merchant === y.merchant && x.amountMinor === y.amountMinor && x.currency === y.currency && dt <= 48 * 3600e3) {
+        set.add(x.id);
+        set.add(y.id);
+      }
+    }
+  }
+  return set;
+}
+
+export default function TransactionsPage() {
+  const m = db.matchStats();
+  const cr = db.closeReadiness();
+  const dupes = duplicateIds();
+  const rows = [...db.TRANSACTIONS].sort((a, b) => b.occurredAt.localeCompare(a.occurredAt));
+
+  return (
+    <div className="animate-in space-y-6">
+      <PageHeader
+        title="Transactions & reconciliation"
+        description="Bank and card lines imported read-only — Kira never originates or moves this money. The matching engine pairs each line to a receipt; unmatched and ambiguous items are surfaced for close."
+      />
+
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <StatTile label="Imported" value={m.total} sub="this period" icon="transactions" />
+        <StatTile label="Matched" value={m.matched} sub={`${m.matchedPct}% auto`} icon="check" tone="pos" />
+        <StatTile label="In review" value={m.review} sub="FX / asset ambiguity" icon="alert" tone="warn" />
+        <StatTile label="Unmatched" value={m.unmatched} sub="missing receipts" icon="search" tone="neutral" />
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
+        <Card pad={false}>
+          <div className="px-5 pt-5">
+            <CardHeader title="Ledger lines" subtitle="Read-only · system of record-keeping, not a money ledger" icon="transactions" />
+          </div>
+          <Table>
+            <thead>
+              <tr>
+                <Th>Status</Th>
+                <Th>Date</Th>
+                <Th>Description</Th>
+                <Th>Source</Th>
+                <Th className="text-right">Amount</Th>
+                <Th>Match</Th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((t) => {
+                const match = db.matchForTransaction(t.id);
+                const rcp = match ? db.receipt(match.receiptId) : undefined;
+                return (
+                  <tr key={t.id} className="hover:bg-surface-2/40">
+                    <Td>
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT[t.status]}`} />
+                        <span className="text-[12.5px]">{STATUS_LABEL[t.status]}</span>
+                      </span>
+                    </Td>
+                    <Td className="whitespace-nowrap tnum text-[12.5px] text-muted">{fmtDateShort(t.occurredAt)}</Td>
+                    <Td>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-ink">{t.merchant}</span>
+                        {dupes.has(t.id) && t.status !== "matched" && (
+                          <Badge variant="crit" dot>
+                            dup?
+                          </Badge>
+                        )}
+                      </div>
+                      <span className="text-[11.5px] text-faint">{t.description}</span>
+                    </Td>
+                    <Td className="whitespace-nowrap text-[12px] text-muted">{t.sourceRef}</Td>
+                    <Td className="whitespace-nowrap text-right">
+                      <span className="tnum font-semibold text-ink">{money(t.amountMinor, t.currency)}</span>
+                      {t.currency !== "MYR" && (
+                        <div className="tnum text-[11px] text-faint">≈ {money(db.toBase(t.amountMinor, t.currency), "MYR")}</div>
+                      )}
+                    </Td>
+                    <Td>
+                      {rcp ? (
+                        <span className="inline-flex items-center gap-2">
+                          <Thumb hint={rcp.thumbHint} size={26} />
+                          <span className="text-[12px] text-ink-2">{rcp.supplier.split(" ")[0]}</span>
+                          <Badge variant={match!.score >= 90 ? "pos" : "warn"}>{match!.score}%</Badge>
+                        </span>
+                      ) : (
+                        <span className="text-[12px] text-faint">— no receipt</span>
+                      )}
+                    </Td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </Table>
+        </Card>
+
+        <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">
+          <Card>
+            <CardHeader title="Close-readiness" icon="check" />
+            <div className="mb-2 flex items-end justify-between">
+              <span className="tnum text-2xl font-semibold text-ink">{cr.score}%</span>
+              <Badge variant={cr.score >= 80 ? "pos" : cr.score >= 60 ? "warn" : "crit"}>
+                {cr.score >= 80 ? "on track" : "blockers"}
+              </Badge>
+            </div>
+            <Bar value={cr.score} tone={cr.score >= 80 ? "pos" : cr.score >= 60 ? "warn" : "crit"} />
+            <ul className="mt-3 space-y-1.5">
+              {cr.blockers.map((b, i) => (
+                <li key={i} className="flex items-start gap-2 text-[12px] text-muted">
+                  <Icon name="dot" size={10} className="mt-1 shrink-0 text-faint" />
+                  {b}
+                </li>
+              ))}
+            </ul>
+          </Card>
+
+          <Card>
+            <CardHeader title="Matching basis" subtitle="How auto-matches are scored" icon="spark" />
+            <ul className="space-y-2 text-[12.5px] text-muted">
+              <li className="flex items-center gap-2"><Badge variant="pos">amount</Badge> exact minor-unit equality</li>
+              <li className="flex items-center gap-2"><Badge variant="info">date ±1d</Badge> settlement vs document date</li>
+              <li className="flex items-center gap-2"><Badge variant="neutral">merchant~</Badge> fuzzy name similarity</li>
+            </ul>
+            <p className="mt-3 text-[11.5px] text-faint">Matches ≥ 90% auto-confirm; 80–90% are suggested for a human; below 80% stay unmatched.</p>
+          </Card>
+        </aside>
+      </div>
+    </div>
+  );
+}

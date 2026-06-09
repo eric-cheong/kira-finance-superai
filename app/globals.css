@@ -1,0 +1,108 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Typography */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
+
+  /* Colors are RGB channel triplets so Tailwind alpha modifiers work
+     (e.g. bg-ink/20 -> rgb(var(--ink) / 0.2)). */
+
+  /* Neutral surface scale */
+  --bg: 250 250 250;
+  --surface: 255 255 255;
+  --surface-2: 245 245 245;
+  --border: 232 232 234;
+  --border-strong: 214 214 218;
+
+  /* Ink scale */
+  --ink: 24 24 27;
+  --ink-2: 69 69 76;
+  --muted: 113 113 122;
+  --faint: 161 161 170;
+
+  /* Brand — a single, restrained deep teal. Used sparingly. */
+  --brand: 15 118 110;
+  --brand-soft: 236 246 244;
+
+  /* Semantic status — used ONLY for state, never decoration */
+  --pos-fg: 4 120 87;
+  --pos-bg: 236 253 245;
+  --warn-fg: 180 83 9;
+  --warn-bg: 255 251 235;
+  --crit-fg: 190 18 60;
+  --crit-bg: 255 241 242;
+  --info-fg: 29 78 216;
+  --info-bg: 239 246 255;
+}
+
+* {
+  border-color: rgb(var(--border));
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background: rgb(var(--bg));
+  color: rgb(var(--ink));
+  font-family: var(--font-sans);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Tabular, mono figures for money and IDs — consistency across the app */
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
+  letter-spacing: -0.01em;
+}
+
+/* Subtle scrollbar to match the minimalist surface */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgb(217 217 221);
+  border-radius: 999px;
+  border: 3px solid rgb(var(--bg));
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(196 196 202);
+}
+
+/* Focus ring — accessible, consistent */
+:focus-visible {
+  outline: 2px solid rgb(var(--brand));
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@keyframes fade-rise {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-in {
+  animation: fade-rise 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-in {
+    animation: none;
+  }
+}
