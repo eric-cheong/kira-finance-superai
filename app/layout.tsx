@@ -3,9 +3,9 @@ import "./globals.css";
 import { AppShell } from "@/components/app-shell";
 
 export const metadata: Metadata = {
-  title: "Kira · Finance SuperAI",
+  title: "Kira · AI Operating Intelligence",
   description:
-    "All-in-one agentic AI finance app for APAC SMEs. Orchestrates and records — never settles. GST/SST automation, e-invoicing compliance (MyInvois + Peppol/InvoiceNow), and an embedded multi-agent intelligence layer.",
+    "AI operating intelligence platform for finance and operating workflows. Kira benchmarks cash, margin, growth, and customer-experience gaps, then runs approval-gated workflows across existing systems.",
 };
 
 export const viewport: Viewport = {

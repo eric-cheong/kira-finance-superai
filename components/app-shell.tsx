@@ -21,10 +21,12 @@ const NAV: { group: string; items: NavItem[] }[] = [
     items: [
       { href: "/onboarding", label: "Get Started", icon: "bank" },
       { href: "/", label: "Daily Briefing", icon: "briefing" },
+      { href: "/operating-functions", label: "Operating Functions", icon: "workflow" },
       { href: "/capture", label: "Capture", icon: "capture" },
       { href: "/approvals", label: "Approvals", icon: "approvals", badge: "4" },
       { href: "/transactions", label: "Transactions", icon: "transactions" },
       { href: "/bookings", label: "Bookings", icon: "flight" },
+      { href: "/erp-close", label: "ERP Close", icon: "closeBooks" },
     ],
   },
   {

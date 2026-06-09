@@ -1,11 +1,13 @@
-# Kira · Finance SuperAI
+# Kira · AI Operating Intelligence
 
-An all-in-one **agentic-AI finance app** for Malaysia + Singapore SMEs. Kira
-**orchestrates and records — it never settles.** It sits entirely above the
-regulated financial perimeter: no holding, moving, or storing customer money, no
-e-money or card issuing, no placing trades. The license-free wedge is native
-**GST/SST automation + e-invoicing compliance** (LHDN MyInvois + Peppol/InvoiceNow)
-with an embedded **multi-agent intelligence layer**.
+An **AI operating intelligence platform** for Malaysia + Singapore SMEs. Kira
+benchmarks the workflows that decide cash, margin, growth, and customer
+experience, then runs approval-gated workflows across existing systems. For
+finance workflows, Kira **orchestrates and records — it never settles.** It sits
+entirely above the regulated financial perimeter: no holding, moving, or storing
+customer money, no e-money or card issuing, no placing trades. The license-free
+wedge is native **GST/SST automation + e-invoicing compliance** (LHDN MyInvois +
+Peppol/InvoiceNow) with an embedded **multi-agent intelligence layer**.
 
 This repository is a runnable Next.js reference implementation of that product:
 the screens, the data model, realistic SG/MY SME seed data, and a working
@@ -46,9 +48,11 @@ the loop **Observe → Analyze → Plan → Act → Verify → Summarize → Esc
 |---|---|
 | `/onboarding` | Onboarding wizard — org, tax, connectors, feeds, policy, team |
 | `/` | Daily Briefing — runs the live agent orchestration |
+| `/operating-functions` | Operating Functions — benchmark gaps, financial impact, workflow execution, approvals, and audit trails across AR, FP&A, sales, lead gen, service, onboarding, and ops |
 | `/capture` | Capture / Inbox — OCR receipt capture + suggested coding |
 | `/approvals` | Approvals queue — tier-3/4 human-in-the-loop sign-off |
 | `/transactions` | Transactions & reconciliation — read-only matching |
+| `/erp-close` | ERP Close — close-book workflow hub, supplier/bank reconciliation, export gates, and close audit trail |
 | `/compliance` | E-invoicing console — MyInvois + Peppol/InvoiceNow |
 | `/analytics` | Spend analytics — FX-normalised dashboards |
 | `/portfolio` | Portfolio (Phase 2) — read-only, advice-separated |

@@ -34,7 +34,14 @@ export type IconName =
   | "vendor"
   | "forecast"
   | "globe"
-  | "calendar";
+  | "calendar"
+  | "workflow"
+  | "benchmark"
+  | "module"
+  | "route"
+  | "timeline"
+  | "hash"
+  | "database";
 
 const PATHS: Record<IconName, JSX.Element> = {
   briefing: <><path d="M4 5h16M4 12h16M4 19h10" /></>,
@@ -68,6 +75,13 @@ const PATHS: Record<IconName, JSX.Element> = {
   forecast: <><path d="M4 19V5M4 19h16" /><path d="M8 14l3-5 3 3 4-6" /><path d="M15 7l3 3" strokeDasharray="2 2" /></>,
   globe: <><circle cx="12" cy="12" r="9" /><path d="M2 12h20M12 3a15 15 0 010 18M12 3a15 15 0 000 18" /></>,
   calendar: <><rect x="3" y="4" width="18" height="17" rx="2" /><path d="M8 2v3M16 2v3M3 10h18" /></>,
+  workflow: <><rect x="3" y="4" width="6" height="6" rx="1.5" /><rect x="15" y="4" width="6" height="6" rx="1.5" /><rect x="9" y="15" width="6" height="6" rx="1.5" /><path d="M9 7h6M18 10v2a3 3 0 01-3 3h-3M6 10v2a3 3 0 003 3h3" /></>,
+  benchmark: <><path d="M4 19V5M4 19h16" /><path d="M7 16v-4M11 16V8M15 16v-6M19 16V6" /><path d="M6 7h14" strokeDasharray="2 2" /></>,
+  module: <><rect x="4" y="4" width="7" height="7" rx="1.5" /><rect x="13" y="4" width="7" height="7" rx="1.5" /><rect x="4" y="13" width="7" height="7" rx="1.5" /><rect x="13" y="13" width="7" height="7" rx="1.5" /></>,
+  route: <><path d="M6 18a3 3 0 100-6 3 3 0 000 6zM18 12a3 3 0 100-6 3 3 0 000 6z" /><path d="M8.5 13.5l7-3M6 12V7a2 2 0 012-2h3" /><path d="M18 12v5a2 2 0 01-2 2h-3" /></>,
+  timeline: <><path d="M5 4v16" /><path d="M8 6h11M8 12h8M8 18h11" /><circle cx="5" cy="6" r="1.5" /><circle cx="5" cy="12" r="1.5" /><circle cx="5" cy="18" r="1.5" /></>,
+  hash: <><path d="M9 3L7 21M17 3l-2 18M4 8h17M3 16h17" /></>,
+  database: <><ellipse cx="12" cy="5" rx="7" ry="3" /><path d="M5 5v7c0 1.7 3.1 3 7 3s7-1.3 7-3V5" /><path d="M5 12v7c0 1.7 3.1 3 7 3s7-1.3 7-3v-7" /></>,
 };
 
 export function Icon({

@@ -5,6 +5,7 @@ import * as db from "@/lib/data/store";
 import { fmtDate, fmtTime } from "@/lib/format";
 import { DisclaimerBanner } from "@/components/disclaimer-banner";
 import { FindingCard } from "@/components/finding-card";
+import { OperatingFunctionsLandingSection } from "@/components/operating-functions";
 import {
   Badge,
   Button,
@@ -65,6 +66,8 @@ export default function BriefingPage() {
           </Button>
         </div>
       </div>
+
+      <OperatingFunctionsLandingSection />
 
       {/* Topline */}
       <div className="rounded-xl border border-border bg-surface p-4 shadow-card">
