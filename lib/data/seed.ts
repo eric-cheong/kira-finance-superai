@@ -12,10 +12,13 @@
 import type {
   AccountingSyncRef,
   ApprovalRequest,
+  Booking,
+  BookingQuote,
   ChartOfAccount,
   CostCentre,
   CountryConfig,
   EInvoice,
+  ForecastBucket,
   Match,
   NewsItem,
   Organization,
@@ -26,6 +29,7 @@ import type {
   TransactionEvent,
   User,
   UserPreference,
+  Vendor,
 } from "../types";
 
 /** Fixed "current moment" — the 07:30 MYT daily briefing on 09 Jun 2026. */
@@ -233,6 +237,230 @@ export const PREFERENCES: UserPreference = {
 export const COUNTRY_CONFIGS: CountryConfig[] = [
   { country: "MY", taxModel: "MY_SST", eInvoiceChannel: "MyInvois", eInvoiceSchema: "MyInvois UBL 2.1 (v1.1)", regulator: "LHDN / BNM", paymentMethods: ["DuitNow", "FPX", "Card", "Cheque"], languagePack: ["en", "ms", "zh"] },
   { country: "SG", taxModel: "SG_GST", eInvoiceChannel: "Peppol-InvoiceNow", eInvoiceSchema: "PINT-SG (Peppol BIS)", regulator: "IRAS / MAS", paymentMethods: ["PayNow", "GIRO", "Card"], languagePack: ["en", "zh"] },
+];
+
+// ── Booking quotes ──────────────────────────────────────────────────────────
+
+export const BOOKING_QUOTES: BookingQuote[] = [
+  {
+    id: "bq_01",
+    requestedBy: "u_wei",
+    type: "flight",
+    description: "KL → Singapore return · Café Manager site visit · 12–14 Jun",
+    createdAt: "2026-06-09T08:10:00+08:00",
+    options: [
+      {
+        index: 0, label: "AirAsia AK713 + AK718", supplier: "AirAsia",
+        amountMinor: 42800, currency: "MYR",
+        breakdown: [{ item: "Base fare (2 pax)", amountMinor: 35000 }, { item: "Baggage 20kg", amountMinor: 5200 }, { item: "Service fee", amountMinor: 2600 }],
+        notes: ["Non-refundable", "15kg cabin bag included", "Departs 07:25 KLIA2 · arrives 08:30 Changi T4"],
+        expiresAt: "2026-06-09T09:00:00+08:00",
+      },
+      {
+        index: 1, label: "Malaysia Airlines MH601 + MH604", supplier: "Malaysia Airlines",
+        amountMinor: 68400, currency: "MYR",
+        breakdown: [{ item: "Base fare (2 pax)", amountMinor: 56000 }, { item: "30kg baggage included", amountMinor: 0 }, { item: "Taxes & fees", amountMinor: 12400 }],
+        notes: ["Fully refundable within 24h", "Lounge access at KLIA", "Departs 09:10 KLIA · arrives 10:15 Changi T1"],
+        expiresAt: "2026-06-09T09:00:00+08:00",
+      },
+      {
+        index: 2, label: "Scoot TR717 + TR710", supplier: "Scoot",
+        amountMinor: 38600, currency: "MYR",
+        breakdown: [{ item: "Base fare (2 pax)", amountMinor: 30000 }, { item: "Baggage 20kg", amountMinor: 4800 }, { item: "Seat selection", amountMinor: 3800 }],
+        notes: ["No changes or refunds", "Budget terminal, allow extra transfer time"],
+        expiresAt: "2026-06-09T09:00:00+08:00",
+      },
+    ],
+    selectedIndex: undefined,
+    researchSources: [
+      "AirAsia.com (checked 09 Jun 07:45 MYT)",
+      "MalaysiaAirlines.com (checked 09 Jun 07:47 MYT)",
+      "Scoot.com (checked 09 Jun 07:49 MYT)",
+      "KLIA2 to Changi T4 transfer notes — Exa research",
+    ],
+    status: "open",
+  },
+  {
+    id: "bq_02",
+    requestedBy: "u_amir",
+    type: "hotel",
+    description: "Singapore accommodation · Tanjong Pagar · 2 nights · 12–14 Jun",
+    createdAt: "2026-06-09T08:12:00+08:00",
+    options: [
+      {
+        index: 0, label: "Hotel Clover 769 North Bridge", supplier: "Hotel Clover",
+        amountMinor: 28000, currency: "SGD",
+        breakdown: [{ item: "Superior room × 2 nights", amountMinor: 25688 }, { item: "GST 9%", amountMinor: 2312 }],
+        notes: ["Free cancellation until 11 Jun", "CBD location — 10 min walk to Telok Ayer outlet"],
+        expiresAt: "2026-06-09T12:00:00+08:00",
+      },
+      {
+        index: 1, label: "Citadines Connect City Centre", supplier: "Citadines",
+        amountMinor: 35000, currency: "SGD",
+        breakdown: [{ item: "Deluxe room × 2 nights", amountMinor: 32110 }, { item: "GST 9%", amountMinor: 2890 }],
+        notes: ["Free cancellation until 10 Jun", "Breakfast included"],
+        expiresAt: "2026-06-09T12:00:00+08:00",
+      },
+    ],
+    researchSources: [
+      "Booking.com SG results (09 Jun 07:50 MYT)",
+      "Tanjong Pagar area transport map — Exa research",
+    ],
+    status: "open",
+  },
+];
+
+// ── Bookings ─────────────────────────────────────────────────────────────────
+
+export const BOOKINGS: Booking[] = [
+  {
+    id: "bk_01",
+    quoteId: "bq_prev_01",
+    type: "flight",
+    supplier: "AirAsia",
+    description: "KL → Bangkok (Don Mueang) return · Supplier visit · 02–05 Jun 2026",
+    startDate: "2026-06-02",
+    endDate: "2026-06-05",
+    amountMinor: 52600,
+    currency: "MYR",
+    status: "booked",
+    confirmationRef: "AZJK93",
+    bookedAt: "2026-05-27T14:30:00+08:00",
+    travellerId: "u_amir",
+    departmentBudgetCode: "CC-HQ",
+    linkedTransactionId: undefined,
+  },
+];
+
+// ── Vendors ──────────────────────────────────────────────────────────────────
+
+export const VENDORS: Vendor[] = [
+  {
+    id: "vnd_01",
+    name: "Yning Coffee Supply",
+    category: "COGS — Green Coffee",
+    country: "MY",
+    website: "https://yningcoffee.com.my",
+    totalSpendMinor: 1820000,
+    currency: "MYR",
+    transactionCount: 6,
+    lastTransactionAt: "2026-06-08T03:12:00+08:00",
+    riskLevel: "low",
+    priceIntelligence: "Arabica futures eased ~3% w/w — potential room to renegotiate at next order cycle.",
+    lastEnrichedAt: "2026-06-09T07:31:00+08:00",
+  },
+  {
+    id: "vnd_02",
+    name: "EcoPack Sdn Bhd",
+    category: "Packaging & Supplies",
+    country: "MY",
+    totalSpendMinor: 632000,
+    currency: "MYR",
+    transactionCount: 4,
+    lastTransactionAt: "2026-06-06T11:20:00+08:00",
+    riskLevel: "low",
+    alternativeSuggestions: ["GreenWrap MY", "PackNest Sdn Bhd"],
+    lastEnrichedAt: "2026-06-09T07:31:00+08:00",
+  },
+  {
+    id: "vnd_03",
+    name: "Meta Platforms",
+    category: "Marketing & Advertising",
+    country: "US",
+    website: "https://business.facebook.com",
+    totalSpendMinor: 376000,
+    currency: "MYR",
+    transactionCount: 5,
+    lastTransactionAt: "2026-06-08T22:41:00+08:00",
+    riskLevel: "medium",
+    riskNotes: "Possible duplicate charge detected 07–08 Jun — under review.",
+    lastEnrichedAt: "2026-06-09T07:30:06+08:00",
+  },
+  {
+    id: "vnd_04",
+    name: "CapitaLand (Telok Ayer)",
+    category: "Rent",
+    country: "SG",
+    totalSpendMinor: 192000000,
+    currency: "SGD",
+    transactionCount: 12,
+    lastTransactionAt: "2026-06-04T10:00:00+08:00",
+    riskLevel: "low",
+    lastEnrichedAt: "2026-06-09T07:31:00+08:00",
+  },
+  {
+    id: "vnd_05",
+    name: "Figma Inc",
+    category: "Software & Subscriptions",
+    country: "US",
+    website: "https://figma.com",
+    totalSpendMinor: 4500,
+    currency: "USD",
+    transactionCount: 3,
+    lastTransactionAt: "2026-06-06T16:33:00+08:00",
+    riskLevel: "low",
+    riskNotes: "Imported service — reverse-charge SST self-accounting required.",
+    lastEnrichedAt: "2026-06-09T07:31:00+08:00",
+  },
+  {
+    id: "vnd_06",
+    name: "Senheng",
+    category: "Equipment",
+    country: "MY",
+    totalSpendMinor: 329900,
+    currency: "MYR",
+    transactionCount: 1,
+    lastTransactionAt: "2026-06-05T18:47:00+08:00",
+    riskLevel: "low",
+    lastEnrichedAt: "2026-06-09T07:31:00+08:00",
+  },
+];
+
+// ── Cashflow forecast buckets (30 / 60 / 90-day projection) ─────────────────
+
+export const FORECAST_BUCKETS: ForecastBucket[] = [
+  {
+    label: "Jun 2026 (remaining)",
+    periodStart: "2026-06-09",
+    periodEnd: "2026-06-30",
+    inflow: 3200000,
+    outflow: 2840000,
+    net: 360000,
+    items: [
+      { id: "fc_01", label: "Wholesale invoices due (3 open)", kind: "income", amountMinor: 1660000, currency: "MYR", dueDate: "2026-06-20", confidence: 88, source: "Open e-invoices" },
+      { id: "fc_02", label: "Singapore outlet revenue (est)", kind: "income", amountMinor: 1540000, currency: "MYR", dueDate: "2026-06-30", confidence: 72, source: "Last 3 months avg" },
+      { id: "fc_03", label: "Yning Coffee Supply — next order", kind: "expense", amountMinor: 480000, currency: "MYR", dueDate: "2026-06-22", confidence: 80, source: "Recurring pattern" },
+      { id: "fc_04", label: "Payroll (Jun)", kind: "expense", amountMinor: 1240000, currency: "MYR", dueDate: "2026-06-28", confidence: 99, source: "HR schedule" },
+      { id: "fc_05", label: "Telok Ayer rent (committed)", kind: "committed", amountMinor: 320000, currency: "SGD", dueDate: "2026-07-01", confidence: 100, source: "bk_01 / Lease" },
+      { id: "fc_06", label: "Pending booking — KL→SG trip", kind: "pending", amountMinor: 71400, currency: "MYR", dueDate: "2026-06-12", confidence: 65, source: "bq_01 + bq_02 (pending approval)" },
+    ],
+  },
+  {
+    label: "Jul 2026",
+    periodStart: "2026-07-01",
+    periodEnd: "2026-07-31",
+    inflow: 4100000,
+    outflow: 3250000,
+    net: 850000,
+    items: [
+      { id: "fc_07", label: "Wholesale pipeline (est)", kind: "income", amountMinor: 2600000, currency: "MYR", dueDate: "2026-07-20", confidence: 70, source: "Pipeline estimate" },
+      { id: "fc_08", label: "SG revenue (est)", kind: "income", amountMinor: 1500000, currency: "MYR", dueDate: "2026-07-31", confidence: 65, source: "Trend model" },
+      { id: "fc_09", label: "Payroll (Jul)", kind: "expense", amountMinor: 1240000, currency: "MYR", dueDate: "2026-07-28", confidence: 99, source: "HR schedule" },
+      { id: "fc_10", label: "Coffee + packaging supplies", kind: "expense", amountMinor: 640000, currency: "MYR", dueDate: "2026-07-15", confidence: 75, source: "Recurring pattern" },
+    ],
+  },
+  {
+    label: "Aug 2026",
+    periodStart: "2026-08-01",
+    periodEnd: "2026-08-31",
+    inflow: 4300000,
+    outflow: 3400000,
+    net: 900000,
+    items: [
+      { id: "fc_11", label: "Wholesale + retail (est)", kind: "income", amountMinor: 4300000, currency: "MYR", dueDate: "2026-08-31", confidence: 62, source: "3-month trend" },
+      { id: "fc_12", label: "Opex (est)", kind: "expense", amountMinor: 3400000, currency: "MYR", dueDate: "2026-08-31", confidence: 60, source: "Trend model" },
+    ],
+  },
 ];
 
 // ── Raw audit events (the chain is computed in the store) ────────────────────

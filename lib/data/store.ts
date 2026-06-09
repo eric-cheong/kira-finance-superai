@@ -34,6 +34,10 @@ export const {
   NEWS,
   PREFERENCES,
   COUNTRY_CONFIGS,
+  BOOKING_QUOTES,
+  BOOKINGS,
+  VENDORS,
+  FORECAST_BUCKETS,
 } = seed;
 
 // ── FX (illustrative, fixed for determinism — to base currency MYR) ─────────

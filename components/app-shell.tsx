@@ -24,18 +24,23 @@ const NAV: { group: string; items: NavItem[] }[] = [
       { href: "/capture", label: "Capture", icon: "capture" },
       { href: "/approvals", label: "Approvals", icon: "approvals", badge: "4" },
       { href: "/transactions", label: "Transactions", icon: "transactions" },
+      { href: "/bookings", label: "Bookings", icon: "flight" },
     ],
   },
   {
-    group: "Comply",
+    group: "Finance",
     items: [
-      { href: "/compliance", label: "E-invoicing", icon: "compliance" },
+      { href: "/forecast", label: "Cashflow Forecast", icon: "forecast" },
       { href: "/analytics", label: "Spend Analytics", icon: "analytics" },
+      { href: "/compliance", label: "E-invoicing", icon: "compliance" },
     ],
   },
   {
     group: "Intelligence",
-    items: [{ href: "/portfolio", label: "Portfolio", icon: "portfolio", phase: 2 }],
+    items: [
+      { href: "/vendors", label: "Vendors", icon: "vendor" },
+      { href: "/portfolio", label: "Portfolio", icon: "portfolio", phase: 2 },
+    ],
   },
   {
     group: "Govern",
@@ -170,7 +175,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        <main className="mx-auto w-full max-w-content px-4 py-6 sm:px-6 lg:px-8">{children}</main>
+        <main className="mx-auto w-full max-w-content px-4 py-6 sm:px-6 lg:max-w-[calc(100vw-248px)] lg:px-8 2xl:max-w-content">{children}</main>
       </div>
     </div>
   );

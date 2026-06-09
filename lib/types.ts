@@ -310,6 +310,99 @@ export interface RunMemory {
   acknowledgedAlertIds: string[];
 }
 
+// ── Booking (travel / procurement) ──────────────────────────────────────────
+
+export type BookingType = "flight" | "hotel" | "rail" | "car" | "product";
+export type BookingStatus = "quoted" | "pending_approval" | "approved" | "booked" | "cancelled";
+
+export interface BookingQuoteOption {
+  index: number;
+  label: string;
+  supplier: string;
+  amountMinor: number;
+  currency: CurrencyCode;
+  breakdown: { item: string; amountMinor: number }[];
+  notes: string[];
+  expiresAt?: string;
+}
+
+export interface BookingQuote {
+  id: string;
+  requestedBy: string;
+  type: BookingType;
+  description: string;
+  createdAt: string;
+  options: BookingQuoteOption[];
+  selectedIndex?: number;
+  researchSources: string[];
+  status: "open" | "selected" | "expired";
+}
+
+export interface Booking {
+  id: string;
+  quoteId: string;
+  type: BookingType;
+  supplier: string;
+  description: string;
+  startDate: string;
+  endDate?: string;
+  amountMinor: number;
+  currency: CurrencyCode;
+  status: BookingStatus;
+  approvalId?: string;
+  confirmationRef?: string;
+  bookedAt?: string;
+  travellerId?: string;
+  departmentBudgetCode?: string;
+  linkedTransactionId?: string;
+}
+
+// ── Vendor intelligence ─────────────────────────────────────────────────────
+
+export type VendorRisk = "low" | "medium" | "high";
+
+export interface Vendor {
+  id: string;
+  name: string;
+  category: string;
+  country: string;
+  website?: string;
+  totalSpendMinor: number;
+  currency: CurrencyCode;
+  transactionCount: number;
+  lastTransactionAt: string;
+  riskLevel: VendorRisk;
+  riskNotes?: string;
+  alternativeSuggestions?: string[];
+  priceIntelligence?: string;
+  lastEnrichedAt?: string;
+}
+
+// ── Cashflow forecast ───────────────────────────────────────────────────────
+
+export type ForecastItemKind = "income" | "expense" | "committed" | "pending";
+
+export interface ForecastItem {
+  id: string;
+  label: string;
+  kind: ForecastItemKind;
+  amountMinor: number;
+  currency: CurrencyCode;
+  dueDate: string;
+  confidence: number;
+  source: string;
+}
+
+export interface ForecastBucket {
+  label: string;
+  periodStart: string;
+  periodEnd: string;
+  inflow: number;
+  outflow: number;
+  net: number;
+  items: ForecastItem[];
+}
+
 // ── Country configuration (metadata, not code forks) ────────────────────────
 
 export interface CountryConfig {

@@ -22,7 +22,10 @@ export type AgentName =
   | "Risk Monitoring"
   | "Compliance/Safety"
   | "Notification"
-  | "Human Approval";
+  | "Human Approval"
+  | "Booking"
+  | "Vendor Intelligence"
+  | "Cashflow Forecast";
 
 export type Phase = 1 | 2 | 3;
 

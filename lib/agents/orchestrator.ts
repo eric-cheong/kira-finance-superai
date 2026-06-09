@@ -7,7 +7,9 @@
 import * as db from "../data/store";
 import type { ProductPhase, RunMemory } from "../types";
 import {
+  bookingAgent,
   budgetSpendAgent,
+  cashflowForecastAgent,
   complianceGate,
   marketResearchAgent,
   newsRelevanceAgent,
@@ -15,6 +17,7 @@ import {
   portfolioAnalysisAgent,
   riskMonitoringAgent,
   userPreferenceAgent,
+  vendorIntelligenceAgent,
   META,
 } from "./agents";
 import type {
@@ -69,16 +72,18 @@ export function runDailyBriefing({ maxPhase = 1 }: { maxPhase?: Phase } = {}): B
   orchestratorLog.push(`Product phase ${ctx.productPhase}: ${ctx.productPhase === 1 ? "license-free MVP; partnered rails and investment actions remain unavailable" : "expanded intelligence enabled"}.`);
   orchestratorLog.push(
     maxPhase >= 2
-      ? "Plan: Preference → parallel(Budget, Risk, News, Market, Portfolio) → Compliance gate → merge → Notification."
-      : "Plan: Preference → Budget/Spend → Compliance gate → merge → Notification. Phase-2 intelligence agents are disabled for the MVP run.",
+      ? "Plan: Preference → parallel(Budget, Booking, Forecast, Risk, News, Market, Portfolio, Vendors) → Compliance gate → merge → Notification."
+      : "Plan: Preference → parallel(Budget, Booking, Forecast) → Compliance gate → merge → Notification. Phase-2 intelligence agents are disabled for the MVP run.",
   );
 
   // 1) Preference resolves the shared context.
   const pref = userPreferenceAgent(ctx);
 
-  // 2) Independent analysts. In Phase 1, only Budget/Spend is live; the rest are
-  // Phase 2 intelligence agents and must not leak into the MVP briefing.
+  // 2) Independent analysts. Phase 1 includes Budget/Spend, Booking, and
+  // Cashflow Forecast. Phase 2 adds market intelligence agents.
   const budget = budgetSpendAgent(ctx);
+  const booking = bookingAgent(ctx);
+  const forecast = cashflowForecastAgent(ctx);
   const phaseTwoResults: AgentResult[] =
     maxPhase >= 2
       ? [
@@ -86,16 +91,19 @@ export function runDailyBriefing({ maxPhase = 1 }: { maxPhase?: Phase } = {}): B
           newsRelevanceAgent(ctx),
           marketResearchAgent(ctx),
           portfolioAnalysisAgent(ctx),
+          vendorIntelligenceAgent(ctx),
         ]
       : [];
   orchestratorLog.push(
     maxPhase >= 2
-      ? `Collected findings: Budget ${budget.findings.length}, ${phaseTwoResults.map((a) => `${a.agent} ${a.findings.length}`).join(", ")}.`
-      : `Collected findings: Budget ${budget.findings.length}. Phase-2 agents skipped.`,
+      ? `Collected findings: Budget ${budget.findings.length}, Booking ${booking.findings.length}, Forecast ${forecast.findings.length}, ${phaseTwoResults.map((a) => `${a.agent} ${a.findings.length}`).join(", ")}.`
+      : `Collected findings: Budget ${budget.findings.length}, Booking ${booking.findings.length}, Forecast ${forecast.findings.length}. Phase-2 agents skipped.`,
   );
 
   const incoming: Finding[] = [
     ...budget.findings,
+    ...booking.findings,
+    ...forecast.findings,
     ...phaseTwoResults.flatMap((a) => a.findings),
   ];
 
@@ -117,6 +125,7 @@ export function runDailyBriefing({ maxPhase = 1 }: { maxPhase?: Phase } = {}): B
     { key: "risk", title: "Risks & alerts", subtitle: "Flagged, scored, none acted on autonomously", kinds: ["risk"] },
     { key: "markets", title: "Markets & portfolio", subtitle: "Informational — not financial advice", kinds: ["market", "portfolio"] },
     { key: "news", title: "News that matters", subtitle: "Ranked by relevance to your business", kinds: ["news"] },
+    { key: "compliance", title: "Compliance", subtitle: "E-invoicing and regulatory items", kinds: ["compliance"] },
   ];
   const sections: BriefingSection[] = sectionDefs
     .map((d) => ({
@@ -147,7 +156,7 @@ export function runDailyBriefing({ maxPhase = 1 }: { maxPhase?: Phase } = {}): B
   const headline = `${m.total} transactions imported · ${m.matched} auto-matched (${m.matchedPct}%) · ${approvals.length} need approval · close-readiness ${cr.score}%.`;
 
   const agentResults: AgentResult[] = [
-    orchestrator, pref, budget, ...phaseTwoResults, gate.result, notif.result,
+    orchestrator, pref, budget, booking, forecast, ...phaseTwoResults, gate.result, notif.result,
   ];
 
   return {

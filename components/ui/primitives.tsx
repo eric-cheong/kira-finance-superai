@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactNode, TdHTMLAttributes, ThHTMLAttributes } from "react";
 import Link from "next/link";
 import { cn } from "./cn";
 import { Icon, type IconName } from "./icons";
@@ -319,14 +319,14 @@ export function Table({ children, className }: { children: ReactNode; className?
   );
 }
 
-export function Th({ children, className }: { children?: ReactNode; className?: string }) {
+export function Th({ children, className, ...props }: { children?: ReactNode; className?: string } & ThHTMLAttributes<HTMLTableCellElement>) {
   return (
-    <th className={cn("border-b border-border px-3 py-2.5 text-2xs font-semibold uppercase tracking-wide text-faint", className)}>
+    <th className={cn("border-b border-border px-3 py-2.5 text-2xs font-semibold uppercase tracking-wide text-faint", className)} {...props}>
       {children}
     </th>
   );
 }
 
-export function Td({ children, className }: { children?: ReactNode; className?: string }) {
-  return <td className={cn("border-b border-border px-3 py-3 align-middle text-ink-2", className)}>{children}</td>;
+export function Td({ children, className, ...props }: { children?: ReactNode; className?: string } & TdHTMLAttributes<HTMLTableCellElement>) {
+  return <td className={cn("border-b border-border px-3 py-3 align-middle text-ink-2", className)} {...props}>{children}</td>;
 }
