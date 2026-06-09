@@ -56,26 +56,28 @@ const NAV: { group: string; items: NavItem[] }[] = [
 
 function NavLink({ item, active, onClick }: { item: NavItem; active: boolean; onClick?: () => void }) {
   return (
-    <Link
-      href={item.href}
-      onClick={onClick}
-      aria-current={active ? "page" : undefined}
-      className={cn(
-        "group flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13.5px] font-medium transition-colors",
-        active ? "bg-surface-2 text-ink" : "text-muted hover:bg-surface-2/60 hover:text-ink-2",
-      )}
-    >
-      <Icon name={item.icon} size={17} className={active ? "text-brand" : "text-faint group-hover:text-muted"} />
-      <span className="flex-1">{item.label}</span>
-      {item.phase === 2 && (
-        <span className="rounded border border-border px-1 py-px text-[10px] font-semibold text-faint">P2</span>
-      )}
-      {item.badge && (
-        <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-warn-bg px-1 text-[10px] font-semibold text-warn-fg">
-          {item.badge}
-        </span>
-      )}
-    </Link>
+    <li>
+      <Link
+        href={item.href}
+        onClick={onClick}
+        aria-current={active ? "page" : undefined}
+        className={cn(
+          "group rounded-lg border-l-2 px-2.5 py-2 text-[13.5px] font-medium text-ink",
+          active ? "menu-active border-brand bg-brand-soft text-ink" : "border-transparent hover:bg-base-200",
+        )}
+      >
+        <Icon name={item.icon} size={17} className={active ? "text-brand" : "text-ink"} />
+        <span className="flex-1">{item.label}</span>
+        {item.phase === 2 && (
+          <span className="badge badge-outline badge-xs border-base-300 text-ink">P2</span>
+        )}
+        {item.badge && (
+          <span className="badge badge-primary badge-xs min-w-[18px] text-primary-content">
+            {item.badge}
+          </span>
+        )}
+      </Link>
+    </li>
   );
 }
 
@@ -102,8 +104,10 @@ function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: 
       <nav className="flex-1 space-y-5 overflow-y-auto px-3 pb-4">
         {NAV.map((g) => (
           <div key={g.group}>
-            <div className="mb-1.5 px-2.5 text-[10.5px] font-semibold uppercase tracking-wider text-faint">{g.group}</div>
-            <div className="space-y-0.5">
+            <ul className="menu menu-sm w-full gap-0.5 p-0">
+              <li className="menu-title px-2.5 text-[10.5px] font-semibold uppercase tracking-wider text-ink">
+                <span>{g.group}</span>
+              </li>
               {g.items.map((item) => (
                 <NavLink
                   key={item.href}
@@ -112,7 +116,7 @@ function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: 
                   onClick={onNavigate}
                 />
               ))}
-            </div>
+            </ul>
           </div>
         ))}
       </nav>
@@ -134,50 +138,58 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-bg">
-      {/* Desktop sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[248px] border-r border-border bg-surface lg:block">
-        <SidebarBody pathname={pathname} />
-      </aside>
+    <div className="drawer min-h-screen bg-bg lg:drawer-open">
+      <input
+        id="app-shell-drawer"
+        type="checkbox"
+        className="drawer-toggle"
+        checked={open}
+        onChange={(event) => setOpen(event.target.checked)}
+        suppressHydrationWarning
+      />
 
-      {/* Mobile drawer */}
-      {open && (
-        <div className="fixed inset-0 z-40 lg:hidden">
-          <div className="absolute inset-0 bg-ink/20" onClick={() => setOpen(false)} />
-          <aside className="absolute inset-y-0 left-0 w-[260px] border-r border-border bg-surface">
-            <SidebarBody pathname={pathname} onNavigate={() => setOpen(false)} />
-          </aside>
-        </div>
-      )}
-
-      <div className="lg:pl-[248px]">
-        {/* Topbar */}
-        <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-border bg-bg/80 px-4 backdrop-blur sm:px-6">
-          <button
-            onClick={() => setOpen(true)}
-            className="-ml-1 rounded-lg p-2 text-ink-2 hover:bg-surface-2 lg:hidden"
-            aria-label="Open navigation"
-          >
-            <Icon name="briefing" size={18} />
-          </button>
-          <div className="hidden items-center gap-2 rounded-lg border border-border bg-surface px-2.5 py-1.5 text-[13px] text-faint sm:flex">
-            <Icon name="search" size={15} />
-            <span>Search transactions, invoices, agents…</span>
+      <div className="drawer-content flex min-h-screen flex-col">
+        <header className="navbar sticky top-0 z-20 min-h-14 border-b border-border bg-base-100 px-4 sm:px-6">
+          <div className="navbar-start min-w-0 flex-1 gap-3">
+            <label
+              htmlFor="app-shell-drawer"
+              className="btn btn-square btn-ghost btn-sm -ml-1 lg:hidden"
+              aria-label="Open navigation"
+            >
+              <Icon name="briefing" size={18} />
+            </label>
+            <div className="hidden min-w-0 items-center gap-2 rounded-lg border border-base-300 bg-base-100 px-2.5 py-1.5 text-[13px] text-ink sm:flex">
+              <Icon name="search" size={15} />
+              <span>Search transactions, invoices, agents…</span>
+            </div>
           </div>
-          <div className="flex-1" />
-          <div className="hidden items-center gap-1.5 rounded-full border border-pos-fg/15 bg-pos-bg px-2.5 py-1 text-2xs font-medium text-pos-fg sm:flex">
-            <span className="h-1.5 w-1.5 rounded-full bg-pos-fg" />
-            Orchestrate · never settle
-          </div>
-          <button className="rounded-lg p-2 text-ink-2 hover:bg-surface-2" aria-label="Notifications">
-            <Icon name="bell" size={18} />
-          </button>
-          <div className="lg:hidden">
-            <Avatar name="Amir Hafiz" size={28} />
+          <div className="navbar-end gap-2">
+            <div className="badge badge-primary badge-outline hidden gap-1.5 px-2.5 py-3 text-2xs font-medium text-ink sm:inline-flex">
+              <span className="h-1.5 w-1.5 rounded-full bg-brand" />
+              Orchestrate · never settle
+            </div>
+            <button className="btn btn-square btn-ghost btn-sm text-ink" aria-label="Notifications">
+              <Icon name="bell" size={18} />
+            </button>
+            <div className="lg:hidden">
+              <Avatar name="Amir Hafiz" size={28} />
+            </div>
           </div>
         </header>
 
-        <main className="mx-auto w-full max-w-content px-4 py-6 sm:px-6 lg:max-w-[calc(100vw-248px)] lg:px-8 2xl:max-w-content">{children}</main>
+        <main className="mx-auto w-full max-w-content px-4 py-6 sm:px-6 lg:px-8 2xl:max-w-content">{children}</main>
+      </div>
+
+      <div className="drawer-side z-40 lg:z-30">
+        <label
+          htmlFor="app-shell-drawer"
+          aria-label="Close navigation"
+          className="drawer-overlay"
+          onClick={() => setOpen(false)}
+        />
+        <aside className="overlay-surface min-h-full w-[min(280px,calc(100vw-48px))] border-r border-border lg:w-[248px]">
+          <SidebarBody pathname={pathname} onNavigate={() => setOpen(false)} />
+        </aside>
       </div>
     </div>
   );

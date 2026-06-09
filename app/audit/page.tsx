@@ -57,8 +57,8 @@ export default function AuditPage() {
                 <tr key={a.name} className="hover:bg-surface-2/40">
                   <Td className="whitespace-nowrap font-medium text-ink">{a.name}</Td>
                   <Td className="text-[12.5px]">{a.job}</Td>
-                  <Td className="text-[12.5px] text-pos-fg">{a.autonomous}</Td>
-                  <Td className="text-[12.5px] text-crit-fg">{a.neverWithoutHuman}</Td>
+                  <Td className="text-[12.5px] text-ink">{a.autonomous}</Td>
+                  <Td className="text-[12.5px] text-ink">{a.neverWithoutHuman}</Td>
                   <Td>{a.phase === 2 ? <Badge variant="neutral">P2</Badge> : <Badge variant="brand">P1</Badge>}</Td>
                 </tr>
               ))}

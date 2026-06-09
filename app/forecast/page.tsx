@@ -18,8 +18,8 @@ export const metadata = { title: "Cashflow Forecast · Kira" };
 
 const KIND_STYLE: Record<ForecastItemKind, { icon: "arrowUpRight" | "arrowRight" | "clock" | "alert"; label: string; cls: string }> = {
   income: { icon: "arrowUpRight", label: "inflow", cls: "text-pos-fg" },
-  expense: { icon: "arrowRight", label: "outflow", cls: "text-crit-fg" },
-  committed: { icon: "clock", label: "committed", cls: "text-warn-fg" },
+  expense: { icon: "arrowRight", label: "outflow", cls: "text-ink" },
+  committed: { icon: "clock", label: "committed", cls: "text-ink" },
   pending: { icon: "alert", label: "pending approval", cls: "text-info-fg" },
 };
 
@@ -72,9 +72,9 @@ function BucketCard({ bucket }: { bucket: ForecastBucket }) {
         </div>
         <div className="rounded-lg border border-border px-3 py-2.5">
           <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-faint">Outflow</div>
-          <div className="tnum text-[17px] font-semibold text-crit-fg">{money(bucket.outflow, "MYR", { compact: true })}</div>
+          <div className="tnum text-[17px] font-semibold text-ink">{money(bucket.outflow, "MYR", { compact: true })}</div>
           <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-surface-2">
-            <div className="h-full rounded-full bg-crit-fg" style={{ width: `${(bucket.outflow / maxFlow) * 100}%` }} />
+            <div className="h-full rounded-full bg-ink" style={{ width: `${(bucket.outflow / maxFlow) * 100}%` }} />
           </div>
         </div>
       </div>
@@ -123,7 +123,7 @@ export default function ForecastPage() {
           value={money(totalOutflow, "MYR", { compact: true })}
           sub="projected · all buckets"
           icon="arrowRight"
-          tone="crit"
+          tone="neutral"
         />
         <StatTile
           label="Net position"
@@ -191,9 +191,9 @@ export default function ForecastPage() {
                   <div className="flex items-center gap-2">
                     <span className="w-14 shrink-0 text-right text-[11px] text-faint">out</span>
                     <div className="flex-1 overflow-hidden rounded-full bg-surface-2" style={{ height: 8 }}>
-                      <div className="h-full rounded-full bg-crit-fg" style={{ width: `${(b.outflow / maxFlow) * 100}%` }} />
+                      <div className="h-full rounded-full bg-ink" style={{ width: `${(b.outflow / maxFlow) * 100}%` }} />
                     </div>
-                    <span className="tnum w-20 shrink-0 text-right text-[11.5px] text-crit-fg">{money(b.outflow, "MYR", { compact: true })}</span>
+                    <span className="tnum w-20 shrink-0 text-right text-[11.5px] text-ink">{money(b.outflow, "MYR", { compact: true })}</span>
                   </div>
                 </div>
               </div>

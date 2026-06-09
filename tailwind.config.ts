@@ -1,6 +1,22 @@
+import daisyui from "daisyui";
 import type { Config } from "tailwindcss";
 
-const config: Config = {
+type DaisyUITheme = Record<string, Record<string, string>>;
+
+type ConfigWithDaisyUI = Config & {
+  daisyui?: {
+    themes?: Array<string | DaisyUITheme>;
+    darkTheme?: string;
+    base?: boolean;
+    styled?: boolean;
+    utils?: boolean;
+    prefix?: string;
+    logs?: boolean;
+    themeRoot?: string;
+  };
+};
+
+const config = {
   content: [
     "./app/**/*.{ts,tsx}",
     "./components/**/*.{ts,tsx}",
@@ -41,15 +57,55 @@ const config: Config = {
         "2xs": ["0.6875rem", { lineHeight: "0.875rem" }],
       },
       boxShadow: {
-        card: "0 1px 2px 0 rgb(0 0 0 / 0.03)",
-        pop: "0 8px 30px -8px rgb(0 0 0 / 0.12)",
+        card: "0 1px 0 rgb(37 99 235 / 0.08), 0 12px 32px rgb(37 99 235 / 0.08)",
+        pop: "0 16px 44px -14px rgb(37 99 235 / 0.22)",
       },
       maxWidth: {
         content: "1180px",
       },
     },
   },
-  plugins: [],
-};
+  plugins: [daisyui],
+  daisyui: {
+    themes: [
+      {
+        kira: {
+          "color-scheme": "light",
+          primary: "#2563eb",
+          "primary-content": "#ffffff",
+          secondary: "#000000",
+          "secondary-content": "#ffffff",
+          accent: "#2563eb",
+          "accent-content": "#ffffff",
+          neutral: "#000000",
+          "neutral-content": "#ffffff",
+          "base-100": "#ffffff",
+          "base-200": "#eef6ff",
+          "base-300": "#c4daf6",
+          "base-content": "#000000",
+          info: "#2563eb",
+          "info-content": "#ffffff",
+          success: "#2563eb",
+          "success-content": "#ffffff",
+          warning: "#2563eb",
+          "warning-content": "#ffffff",
+          error: "#be123c",
+          "error-content": "#ffffff",
+          "--rounded-box": "0.875rem",
+          "--rounded-btn": "0.5rem",
+          "--rounded-badge": "999px",
+          "--animation-btn": "0.15s",
+          "--btn-focus-scale": "0.98",
+          "--border-btn": "1px",
+        },
+      },
+    ],
+    darkTheme: "kira",
+    base: true,
+    styled: true,
+    utils: true,
+    logs: false,
+  },
+} satisfies ConfigWithDaisyUI;
 
 export default config;

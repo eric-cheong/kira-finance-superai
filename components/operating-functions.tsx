@@ -25,9 +25,9 @@ const STATUS_COPY: Record<OperatingFunction["workflowStatus"], string> = {
 };
 
 const STATUS_TONE: Record<OperatingFunction["workflowStatus"], Tone> = {
-  running: "pos",
-  approval: "warn",
-  queued: "info",
+  running: "info",
+  approval: "neutral",
+  queued: "neutral",
 };
 
 function statusBadge(status: OperatingFunction["workflowStatus"]) {
@@ -67,9 +67,9 @@ function ListBlock({
 
 export function OperatingFunctionsLandingSection() {
   return (
-    <section className="overflow-hidden rounded-xl border border-border bg-surface shadow-card">
+    <section className="card overflow-hidden border border-base-300 bg-base-100/80 shadow-sm">
       <div className="grid gap-0 lg:grid-cols-[1fr_360px]">
-        <div className="p-5 sm:p-6">
+        <div className="card-body p-5 sm:p-6">
           <div className="max-w-3xl">
             <h2 className="text-[26px] font-semibold tracking-[-0.03em] text-ink sm:text-[32px]">
               One platform. Every operating function.
@@ -92,16 +92,16 @@ export function OperatingFunctionsLandingSection() {
           </div>
 
           <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:items-center">
-            <Button variant="primary" icon="benchmark" href="/operating-functions">
+            <Button variant="primary" icon="benchmark" href="/operating-functions" className="w-full sm:w-auto">
               Map your operating gaps
             </Button>
-            <Button variant="outline" icon="workflow" href="/operating-functions">
+            <Button variant="outline" icon="workflow" href="/operating-functions" className="w-full sm:w-auto">
               See what KIRA can automate
             </Button>
           </div>
         </div>
 
-        <div className="border-t border-border bg-surface-2/45 p-5 lg:border-l lg:border-t-0">
+        <div className="border-t border-base-300 bg-base-200/60 p-5 lg:border-l lg:border-t-0">
           <div className="mb-3 flex items-center justify-between">
             <span className="text-[12px] font-semibold uppercase tracking-wide text-faint">Operating impact</span>
             <Badge variant="brand" dot>
@@ -110,7 +110,7 @@ export function OperatingFunctionsLandingSection() {
           </div>
           <div className="grid grid-cols-2 gap-2">
             {OPERATING_FUNCTIONS.slice(0, 4).map((fn) => (
-              <div key={fn.id} className="rounded-lg border border-border bg-surface px-3 py-2.5">
+              <div key={fn.id} className="card border border-base-300 bg-base-100 px-3 py-2.5 shadow-none">
                 <div className="text-[12px] font-semibold text-ink">{fn.shortName}</div>
                 <div className="mt-1 tnum text-[12px] text-brand">{fn.impactMetric}</div>
                 <div className="mt-0.5 text-[10.5px] text-faint">{fn.financialImpact}</div>
@@ -133,7 +133,7 @@ export function OperatingFunctionsLandingSection() {
         </thead>
         <tbody>
           {OPERATING_FUNCTIONS.map((fn) => (
-            <tr key={fn.id} className="hover:bg-surface-2/40">
+            <tr key={fn.id} className="hover">
               <Td>
                 <div className="font-semibold text-ink">{fn.function}</div>
                 <div className="mt-0.5 text-[11.5px] text-faint">{fn.financialImpact}</div>
@@ -170,19 +170,21 @@ function ModuleList({ functions }: { functions: readonly OperatingFunction[] }) 
       <div className="border-b border-border px-4 py-4">
         <CardHeader title="Modules" subtitle="Functions KIRA can benchmark and operate" icon="module" />
       </div>
-      <nav className="divide-y divide-border">
+      <ul className="menu menu-sm divide-y divide-base-300 p-0">
         {functions.map((fn) => (
-          <Link key={fn.id} href={`#${fn.id}`} className="group block px-4 py-3 hover:bg-surface-2/55">
-            <div className="flex items-center justify-between gap-2">
-              <div className="min-w-0">
-                <div className="truncate text-[13px] font-semibold text-ink group-hover:text-brand">{fn.function}</div>
-                <div className="mt-0.5 truncate text-[11.5px] text-muted">{fn.financialImpact}</div>
+          <li key={fn.id}>
+            <Link href={`#${fn.id}`} className="group rounded-none px-4 py-3">
+              <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="truncate text-[13px] font-semibold text-ink group-hover:text-brand">{fn.function}</div>
+                  <div className="mt-0.5 truncate text-[11.5px] text-muted">{fn.financialImpact}</div>
+                </div>
+                <Icon name="chevronRight" size={15} className="shrink-0 text-faint" />
               </div>
-              <Icon name="chevronRight" size={15} className="shrink-0 text-faint" />
-            </div>
-          </Link>
+            </Link>
+          </li>
         ))}
-      </nav>
+      </ul>
     </Card>
   );
 }
@@ -218,7 +220,7 @@ function FunctionModule({ fn }: { fn: OperatingFunction }) {
           <div className="p-4">
             <div className="text-[11px] font-semibold uppercase tracking-wide text-faint">Human approvals</div>
             <div className="mt-2 flex items-baseline gap-2">
-              <span className="tnum text-2xl font-semibold text-warn-fg">{fn.approvalsRequired}</span>
+              <span className="tnum text-2xl font-semibold text-ink">{fn.approvalsRequired}</span>
               <span className="text-[12px] text-muted">required</span>
             </div>
           </div>
@@ -294,9 +296,9 @@ export function OperatingFunctionsModulePage() {
     <>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatTile label="Functions" value={OPERATING_FUNCTIONS.length} sub="operating modules" icon="module" tone="brand" />
-        <StatTile label="Detected risks" value={totalRisks} sub="open across functions" icon="alert" tone="warn" />
-        <StatTile label="Running workflows" value={running} sub={`${approval} approval-gated`} icon="workflow" tone="pos" />
-        <StatTile label="Approvals" value={totalApprovals} sub="human decisions required" icon="approvals" tone="warn" />
+        <StatTile label="Detected risks" value={totalRisks} sub="open across functions" icon="alert" tone="neutral" />
+        <StatTile label="Running workflows" value={running} sub={`${approval} approval-gated`} icon="workflow" tone="info" />
+        <StatTile label="Approvals" value={totalApprovals} sub="human decisions required" icon="approvals" tone="neutral" />
       </div>
 
       <Card>

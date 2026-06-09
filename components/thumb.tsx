@@ -18,16 +18,16 @@ const GLYPH: Record<string, string> = {
 };
 
 const TONE: Record<string, string> = {
-  beans: "bg-[#f4ede3] text-[#7a5a36]",
-  bolt: "bg-warn-bg text-warn-fg",
-  car: "bg-info-bg text-info-fg",
-  box: "bg-[#eef2f4] text-[#475569]",
-  design: "bg-[#f3eefb] text-[#6d28d9]",
-  grinder: "bg-surface-2 text-ink-2",
-  cup: "bg-[#eaf6ef] text-[#15803d]",
-  building: "bg-[#eef2f4] text-[#475569]",
-  ads: "bg-brand-soft text-brand",
-  doc: "bg-surface-2 text-muted",
+  beans: "bg-white text-ink",
+  bolt: "bg-brand-soft text-ink",
+  car: "bg-brand-soft text-ink",
+  box: "bg-white text-ink",
+  design: "bg-brand-soft text-ink",
+  grinder: "bg-surface-2 text-ink",
+  cup: "bg-brand-soft text-ink",
+  building: "bg-white text-ink",
+  ads: "bg-brand-soft text-ink",
+  doc: "bg-surface-2 text-ink",
 };
 
 export function Thumb({ hint, size = 40 }: { hint: string; size?: number }) {
@@ -35,7 +35,7 @@ export function Thumb({ hint, size = 40 }: { hint: string; size?: number }) {
     <span
       className={cn(
         "inline-flex shrink-0 items-center justify-center rounded-lg border border-border",
-        TONE[hint] ?? "bg-surface-2 text-muted",
+        TONE[hint] ?? "bg-surface-2 text-ink",
       )}
       style={{ width: size, height: size, fontSize: size * 0.45 }}
       aria-hidden="true"

@@ -18,7 +18,7 @@ export function Card({
   return (
     <div
       className={cn(
-        "min-w-0 rounded-xl border border-border bg-surface shadow-card",
+        "card overlay-surface min-w-0 border border-base-300 bg-base-100/80 text-base-content shadow-sm",
         pad && "p-5",
         className,
       )}
@@ -48,7 +48,7 @@ export function CardHeader({
           </span>
         )}
         <div className="min-w-0">
-          <h3 className="text-[15px] font-semibold tracking-[-0.01em] text-ink">{title}</h3>
+          <h3 className="card-title text-[15px] font-semibold tracking-[-0.01em] text-ink">{title}</h3>
           {subtitle && <p className="mt-0.5 text-[13px] text-muted">{subtitle}</p>}
         </div>
       </div>
@@ -62,12 +62,12 @@ export function CardHeader({
 type Variant = "neutral" | "pos" | "warn" | "crit" | "info" | "brand";
 
 const VARIANT: Record<Variant, string> = {
-  neutral: "bg-surface-2 text-ink-2 border-border",
-  pos: "bg-pos-bg text-pos-fg border-pos-fg/15",
-  warn: "bg-warn-bg text-warn-fg border-warn-fg/15",
-  crit: "bg-crit-bg text-crit-fg border-crit-fg/15",
-  info: "bg-info-bg text-info-fg border-info-fg/15",
-  brand: "bg-brand-soft text-brand border-brand/15",
+  neutral: "badge-outline border-base-300 bg-base-100 text-ink",
+  pos: "badge-outline border-primary/20 bg-primary/5 text-ink",
+  warn: "badge-outline border-primary/20 bg-primary/5 text-ink",
+  crit: "badge-error text-error-content",
+  info: "badge-outline border-primary/20 bg-primary/5 text-ink",
+  brand: "badge-primary text-primary-content",
 };
 
 export function Badge({
@@ -85,6 +85,7 @@ export function Badge({
     <span
       className={cn(
         "inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-2xs font-medium",
+        "badge badge-sm min-h-0 h-auto",
         VARIANT[variant],
         className,
       )}
@@ -145,23 +146,25 @@ export function StatTile({
 }) {
   const toneText: Record<Variant, string> = {
     neutral: "text-ink",
-    pos: "text-pos-fg",
-    warn: "text-warn-fg",
+    pos: "text-ink",
+    warn: "text-ink",
     crit: "text-crit-fg",
-    info: "text-info-fg",
-    brand: "text-brand",
+    info: "text-ink",
+    brand: "text-ink",
   };
   return (
-    <Card className="flex flex-col gap-1">
-      <div className="flex items-center justify-between">
-        <span className="text-[12px] font-medium uppercase tracking-wide text-faint">{label}</span>
-        {icon && <Icon name={icon} size={16} className="text-faint" />}
+    <div className="stats min-w-0 border border-base-300 bg-base-100/80 shadow-sm">
+      <div className="stat min-w-0 p-4">
+        <div className="stat-figure text-ink">
+          {icon && <Icon name={icon} size={16} />}
+        </div>
+        <div className="stat-title text-[12px] font-medium uppercase tracking-wide text-ink">{label}</div>
+        <div className={cn("stat-value mt-1 text-2xl font-semibold tracking-[-0.02em] tnum", toneText[tone])}>
+          {value}
+        </div>
+        {sub && <div className="stat-desc text-[12.5px] text-ink">{sub}</div>}
       </div>
-      <div className={cn("mt-1 text-2xl font-semibold tracking-[-0.02em] tnum", toneText[tone])}>
-        {value}
-      </div>
-      {sub && <div className="text-[12.5px] text-muted">{sub}</div>}
-    </Card>
+    </div>
   );
 }
 
@@ -173,17 +176,16 @@ export function Amount({ children, className }: { children: ReactNode; className
 
 export function Bar({ value, tone = "brand" }: { value: number; tone?: Variant }) {
   const bg: Record<Variant, string> = {
-    neutral: "bg-faint",
-    pos: "bg-pos-fg",
-    warn: "bg-warn-fg",
-    crit: "bg-crit-fg",
-    info: "bg-info-fg",
-    brand: "bg-brand",
+    neutral: "progress-neutral",
+    pos: "progress-primary",
+    warn: "progress-primary",
+    crit: "progress-error",
+    info: "progress-info",
+    brand: "progress-primary",
   };
+  const clamped = Math.max(2, Math.min(100, value));
   return (
-    <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
-      <div className={cn("h-full rounded-full", bg[tone])} style={{ width: `${Math.max(2, Math.min(100, value))}%` }} />
-    </div>
+    <progress className={cn("progress h-1.5 w-full bg-base-200", bg[tone])} value={clamped} max={100} />
   );
 }
 
@@ -207,11 +209,13 @@ export function Avatar({ name, size = 30 }: { name: string; size?: number }) {
     .map((p) => p[0]?.toUpperCase() ?? "")
     .join("");
   return (
-    <span
-      className="inline-flex shrink-0 items-center justify-center rounded-full bg-brand-soft font-semibold text-brand"
-      style={{ width: size, height: size, fontSize: size * 0.4 }}
-    >
-      {inits}
+    <span className="avatar placeholder inline-flex shrink-0">
+      <span
+        className="inline-flex items-center justify-center rounded-full bg-primary/10 font-semibold text-primary"
+        style={{ width: size, height: size, fontSize: size * 0.4 }}
+      >
+        {inits}
+      </span>
     </span>
   );
 }
@@ -250,7 +254,7 @@ export function PageHeader({
         </div>
         {description && <p className="mt-1.5 max-w-2xl text-[13.5px] leading-relaxed text-muted">{description}</p>}
       </div>
-      {actions && <div className="flex items-center gap-2">{actions}</div>}
+      {actions && <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">{actions}</div>}
     </div>
   );
 }
@@ -279,13 +283,13 @@ export function Button({
   onClick?: () => void;
 }) {
   const base =
-    "inline-flex items-center justify-center gap-1.5 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:pointer-events-none";
-  const sizes = { sm: "h-8 px-2.5 text-[12.5px]", md: "h-9 px-3.5 text-[13.5px]" };
+    "btn inline-flex items-center justify-center gap-1.5 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:pointer-events-none";
+  const sizes = { sm: "btn-sm h-8 min-h-8 px-2.5 text-[12.5px]", md: "btn-sm h-9 min-h-9 px-3.5 text-[13.5px]" };
   const variants = {
-    primary: "bg-ink text-white hover:bg-ink-2",
-    ghost: "text-ink-2 hover:bg-surface-2",
-    outline: "border border-border-strong text-ink hover:bg-surface-2",
-    danger: "bg-crit-bg text-crit-fg hover:bg-crit-bg/70 border border-crit-fg/20",
+    primary: "btn-primary",
+    ghost: "btn-ghost text-ink",
+    outline: "btn-outline border-base-300 bg-base-100 text-ink hover:bg-base-200 hover:text-ink",
+    danger: "btn-error",
   };
   const classes = cn(base, sizes[size], variants[variant], className);
   const inner = (
@@ -314,19 +318,19 @@ export function Button({
 export function Table({ children, className }: { children: ReactNode; className?: string }) {
   return (
     <div className={cn("overflow-x-auto", className)}>
-      <table className="w-full border-collapse text-left text-[13px]">{children}</table>
+      <table className="table table-sm w-full text-left text-[13px] text-ink">{children}</table>
     </div>
   );
 }
 
 export function Th({ children, className, ...props }: { children?: ReactNode; className?: string } & ThHTMLAttributes<HTMLTableCellElement>) {
   return (
-    <th className={cn("border-b border-border px-3 py-2.5 text-2xs font-semibold uppercase tracking-wide text-faint", className)} {...props}>
+    <th className={cn("border-b border-base-300 px-3 py-2.5 text-2xs font-semibold uppercase tracking-wide text-ink", className)} {...props}>
       {children}
     </th>
   );
 }
 
 export function Td({ children, className, ...props }: { children?: ReactNode; className?: string } & TdHTMLAttributes<HTMLTableCellElement>) {
-  return <td className={cn("border-b border-border px-3 py-3 align-middle text-ink-2", className)} {...props}>{children}</td>;
+  return <td className={cn("border-b border-base-300 px-3 py-3 align-middle text-ink", className)} {...props}>{children}</td>;
 }
