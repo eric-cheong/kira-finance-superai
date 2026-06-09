@@ -18,7 +18,7 @@ export function Card({
   return (
     <div
       className={cn(
-        "card overlay-surface min-w-0 border border-base-300 bg-base-100/80 text-base-content shadow-sm",
+        "card min-w-0 border border-base-300 bg-base-100 text-base-content shadow-none",
         pad && "p-5",
         className,
       )}
@@ -48,7 +48,7 @@ export function CardHeader({
           </span>
         )}
         <div className="min-w-0">
-          <h3 className="card-title text-[15px] font-semibold tracking-[-0.01em] text-ink">{title}</h3>
+          <h3 className="card-title text-[15px] font-semibold text-ink">{title}</h3>
           {subtitle && <p className="mt-0.5 text-[13px] text-muted">{subtitle}</p>}
         </div>
       </div>
@@ -63,11 +63,11 @@ type Variant = "neutral" | "pos" | "warn" | "crit" | "info" | "brand";
 
 const VARIANT: Record<Variant, string> = {
   neutral: "badge-outline border-base-300 bg-base-100 text-ink",
-  pos: "badge-outline border-primary/20 bg-primary/5 text-ink",
-  warn: "badge-outline border-primary/20 bg-primary/5 text-ink",
-  crit: "badge-error text-error-content",
-  info: "badge-outline border-primary/20 bg-primary/5 text-ink",
-  brand: "badge-primary text-primary-content",
+  pos: "badge-outline border-brand/20 bg-brand-soft text-ink",
+  warn: "badge-outline border-brand/20 bg-base-100 text-ink",
+  crit: "badge-outline border-error/30 bg-error/5 text-error",
+  info: "badge-outline border-brand/20 bg-brand-soft text-ink",
+  brand: "badge-outline border-brand/25 bg-brand-soft text-ink",
 };
 
 export function Badge({
@@ -153,16 +153,16 @@ export function StatTile({
     brand: "text-ink",
   };
   return (
-    <div className="stats min-w-0 border border-base-300 bg-base-100/80 shadow-sm">
+    <div className="stats min-w-0 border border-base-300 bg-base-100 shadow-none">
       <div className="stat min-w-0 p-4">
         <div className="stat-figure text-ink">
           {icon && <Icon name={icon} size={16} />}
         </div>
-        <div className="stat-title text-[12px] font-medium uppercase tracking-wide text-ink">{label}</div>
-        <div className={cn("stat-value mt-1 text-2xl font-semibold tracking-[-0.02em] tnum", toneText[tone])}>
+        <div className="stat-title text-[12px] font-medium uppercase tracking-wide text-muted">{label}</div>
+        <div className={cn("stat-value mt-1 text-2xl font-semibold tnum", toneText[tone])}>
           {value}
         </div>
-        {sub && <div className="stat-desc text-[12.5px] text-ink">{sub}</div>}
+        {sub && <div className="stat-desc text-[12.5px] text-muted">{sub}</div>}
       </div>
     </div>
   );
@@ -181,7 +181,7 @@ export function Bar({ value, tone = "brand" }: { value: number; tone?: Variant }
     warn: "progress-primary",
     crit: "progress-error",
     info: "progress-info",
-    brand: "progress-primary",
+    brand: "progress-info",
   };
   const clamped = Math.max(2, Math.min(100, value));
   return (
@@ -211,7 +211,7 @@ export function Avatar({ name, size = 30 }: { name: string; size?: number }) {
   return (
     <span className="avatar placeholder inline-flex shrink-0">
       <span
-        className="inline-flex items-center justify-center rounded-full bg-primary/10 font-semibold text-primary"
+        className="inline-flex items-center justify-center rounded-lg border border-base-300 bg-base-200 font-semibold text-ink"
         style={{ width: size, height: size, fontSize: size * 0.4 }}
       >
         {inits}
@@ -223,7 +223,7 @@ export function Avatar({ name, size = 30 }: { name: string; size?: number }) {
 export function EmptyState({ icon = "check", title, sub }: { icon?: IconName; title: string; sub?: string }) {
   return (
     <div className="flex flex-col items-center justify-center gap-2 px-6 py-12 text-center">
-      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-2 text-muted">
+      <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-base-300 bg-surface-2 text-muted">
         <Icon name={icon} size={20} />
       </span>
       <p className="text-[14px] font-medium text-ink">{title}</p>
@@ -249,7 +249,7 @@ export function PageHeader({
     <div className="mb-6 flex flex-col gap-3 border-b border-border pb-5 sm:flex-row sm:items-end sm:justify-between">
       <div>
         <div className="flex items-center gap-2.5">
-          <h1 className="text-[22px] font-semibold tracking-[-0.02em] text-ink">{title}</h1>
+          <h1 className="text-[22px] font-semibold text-ink">{title}</h1>
           {badge}
         </div>
         {description && <p className="mt-1.5 max-w-2xl text-[13.5px] leading-relaxed text-muted">{description}</p>}
@@ -283,13 +283,16 @@ export function Button({
   onClick?: () => void;
 }) {
   const base =
-    "btn inline-flex items-center justify-center gap-1.5 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:pointer-events-none";
-  const sizes = { sm: "btn-sm h-8 min-h-8 px-2.5 text-[12.5px]", md: "btn-sm h-9 min-h-9 px-3.5 text-[13.5px]" };
+    "btn inline-flex transform-gpu items-center justify-center gap-1.5 rounded-lg border border-transparent font-medium shadow-none transition disabled:pointer-events-none disabled:opacity-50 active:translate-y-[1px]";
+  const sizes = {
+    sm: "h-11 min-h-11 px-3 text-[13px] sm:h-8 sm:min-h-8 sm:px-2.5 sm:text-[12.5px]",
+    md: "h-11 min-h-11 px-3.5 text-[13.5px] sm:h-9 sm:min-h-9",
+  };
   const variants = {
-    primary: "btn-primary",
-    ghost: "btn-ghost text-ink",
-    outline: "btn-outline border-base-300 bg-base-100 text-ink hover:bg-base-200 hover:text-ink",
-    danger: "btn-error",
+    primary: "bg-ink text-white hover:bg-ink-2",
+    ghost: "bg-transparent text-ink hover:bg-base-200",
+    outline: "bg-base-200 text-ink hover:bg-base-300",
+    danger: "bg-error text-white hover:bg-error/90",
   };
   const classes = cn(base, sizes[size], variants[variant], className);
   const inner = (

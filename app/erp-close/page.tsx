@@ -647,7 +647,7 @@ export default function ErpClosePage() {
               <span className="text-[13px] font-semibold uppercase tracking-wide text-faint">Close readiness</span>
             </div>
             <div className="mt-2 flex items-end gap-2">
-              <span className="tnum text-4xl font-semibold tracking-[-0.02em] text-ink">{readiness.score}%</span>
+              <span className="tnum text-4xl font-semibold text-ink">{readiness.score}%</span>
               <Badge variant={blockerCount > 0 ? "warn" : "pos"}>{blockerCount > 0 ? "review required" : "ready"}</Badge>
             </div>
             <p className="mt-1 text-[12.5px] text-muted">

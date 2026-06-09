@@ -30,7 +30,7 @@ function SourceLink({ href, label }: { href?: string; label: string }) {
 export function FindingCard({ finding: f }: { finding: Finding }) {
   const internalHref = f.relatedHref && !f.relatedHref.startsWith("http") ? f.relatedHref : undefined;
   const className = cn(
-    "block rounded-xl border border-border bg-surface p-4 shadow-card transition-colors",
+    "block rounded-lg border border-border bg-surface p-4 transition-colors",
     internalHref && "hover:border-border-strong",
   );
 
@@ -66,7 +66,7 @@ export function FindingCard({ finding: f }: { finding: Finding }) {
         {f.sources.map((s, i) => (
           <span key={i} className="inline-flex items-center gap-2">
             <SourceLink href={i === 0 ? f.relatedHref : undefined} label={s} />
-            {i < f.sources.length - 1 && <span className="text-border-strong">·</span>}
+            {i < f.sources.length - 1 && <span aria-hidden className="text-faint">·</span>}
           </span>
         ))}
       </div>

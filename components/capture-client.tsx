@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 import { money } from "@/lib/format";
-import { Badge, Button, Card, ConfidenceChip, Icon } from "@/components/ui";
+import { Button, Card, ConfidenceChip, Icon } from "@/components/ui";
 import { Thumb } from "@/components/thumb";
-import { cn } from "@/components/ui/cn";
 
 type Stage = "idle" | "scanning" | "extracted" | "confirmed";
 
@@ -24,10 +23,20 @@ const MOCK = {
 
 export function CaptureBox() {
   const [stage, setStage] = useState<Stage>("idle");
+  const [reviewed, setReviewed] = useState(false);
+  const reviewThreshold = 85;
+  const needsReview = MOCK.fields.some((field) => field.c < reviewThreshold);
+  const canPost = !needsReview || reviewed;
 
   function snap() {
+    setReviewed(false);
     setStage("scanning");
     setTimeout(() => setStage("extracted"), 900);
+  }
+
+  function reset() {
+    setReviewed(false);
+    setStage("idle");
   }
 
   return (
@@ -92,13 +101,22 @@ export function CaptureBox() {
             ))}
           </div>
 
+          {stage === "extracted" && needsReview && (
+            <div className="mt-3 rounded-lg border border-brand/20 bg-brand-soft px-3 py-2 text-[12.5px] text-muted">
+              <span className="font-medium text-ink">Review required.</span> One field is below {reviewThreshold}% confidence.
+              Confirming is locked until coding is reviewed.
+            </div>
+          )}
+
           {stage === "extracted" ? (
             <div className="mt-4 flex items-center gap-2">
-              <Button variant="primary" icon="check" onClick={() => setStage("confirmed")}>
+              <Button variant="primary" icon="check" disabled={!canPost} onClick={() => setStage("confirmed")}>
                 Confirm & post
               </Button>
-              <Button variant="ghost">Adjust coding</Button>
-              <button onClick={() => setStage("idle")} className="ml-auto text-[12px] text-muted hover:underline">
+              <Button variant={reviewed ? "outline" : "ghost"} onClick={() => setReviewed(true)}>
+                {reviewed ? "Coding reviewed" : "Adjust coding"}
+              </Button>
+              <button onClick={reset} className="ml-auto text-[12px] text-muted hover:underline">
                 discard
               </button>
             </div>
@@ -107,7 +125,7 @@ export function CaptureBox() {
               <span className="flex items-center gap-2 text-[13px] font-medium text-pos-fg">
                 <Icon name="check" size={16} /> Posted to record store · queued for auto-match
               </span>
-              <button onClick={() => setStage("idle")} className="text-[12px] text-pos-fg/80 hover:underline">
+              <button onClick={reset} className="text-[12px] text-pos-fg/80 hover:underline">
                 capture another
               </button>
             </div>

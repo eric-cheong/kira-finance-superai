@@ -15,9 +15,10 @@ export function BookingApproval({
 }) {
   const [selected, setSelected] = useState<number | null>(null);
   const [state, setState] = useState<"idle" | "confirmed" | "rejected">("idle");
+  const selectedOption = selected === null ? null : options.find((option) => option.index === selected) ?? null;
 
-  if (state === "confirmed" && selected !== null) {
-    const opt = options[selected];
+  if (state === "confirmed" && selectedOption) {
+    const opt = selectedOption;
     return (
       <div className="mt-4 flex flex-col gap-2 rounded-lg border border-pos-fg/20 bg-pos-bg p-4">
         <div className="flex items-center gap-2 text-[13.5px] font-semibold text-pos-fg">
@@ -58,10 +59,11 @@ export function BookingApproval({
           <button
             key={opt.index}
             onClick={() => setSelected(opt.index)}
+            aria-pressed={selected === opt.index}
             className={cn(
-              "flex w-full items-center justify-between rounded-lg border px-3 py-2.5 text-left transition-colors",
+              "flex min-h-11 w-full transform-gpu items-center justify-between rounded-lg border px-3 py-2.5 text-left transition active:translate-y-[1px]",
               selected === opt.index
-                ? "border-brand bg-brand-soft"
+                ? "border-brand bg-brand-soft shadow-card"
                 : "border-border bg-surface hover:border-border-strong",
             )}
           >
@@ -78,7 +80,7 @@ export function BookingApproval({
         <Button
           variant="primary"
           icon="check"
-          disabled={selected === null}
+          disabled={selectedOption === null}
           onClick={() => setState("confirmed")}
         >
           Confirm booking

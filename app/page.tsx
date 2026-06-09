@@ -47,7 +47,7 @@ export default function BriefingPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <div className="flex items-center gap-2.5">
-            <h1 className="text-[22px] font-semibold tracking-[-0.02em] text-ink">Good morning, Amir</h1>
+            <h1 className="text-[22px] font-semibold text-ink">Good morning, Amir</h1>
             <Badge variant="brand" dot>
               live run
             </Badge>
@@ -70,7 +70,7 @@ export default function BriefingPage() {
       <OperatingFunctionsLandingSection />
 
       {/* Topline */}
-      <div className="rounded-xl border border-border bg-surface p-4 shadow-card">
+      <div className="rounded-lg border border-border bg-surface p-4">
         <p className="text-[14px] leading-relaxed text-ink-2">
           <Icon name="spark" size={15} className="mr-1.5 inline -translate-y-px text-brand" />
           {run.topline.headline}

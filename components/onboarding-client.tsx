@@ -30,7 +30,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 const inputCls =
-  "w-full rounded-lg border border-border bg-surface px-3 py-2 text-[13px] text-ink outline-none focus:border-brand";
+  "w-full rounded-lg border border-border bg-surface px-3 py-2 text-[13px] text-ink outline-none focus:border-brand focus:shadow-card";
 
 function Choice({
   label,
@@ -45,10 +45,12 @@ function Choice({
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
+      aria-pressed={active}
       className={cn(
-        "flex items-center justify-between rounded-lg border px-3 py-2.5 text-left transition-colors",
-        active ? "border-brand bg-brand-soft" : "border-border bg-surface hover:border-border-strong",
+        "flex min-h-11 transform-gpu items-center justify-between rounded-lg border px-3 py-2.5 text-left transition active:translate-y-[1px]",
+        active ? "border-brand bg-brand-soft shadow-card" : "border-border bg-surface hover:border-border-strong",
       )}
     >
       <span>
@@ -64,10 +66,13 @@ export function OnboardingWizard() {
   const [i, setI] = useState(0);
   const [country, setCountry] = useState<"MY" | "SG">("MY");
   const [accounting, setAccounting] = useState("AutoCount");
+  const [orgName, setOrgName] = useState("Kira Roasters Sdn Bhd");
+  const [industry, setIndustry] = useState("F&B · Specialty Coffee");
   const [done, setDone] = useState(false);
 
   const step = STEPS[i];
   const pct = Math.round(((i + 1) / STEPS.length) * 100);
+  const orgStepValid = orgName.trim().length > 1 && industry.trim().length > 1;
 
   if (done) {
     return (
@@ -143,7 +148,7 @@ export function OnboardingWizard() {
           {step.key === "org" && (
             <>
               <Field label="Legal name">
-                <input className={inputCls} defaultValue="Kira Roasters Sdn Bhd" />
+                <input className={inputCls} value={orgName} onChange={(event) => setOrgName(event.target.value)} required />
               </Field>
               <Field label="Country of incorporation">
                 <div className="grid grid-cols-2 gap-2">
@@ -152,8 +157,13 @@ export function OnboardingWizard() {
                 </div>
               </Field>
               <Field label="Industry">
-                <input className={inputCls} defaultValue="F&B · Specialty Coffee" />
+                <input className={inputCls} value={industry} onChange={(event) => setIndustry(event.target.value)} required />
               </Field>
+              {!orgStepValid && (
+                <p className="rounded-lg border border-error/25 bg-error/5 px-3 py-2 text-[12px] text-error">
+                  Legal name and industry are required before continuing.
+                </p>
+              )}
             </>
           )}
 
@@ -253,7 +263,12 @@ export function OnboardingWizard() {
             Back
           </Button>
           {i < STEPS.length - 1 ? (
-            <Button variant="primary" iconRight="arrowRight" onClick={() => setI((n) => n + 1)}>
+            <Button
+              variant="primary"
+              iconRight="arrowRight"
+              disabled={i === 0 && !orgStepValid}
+              onClick={() => setI((n) => n + 1)}
+            >
               Continue
             </Button>
           ) : (

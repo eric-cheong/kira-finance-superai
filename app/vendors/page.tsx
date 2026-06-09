@@ -151,26 +151,24 @@ export default function VendorsPage() {
             icon="vendor"
           />
         </div>
-        <div className="overflow-x-auto">
-          <Table>
-            <thead>
-              <tr>
-                <Th>Vendor</Th>
-                <Th>Country</Th>
-                <Th>Total spend</Th>
-                <Th>Txns</Th>
-                <Th>Last activity</Th>
-                <Th>Risk</Th>
-                <Th>Intelligence</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {vendors.map((v) => (
-                <VendorRow key={v.id} v={v} maxSpend={maxSpend} />
-              ))}
-            </tbody>
-          </Table>
-        </div>
+        <Table>
+          <thead>
+            <tr>
+              <Th>Vendor</Th>
+              <Th>Country</Th>
+              <Th>Total spend</Th>
+              <Th>Txns</Th>
+              <Th>Last activity</Th>
+              <Th>Risk</Th>
+              <Th>Intelligence</Th>
+            </tr>
+          </thead>
+          <tbody>
+            {vendors.map((v) => (
+              <VendorRow key={v.id} v={v} maxSpend={maxSpend} />
+            ))}
+          </tbody>
+        </Table>
       </Card>
 
       <Card>

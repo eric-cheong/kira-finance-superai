@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { cn } from "./ui/cn";
 import { Icon, type IconName } from "./ui/icons";
 import { Avatar } from "./ui/primitives";
@@ -54,6 +54,14 @@ const NAV: { group: string; items: NavItem[] }[] = [
   },
 ];
 
+const SEARCH_ITEMS = NAV.flatMap((group) =>
+  group.items.map((item) => ({
+    ...item,
+    group: group.group,
+    haystack: `${item.label} ${group.group}`.toLowerCase(),
+  })),
+);
+
 function NavLink({ item, active, onClick }: { item: NavItem; active: boolean; onClick?: () => void }) {
   return (
     <li>
@@ -62,17 +70,17 @@ function NavLink({ item, active, onClick }: { item: NavItem; active: boolean; on
         onClick={onClick}
         aria-current={active ? "page" : undefined}
         className={cn(
-          "group rounded-lg border-l-2 px-2.5 py-2 text-[13.5px] font-medium text-ink",
-          active ? "menu-active border-brand bg-brand-soft text-ink" : "border-transparent hover:bg-base-200",
+          "group min-h-11 rounded-lg border-l-2 px-2.5 py-2 text-[13.5px] font-medium text-ink lg:min-h-9",
+          active ? "menu-active border-brand bg-base-200 text-ink" : "border-transparent hover:bg-base-200",
         )}
       >
-        <Icon name={item.icon} size={17} className={active ? "text-brand" : "text-ink"} />
+        <Icon name={item.icon} size={17} className={active ? "text-ink" : "text-muted"} />
         <span className="flex-1">{item.label}</span>
         {item.phase === 2 && (
           <span className="badge badge-outline badge-xs border-base-300 text-ink">P2</span>
         )}
         {item.badge && (
-          <span className="badge badge-primary badge-xs min-w-[18px] text-primary-content">
+          <span className="badge badge-outline badge-xs min-w-[18px] border-base-300 text-ink">
             {item.badge}
           </span>
         )}
@@ -84,14 +92,112 @@ function NavLink({ item, active, onClick }: { item: NavItem; active: boolean; on
 function Brand() {
   return (
     <Link href="/" className="flex items-center gap-2.5 px-1">
-      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-white">
+      <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-base-300 bg-base-100 text-brand">
         <Icon name="spark" size={18} />
       </span>
       <div className="leading-tight">
-        <div className="text-[15px] font-semibold tracking-[-0.02em] text-ink">Kira</div>
+        <div className="text-[15px] font-semibold text-ink">Kira</div>
         <div className="text-[10.5px] font-medium uppercase tracking-wide text-faint">Finance · SuperAI</div>
       </div>
     </Link>
+  );
+}
+
+function CommandSearch() {
+  const router = useRouter();
+  const [query, setQuery] = useState("");
+  const [focused, setFocused] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const cleanQuery = query.trim().toLowerCase();
+  const matches = useMemo(() => {
+    if (!cleanQuery) return SEARCH_ITEMS.slice(0, 5);
+    return SEARCH_ITEMS.filter((item) => item.haystack.includes(cleanQuery)).slice(0, 6);
+  }, [cleanQuery]);
+  const showPanel = focused && query.trim().length > 0;
+  const activeId = showPanel && matches[activeIndex] ? `global-command-option-${activeIndex}` : undefined;
+
+  useEffect(() => {
+    setActiveIndex(0);
+  }, [query]);
+
+  function navigateTo(href: string) {
+    setQuery("");
+    setFocused(false);
+    router.push(href);
+  }
+
+  return (
+    <div className="relative hidden w-full max-w-[390px] sm:block">
+      <label className="sr-only" htmlFor="global-command-search">
+        Search app routes
+      </label>
+      <div className="flex min-h-11 min-w-0 items-center gap-2 rounded-lg border border-base-300 bg-base-100 px-2.5 py-1.5 text-[13px] text-ink focus-within:border-border-strong focus-within:shadow-card sm:min-h-9">
+        <Icon name="search" size={15} className="text-muted" />
+        <input
+          id="global-command-search"
+          type="search"
+          role="combobox"
+          aria-autocomplete="list"
+          aria-expanded={showPanel}
+          aria-controls="global-command-search-results"
+          aria-activedescendant={activeId}
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          onFocus={() => setFocused(true)}
+          onBlur={() => window.setTimeout(() => setFocused(false), 120)}
+          onKeyDown={(event) => {
+            if (event.key === "ArrowDown") {
+              event.preventDefault();
+              setActiveIndex((index) => Math.min(matches.length - 1, index + 1));
+            }
+            if (event.key === "ArrowUp") {
+              event.preventDefault();
+              setActiveIndex((index) => Math.max(0, index - 1));
+            }
+            if (event.key === "Enter" && matches[activeIndex]) {
+              event.preventDefault();
+              navigateTo(matches[activeIndex].href);
+            }
+          }}
+          className="min-w-0 flex-1 bg-transparent text-[13px] text-ink outline-none placeholder:text-faint"
+          placeholder="Search pages, approvals, invoices..."
+        />
+      </div>
+      {showPanel && (
+        <div
+          id="global-command-search-results"
+          role="listbox"
+          className="absolute left-0 top-[calc(100%+8px)] z-30 w-full overflow-hidden rounded-lg border border-base-300 bg-base-100 shadow-pop"
+        >
+          {matches.length > 0 ? (
+            <ul className="menu menu-sm p-1">
+              {matches.map((item, index) => (
+                <li key={item.href}>
+                  <button
+                    id={`global-command-option-${index}`}
+                    role="option"
+                    aria-selected={activeIndex === index}
+                    type="button"
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => navigateTo(item.href)}
+                    className={cn(
+                      "grid min-h-11 grid-cols-[auto_1fr_auto] items-center gap-2 rounded-md px-2.5 py-2 text-left sm:min-h-9",
+                      activeIndex === index && "bg-base-200",
+                    )}
+                  >
+                    <Icon name={item.icon} size={15} className="text-muted" />
+                    <span className="text-[13px] font-medium text-ink">{item.label}</span>
+                    <span className="text-[10.5px] uppercase tracking-wide text-faint">{item.group}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="px-3 py-3 text-[12.5px] text-muted">No matching page</div>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -136,6 +242,17 @@ function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname() ?? "/";
   const [open, setOpen] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    const query = window.matchMedia("(min-width: 1024px)");
+    const sync = () => setIsDesktop(query.matches);
+    sync();
+    query.addEventListener("change", sync);
+    return () => query.removeEventListener("change", sync);
+  }, []);
+
+  const navHidden = !open && !isDesktop;
 
   return (
     <div className="drawer min-h-screen bg-bg lg:drawer-open">
@@ -153,24 +270,21 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="navbar-start min-w-0 flex-1 gap-3">
             <label
               htmlFor="app-shell-drawer"
-              className="btn btn-square btn-ghost btn-sm -ml-1 lg:hidden"
+              className="btn btn-square btn-ghost -ml-1 h-11 min-h-11 w-11 lg:hidden"
               aria-label="Open navigation"
             >
               <Icon name="briefing" size={18} />
             </label>
-            <div className="hidden min-w-0 items-center gap-2 rounded-lg border border-base-300 bg-base-100 px-2.5 py-1.5 text-[13px] text-ink sm:flex">
-              <Icon name="search" size={15} />
-              <span>Search transactions, invoices, agents…</span>
-            </div>
+            <CommandSearch />
           </div>
           <div className="navbar-end gap-2">
-            <div className="badge badge-primary badge-outline hidden gap-1.5 px-2.5 py-3 text-2xs font-medium text-ink sm:inline-flex">
+            <div className="badge badge-outline hidden gap-1.5 border-base-300 px-2.5 py-3 text-2xs font-medium text-ink sm:inline-flex">
               <span className="h-1.5 w-1.5 rounded-full bg-brand" />
-              Orchestrate · never settle
+              Orchestrate
             </div>
-            <button className="btn btn-square btn-ghost btn-sm text-ink" aria-label="Notifications">
+            <Link className="btn btn-square btn-ghost h-11 min-h-11 w-11 text-ink sm:h-9 sm:min-h-9 sm:w-9" aria-label="Open approvals" href="/approvals">
               <Icon name="bell" size={18} />
-            </button>
+            </Link>
             <div className="lg:hidden">
               <Avatar name="Amir Hafiz" size={28} />
             </div>
@@ -187,7 +301,13 @@ export function AppShell({ children }: { children: ReactNode }) {
           className="drawer-overlay"
           onClick={() => setOpen(false)}
         />
-        <aside className="overlay-surface min-h-full w-[min(280px,calc(100vw-48px))] border-r border-border lg:w-[248px]">
+        <aside
+          className={cn(
+            "min-h-full w-[min(280px,calc(100vw-48px))] border-r border-border bg-base-100 lg:w-[248px]",
+            navHidden && "max-lg:invisible",
+          )}
+          aria-hidden={navHidden}
+        >
           <SidebarBody pathname={pathname} onNavigate={() => setOpen(false)} />
         </aside>
       </div>

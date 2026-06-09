@@ -2,21 +2,45 @@
 
 import { useState } from "react";
 import type { UserPreference } from "@/lib/types";
-import { Card, CardHeader, Icon } from "@/components/ui";
+import { Badge, Button, Card, CardHeader, Icon } from "@/components/ui";
 import { cn } from "@/components/ui/cn";
 
 const RISK: UserPreference["riskTolerance"][] = ["conservative", "balanced", "growth"];
 
 export function AutomationControls({ prefs }: { prefs: UserPreference }) {
+  const [savedPrefs, setSavedPrefs] = useState(prefs);
   const [threshold, setThreshold] = useState(prefs.automationThreshold);
   const [risk, setRisk] = useState(prefs.riskTolerance);
   const [channels, setChannels] = useState(prefs.channels);
+  const [saved, setSaved] = useState(false);
 
   const channelKeys = Object.keys(channels) as (keyof typeof channels)[];
+  const dirty =
+    threshold !== savedPrefs.automationThreshold ||
+    risk !== savedPrefs.riskTolerance ||
+    channelKeys.some((key) => channels[key] !== savedPrefs.channels[key]);
+
+  function save() {
+    setSavedPrefs({ ...savedPrefs, automationThreshold: threshold, riskTolerance: risk, channels });
+    setSaved(true);
+    window.setTimeout(() => setSaved(false), 1800);
+  }
+
+  function reset() {
+    setThreshold(savedPrefs.automationThreshold);
+    setRisk(savedPrefs.riskTolerance);
+    setChannels(savedPrefs.channels);
+    setSaved(false);
+  }
 
   return (
     <Card>
-      <CardHeader title="Automation & intelligence" subtitle="How much the agents do before asking you" icon="settings" />
+      <CardHeader
+        title="Automation & intelligence"
+        subtitle="How much the agents do before asking you"
+        icon="settings"
+        right={dirty ? <Badge variant="warn">unsaved</Badge> : saved ? <Badge variant="pos">saved</Badge> : null}
+      />
 
       <div className="space-y-6">
         {/* Threshold */}
@@ -36,12 +60,12 @@ export function AutomationControls({ prefs }: { prefs: UserPreference }) {
             aria-label="Automation threshold"
           />
           <div className="mt-1 flex justify-between text-[10.5px] text-faint">
-            <span>50% · cautious</span>
-            <span>100% · everything reviewed</span>
+            <span>50% · more automation</span>
+            <span>100% · human review only</span>
           </div>
           <p className="mt-2 flex items-start gap-1.5 rounded-lg bg-surface-2/60 px-3 py-2 text-[12px] text-muted">
             <Icon name="shield" size={13} className="mt-0.5 shrink-0" />
-            Findings at or above {threshold}% auto-pass; below {threshold}% queue for a human. Money movement, e-invoice submission, and regulated advice <span className="font-medium text-ink-2">always</span> require approval regardless of confidence.
+            Signals at or above {threshold}% can auto-pass; lower confidence queues for review. Money movement, e-invoice submission, and regulated advice <span className="font-medium text-ink-2">always</span> require approval regardless of confidence.
           </p>
         </div>
 
@@ -52,9 +76,11 @@ export function AutomationControls({ prefs }: { prefs: UserPreference }) {
             {RISK.map((r) => (
               <button
                 key={r}
+                type="button"
                 onClick={() => setRisk(r)}
+                aria-pressed={risk === r}
                 className={cn(
-                  "rounded-md px-3 py-1.5 text-[12.5px] font-medium capitalize transition-colors",
+                  "min-h-11 rounded-md px-3 py-1.5 text-[12.5px] font-medium capitalize transition-colors sm:min-h-8",
                   risk === r ? "bg-surface text-ink shadow-card" : "text-muted hover:text-ink-2",
                 )}
               >
@@ -73,9 +99,11 @@ export function AutomationControls({ prefs }: { prefs: UserPreference }) {
               return (
                 <button
                   key={k}
+                  type="button"
                   onClick={() => setChannels((c) => ({ ...c, [k]: !c[k] }))}
+                  aria-pressed={on}
                   className={cn(
-                    "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12.5px] font-medium capitalize transition-colors",
+                    "inline-flex min-h-11 transform-gpu items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12.5px] font-medium capitalize transition active:translate-y-[1px] sm:min-h-8",
                     on ? "border-brand/20 bg-brand-soft text-brand" : "border-border bg-surface text-muted hover:text-ink-2",
                   )}
                 >
@@ -88,6 +116,15 @@ export function AutomationControls({ prefs }: { prefs: UserPreference }) {
           <p className="mt-2 text-[11.5px] text-faint">
             Quiet hours {prefs.quietHours.from}–{prefs.quietHours.to}. Channel changes are a soft-approval (tier-2) action.
           </p>
+        </div>
+
+        <div className="flex items-center justify-end gap-2 border-t border-border pt-4">
+          <Button variant="ghost" disabled={!dirty} onClick={reset}>
+            Cancel
+          </Button>
+          <Button variant="primary" disabled={!dirty} onClick={save}>
+            Save changes
+          </Button>
         </div>
       </div>
     </Card>

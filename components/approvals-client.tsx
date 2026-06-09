@@ -12,6 +12,7 @@ export function ApprovalQueue({ initial }: { initial: ApprovalRequest[] }) {
   const [decisions, setDecisions] = useState<Record<string, Decision>>(
     Object.fromEntries(initial.map((a) => [a.id, a.state])),
   );
+  const [confirming, setConfirming] = useState<string | null>(null);
 
   const counts = {
     open: Object.values(decisions).filter((d) => d === "open").length,
@@ -21,6 +22,7 @@ export function ApprovalQueue({ initial }: { initial: ApprovalRequest[] }) {
 
   function decide(id: string, d: Decision) {
     setDecisions((prev) => ({ ...prev, [id]: d }));
+    setConfirming(null);
   }
 
   return (
@@ -39,6 +41,7 @@ export function ApprovalQueue({ initial }: { initial: ApprovalRequest[] }) {
       <div className="space-y-3">
         {initial.map((a) => {
           const d = decisions[a.id];
+          const requiresExtraConfirm = !a.reversible || a.tier >= 4;
           return (
             <Card key={a.id} className={cn("transition-colors", d !== "open" && "opacity-75")}>
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -87,15 +90,40 @@ export function ApprovalQueue({ initial }: { initial: ApprovalRequest[] }) {
 
                 <div className="flex shrink-0 flex-col gap-2 sm:w-40">
                   {d === "open" ? (
-                    <>
-                      <Button variant="primary" icon="check" onClick={() => decide(a.id, "approved")} className="w-full">
-                        Approve
-                      </Button>
-                      <Button variant="danger" onClick={() => decide(a.id, "rejected")} className="w-full">
-                        Reject
-                      </Button>
-                      <p className="text-center text-[11px] text-faint">Explicit sign-off required</p>
-                    </>
+                    confirming === a.id ? (
+                      <div className="rounded-lg border border-error/25 bg-error/5 p-2.5">
+                        <p className="text-[12px] font-medium leading-snug text-error">
+                          {a.reversible
+                            ? "Tier-4 action. Confirm before changing this approval state."
+                            : "Irreversible action. This cannot be undone after approval."}
+                        </p>
+                        <div className="mt-2 grid grid-cols-2 gap-2">
+                          <Button variant="outline" size="sm" onClick={() => setConfirming(null)} className="w-full">
+                            Cancel
+                          </Button>
+                          <Button variant="danger" size="sm" onClick={() => decide(a.id, "approved")} className="w-full">
+                            Confirm
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <Button
+                          variant="primary"
+                          icon="check"
+                          onClick={() => (requiresExtraConfirm ? setConfirming(a.id) : decide(a.id, "approved"))}
+                          className="w-full"
+                        >
+                          Approve
+                        </Button>
+                        <Button variant="danger" onClick={() => decide(a.id, "rejected")} className="w-full">
+                          Reject
+                        </Button>
+                        <p className="text-center text-[11px] text-faint">
+                          {requiresExtraConfirm ? "Extra confirmation required" : "Explicit sign-off required"}
+                        </p>
+                      </>
+                    )
                   ) : (
                     <div
                       className={cn(
@@ -105,9 +133,11 @@ export function ApprovalQueue({ initial }: { initial: ApprovalRequest[] }) {
                     >
                       <Icon name={d === "approved" ? "check" : "alert"} size={18} />
                       <span className="text-[13px] font-semibold capitalize">{d}</span>
-                      <button onClick={() => decide(a.id, "open")} className="text-[11px] text-muted underline-offset-2 hover:underline">
-                        undo
-                      </button>
+                      {(a.reversible || d === "rejected") && (
+                        <button onClick={() => decide(a.id, "open")} className="text-[11px] text-muted underline-offset-2 hover:underline">
+                          undo
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>

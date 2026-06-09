@@ -71,7 +71,7 @@ export function OperatingFunctionsLandingSection() {
       <div className="grid gap-0 lg:grid-cols-[1fr_360px]">
         <div className="card-body p-5 sm:p-6">
           <div className="max-w-3xl">
-            <h2 className="text-[26px] font-semibold tracking-[-0.03em] text-ink sm:text-[32px]">
+            <h2 className="text-[26px] font-semibold text-ink sm:text-[32px]">
               One platform. Every operating function.
             </h2>
             <p className="mt-2 max-w-2xl text-[14px] leading-relaxed text-ink-2">
