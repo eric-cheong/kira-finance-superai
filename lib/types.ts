@@ -43,6 +43,8 @@ export function bandOf(confidence: number): ConfidenceBand {
   return "low";
 }
 
+export type ProductPhase = 1 | 2 | 3;
+
 // ── Tenancy, identity, RBAC ─────────────────────────────────────────────────
 
 export type Role = "employee" | "approver" | "finance_admin" | "auditor";

@@ -72,8 +72,20 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatTile label="Total spend" value={money(total, "MYR", { compact: true })} sub="base currency · MoM" icon="analytics" />
         <StatTile label="Entries" value={db.RECORDS.length} sub="posted this period" icon="transactions" />
-        <StatTile label="Top category" value={topAcc.label.split(" — ")[0]} sub={money(topAcc.amountBaseMinor, "MYR")} icon="spark" tone="brand" />
-        <StatTile label="Top cost centre" value={topCC.label} sub={money(topCC.amountBaseMinor, "MYR")} icon="bank" tone="neutral" />
+        <StatTile
+          label="Top category"
+          value={topAcc ? topAcc.label.split(" — ")[0] : "No records"}
+          sub={topAcc ? money(topAcc.amountBaseMinor, "MYR") : "waiting for sync"}
+          icon="spark"
+          tone="brand"
+        />
+        <StatTile
+          label="Top cost centre"
+          value={topCC ? topCC.label : "No records"}
+          sub={topCC ? money(topCC.amountBaseMinor, "MYR") : "waiting for coding"}
+          icon="bank"
+          tone="neutral"
+        />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">

@@ -9,10 +9,11 @@ import { bandOf } from "../types";
 import type { ActionClass, ApprovalTier } from "../types";
 import * as db from "../data/store";
 import { money } from "../format";
+import { applyFindingPolicy, NOT_FINANCIAL_ADVICE } from "../policy";
 import type { AgentResult, Finding, FindingKind, LoopStep, RunContext } from "./types";
 import type { AgentName } from "./types";
 
-const NOT_ADVICE = "Educational / informational only — not financial advice.";
+const NOT_ADVICE = NOT_FINANCIAL_ADVICE;
 
 interface FindingInput {
   id: string;
@@ -181,15 +182,17 @@ export function riskMonitoringAgent(_ctx: RunContext): AgentResult {
   }
   const total = [...bySource.values()].reduce((a, b) => a + b, 0);
   const top = [...bySource.entries()].sort((a, b) => b[1] - a[1])[0];
-  const topPct = Math.round((top[1] / total) * 100);
-  findings.push(mk({
-    id: "risk-card", agent: "Risk Monitoring", kind: "risk",
-    title: "Single-card concentration",
-    detail: `${top[0]} carries ${topPct}% of card/bank spend this period. A frozen or compromised card would stall most purchasing — consider a backup card or split rails.`,
-    confidence: 80, sources: ["Transaction feed"],
-    rationale: "Concentration of outflow on one instrument is an operational risk.",
-    actionClass: "read-only", tier: 1, relatedHref: "/analytics",
-  }));
+  if (top && total > 0) {
+    const topPct = Math.round((top[1] / total) * 100);
+    findings.push(mk({
+      id: "risk-card", agent: "Risk Monitoring", kind: "risk",
+      title: "Single-card concentration",
+      detail: `${top[0]} carries ${topPct}% of card/bank spend this period. A frozen or compromised card would stall most purchasing — consider a backup card or split rails.`,
+      confidence: 80, sources: ["Transaction feed"],
+      rationale: "Concentration of outflow on one instrument is an operational risk.",
+      actionClass: "read-only", tier: 1, relatedHref: "/analytics",
+    }));
+  }
 
   // E-invoice rejection.
   const rej = db.EINVOICES.find((e) => e.state === "rejected");
@@ -209,7 +212,7 @@ export function riskMonitoringAgent(_ctx: RunContext): AgentResult {
   steps.push({ phase: "plan", message: "Order by severity × confidence." });
   steps.push({ phase: "act", message: "Raise alerts; none acted on autonomously." });
   steps.push({ phase: "summarize", message: "Risk scan complete; corrective actions left to humans." });
-  return { agent: "Risk Monitoring", phase: 1, status: "ok", findings, steps, durationMs: 480 };
+  return { agent: "Risk Monitoring", phase: 2, status: "ok", findings, steps, durationMs: 480 };
 }
 
 // ── News Relevance ──────────────────────────────────────────────────────────
@@ -245,7 +248,7 @@ export function newsRelevanceAgent(_ctx: RunContext): AgentResult {
   steps.push({ phase: "analyze", message: "Ranked by relevance; filtered unverifiable." });
   steps.push({ phase: "verify", message: "Marked 1 item 'unable to verify'." });
   steps.push({ phase: "summarize", message: `${findings.filter((f) => !f.unverified).length} relevant items, 1 filtered.` });
-  return { agent: "News Relevance", phase: 1, status: "ok", findings, steps, durationMs: 610 };
+  return { agent: "News Relevance", phase: 2, status: "ok", findings, steps, durationMs: 610 };
 }
 
 // ── Market Research (Phase 2) ───────────────────────────────────────────────
@@ -253,9 +256,11 @@ export function newsRelevanceAgent(_ctx: RunContext): AgentResult {
 export function marketResearchAgent(_ctx: RunContext): AgentResult {
   const steps: LoopStep[] = [{ phase: "observe", message: "Pull overnight moves for watchlist instruments." }];
   const movers = [...db.POSITIONS].sort((a, b) => Math.abs(b.instrument ? b.dayChangePct : 0) - Math.abs(a.dayChangePct)).slice(0, 3);
-  const detail = movers
-    .map((p) => `${p.instrument.name} ${p.dayChangePct >= 0 ? "+" : ""}${p.dayChangePct.toFixed(1)}%`)
-    .join(" · ");
+  const detail = movers.length
+    ? movers
+        .map((p) => `${p.instrument.name} ${p.dayChangePct >= 0 ? "+" : ""}${p.dayChangePct.toFixed(1)}%`)
+        .join(" · ")
+    : "No linked watchlist positions yet";
   const findings: Finding[] = [
     mk({
       id: "mkt-overnight", agent: "Market Research", kind: "market",
@@ -277,29 +282,32 @@ export function portfolioAnalysisAgent(_ctx: RunContext): AgentResult {
   const steps: LoopStep[] = [{ phase: "observe", message: "Read positions (read-only)." }];
   const ps = db.portfolioStats();
   const findings: Finding[] = [];
+  const top = ps.shares[0];
 
   findings.push(mk({
     id: "pf-perf", agent: "Portfolio Analysis", kind: "portfolio",
     title: "Portfolio performance",
-    detail: `Value ${money(ps.valueBase, "MYR", { compact: true })} · unrealised ${ps.pnl >= 0 ? "+" : ""}${money(ps.pnl, "MYR", { compact: true })} (${ps.pnlPct.toFixed(1)}%). Largest holding ${ps.shares[0].name} at ${ps.topShare}% of value.`,
+    detail: top
+      ? `Value ${money(ps.valueBase, "MYR", { compact: true })} · unrealised ${ps.pnl >= 0 ? "+" : ""}${money(ps.pnl, "MYR", { compact: true })} (${ps.pnlPct.toFixed(1)}%). Largest holding ${top.name} at ${ps.topShare}% of value.`
+      : "No linked portfolio positions yet. Connect a read-only brokerage source to enable performance and concentration analysis.",
     confidence: 90, sources: ["Brokerage read API"],
     rationale: "Computed from positions; no action taken.",
     actionClass: "read-only", tier: 1, informational: true, disclaimer: NOT_ADVICE,
     relatedHref: "/portfolio",
   }));
 
-  if (ps.topShare >= 30) {
+  if (top && ps.topShare >= 30) {
     findings.push(mk({
       id: "pf-conc", agent: "Portfolio Analysis", kind: "portfolio",
       title: "Concentration suggestion (draft)",
-      detail: `${ps.shares[0].name} is ${ps.topShare}% of the portfolio — above a balanced single-name target. A draft rebalance toward target weights is prepared. This is a suggestion only and requires your explicit approval; Kira never places trades.`,
+      detail: `${top.name} is ${ps.topShare}% of the portfolio — above a balanced single-name target. A draft rebalance toward target weights is prepared. This is a suggestion only and requires your explicit approval; Kira never places trades.`,
       confidence: 73, sources: ["Position concentration", "Risk tolerance: balanced"],
       rationale: "Single-name share over target; drafted as suggestion, not advice.",
       actionClass: "suggestion", tier: 3, moneyTouching: true, escalate: true,
       informational: true, disclaimer: NOT_ADVICE, relatedHref: "/portfolio",
     }));
   }
-  steps.push({ phase: "analyze", message: `Top concentration ${ps.topShare}%.` });
+  steps.push({ phase: "analyze", message: top ? `Top concentration ${ps.topShare}%.` : "No linked positions to analyse." });
   steps.push({ phase: "plan", message: "Draft rebalance suggestion (no execution)." });
   steps.push({ phase: "escalate", message: "Investment action → requires explicit human approval." });
   return { agent: "Portfolio Analysis", phase: 2, status: "ok", findings, steps, durationMs: 520 };
@@ -312,24 +320,18 @@ export interface GateOutput {
   transformed: Finding[];
 }
 
-export function complianceGate(incoming: Finding[], _ctx: RunContext): GateOutput {
+export function complianceGate(incoming: Finding[], ctx: RunContext): GateOutput {
   const steps: LoopStep[] = [{ phase: "observe", message: `Gate ${incoming.length} findings before they reach the user.` }];
   let relabelled = 0;
   let disclaimed = 0;
+  let prohibited = 0;
   let routedToApproval = 0;
 
   const transformed = incoming.map((f) => {
-    let next = { ...f };
-    // Enforce informational labelling + disclaimer on market/portfolio/news.
-    if (next.kind === "market" || next.kind === "portfolio" || next.kind === "news") {
-      if (!next.informational) { next.informational = true; relabelled++; }
-      if (!next.disclaimer && next.kind !== "news") { next.disclaimer = NOT_ADVICE; disclaimed++; }
-    }
-    // Any money-touching item must be at least Explicit approval (tier 3).
-    if (next.moneyTouching && next.tier < 3) {
-      next.tier = 3 as ApprovalTier;
-      next.escalate = true;
-    }
+    const next = applyFindingPolicy(f, ctx.productPhase);
+    if (!f.informational && next.informational) relabelled++;
+    if (!f.disclaimer && next.disclaimer) disclaimed++;
+    if (next.actionClass === "prohibited") prohibited++;
     if (next.tier >= 3) routedToApproval++;
     return next;
   });
@@ -362,7 +364,7 @@ export function complianceGate(incoming: Finding[], _ctx: RunContext): GateOutpu
   }
 
   steps.push({ phase: "analyze", message: `Relabelled ${relabelled} informational; attached ${disclaimed} disclaimers.` });
-  steps.push({ phase: "act", message: `Blocked 0 prohibited; routed ${routedToApproval} money-touching/regulated items to Approvals.` });
+  steps.push({ phase: "act", message: `Blocked ${prohibited} prohibited; routed ${routedToApproval} money-touching/regulated items to Approvals.` });
   steps.push({ phase: "verify", message: "Advice/info separation enforced; no raw PII left the boundary." });
   steps.push({ phase: "summarize", message: "Gate passed. Output is compliant for delivery." });
 

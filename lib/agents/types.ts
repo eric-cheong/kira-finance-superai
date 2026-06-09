@@ -6,6 +6,7 @@ import type {
   ApprovalTier,
   ConfidenceBand,
   Organization,
+  ProductPhase,
   RunMemory,
   User,
   UserPreference,
@@ -85,6 +86,7 @@ export interface AgentResult {
 export interface RunContext {
   runId: string;
   at: string;
+  productPhase: ProductPhase;
   user: User;
   org: Organization;
   prefs: UserPreference;
@@ -109,6 +111,7 @@ export interface BriefingRun {
     locale: string;
     automationThreshold: number;
     riskTolerance: string;
+    productPhase: ProductPhase;
   };
   agentResults: AgentResult[];
   sections: BriefingSection[];

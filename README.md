@@ -27,20 +27,24 @@ Other scripts: `npm run build`, `npm start`, `npm run typecheck`.
 **The multi-agent engine** (`lib/agents/`) runs one daily-briefing pass through
 the loop **Observe → Analyze → Plan → Act → Verify → Summarize → Escalate**:
 
-- **Orchestrator** (leader) → **User Preference** → parallel fan-out of
-  **Budget/Spend · Risk Monitoring · News Relevance · Market Research (P2) ·
-  Portfolio Analysis (P2)** → **Compliance/Safety gate** → merge & rank →
-  **Notification**, with a **Human Approval** tray for anything money-touching.
+- **Orchestrator** (leader) → **User Preference** → **Budget/Spend** →
+  **Compliance/Safety gate** → merge & rank → **Notification**, with a
+  **Human Approval** tray for anything money-touching.
+- Phase 2 intelligence agents (**Risk Monitoring · News Relevance · Market
+  Research · Portfolio Analysis**) are capability-gated and only join the run
+  when `runDailyBriefing({ maxPhase: 2 })` is requested.
 - Every finding carries a **confidence score, a source, and a rationale**.
 - Four **approval tiers**: (1) no approval · (2) soft · (3) explicit
   (money/e-invoice/investment) · (4) mandatory review (regulated/abnormal).
-- The Compliance gate enforces info-vs-advice separation, attaches disclaimers,
-  labels unverifiable data, and routes money-touching items to approvals.
+- A central policy classifier plus the Compliance gate enforce phase availability,
+  info-vs-advice separation, disclaimers, low-confidence escalation, prohibited
+  actions, and approval routing.
 
 **The screens** (`app/`):
 
 | Route | Screen |
 |---|---|
+| `/onboarding` | Onboarding wizard — org, tax, connectors, feeds, policy, team |
 | `/` | Daily Briefing — runs the live agent orchestration |
 | `/capture` | Capture / Inbox — OCR receipt capture + suggested coding |
 | `/approvals` | Approvals queue — tier-3/4 human-in-the-loop sign-off |
@@ -70,7 +74,13 @@ KL coffee roaster with a Singapore outlet (SST-registered, MyInvois Phase 2).
   spend analytics, read-only briefing. No money movement, no trading.
 - **Phase 2**: portfolio/market/news/risk for personal finance; bill-pay
   orchestration + partner-issued cards via a licensed BaaS; open-banking feeds.
-- **Phase 3**: multi-entity/book/currency, FX revaluation, forecasting, ERP depth.
+- **Phase 3**: full-stack APAC AI-native ERP — append-only customer-owned GL,
+  multi-entity/book/currency, FX revaluation, consolidation, revenue automation,
+  inventory, project accounting, continuous close, forecasting, enterprise
+  compliance, payroll provider integrations, connector marketplace with revenue
+  sharing, optional CRM and manufacturing modules, and multi-region residency
+  enforcement. Settlement, FX execution, disbursement, cards, and e-money still
+  stay on licensed partners.
 
 ## Notes
 

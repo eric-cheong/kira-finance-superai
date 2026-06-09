@@ -84,7 +84,7 @@ export const AUDIT: AuditLogEntry[] = (() => {
   const sorted = [...seed.RAW_AUDIT].sort((a, b) => a.at.localeCompare(b.at));
   let prev = "genesis0000000000";
   return sorted.map((e, i): AuditLogEntry => {
-    const payload = `${e.at}|${e.actor}|${e.action}|${e.target ?? ""}|${e.detail}`;
+    const payload = `${e.at}|${e.actor}|${e.action}|${e.target ?? ""}|${e.detail}|tier:${e.tier ?? ""}`;
     const hash = chainHash(prev, payload);
     const entry: AuditLogEntry = {
       seq: i + 1,
@@ -161,7 +161,7 @@ export function matchStats() {
     matched,
     review,
     unmatched,
-    matchedPct: Math.round((matched / total) * 100),
+    matchedPct: total > 0 ? Math.round((matched / total) * 100) : 0,
   };
 }
 
@@ -228,6 +228,6 @@ export function portfolioStats() {
     valueBase: toBase(p.lastMinor * p.units, p.instrument.currency),
   })).sort((a, b) => b.valueBase - a.valueBase);
   const topShare =
-    valueBase > 0 ? Math.round((shares[0].valueBase / valueBase) * 100) : 0;
+    valueBase > 0 && shares[0] ? Math.round((shares[0].valueBase / valueBase) * 100) : 0;
   return { costBase, valueBase, pnl, pnlPct, topShare, shares };
 }

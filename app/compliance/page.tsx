@@ -88,8 +88,8 @@ export default function CompliancePage() {
     const order: EInvoiceState[] = ["rejected", "queued", "draft", "submitted", "validated", "cancelled"];
     return order.indexOf(a.state) - order.indexOf(b.state);
   });
-  const my = db.COUNTRY_CONFIGS.find((c) => c.country === "MY")!;
-  const sg = db.COUNTRY_CONFIGS.find((c) => c.country === "SG")!;
+  const my = db.COUNTRY_CONFIGS.find((c) => c.country === "MY");
+  const sg = db.COUNTRY_CONFIGS.find((c) => c.country === "SG");
 
   return (
     <div className="animate-in space-y-6">
@@ -125,16 +125,16 @@ export default function CompliancePage() {
         <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">
           <Card>
             <CardHeader title="Malaysia" subtitle="Country config · metadata" icon="bank" />
-            <KeyValue k="Channel" v={my.eInvoiceChannel} />
-            <KeyValue k="Schema" v={my.eInvoiceSchema} />
-            <KeyValue k="Regulator" v={my.regulator} />
+            <KeyValue k="Channel" v={my?.eInvoiceChannel ?? "Not configured"} />
+            <KeyValue k="Schema" v={my?.eInvoiceSchema ?? "—"} />
+            <KeyValue k="Regulator" v={my?.regulator ?? "—"} />
             <KeyValue k="Tax model" v="SST 8%" />
           </Card>
           <Card>
             <CardHeader title="Singapore" subtitle="Country config · metadata" icon="bank" />
-            <KeyValue k="Channel" v={sg.eInvoiceChannel} />
-            <KeyValue k="Schema" v={sg.eInvoiceSchema} />
-            <KeyValue k="Regulator" v={sg.regulator} />
+            <KeyValue k="Channel" v={sg?.eInvoiceChannel ?? "Not configured"} />
+            <KeyValue k="Schema" v={sg?.eInvoiceSchema ?? "—"} />
+            <KeyValue k="Regulator" v={sg?.regulator ?? "—"} />
             <KeyValue k="Tax model" v="GST 9%" />
           </Card>
           <Card>

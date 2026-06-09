@@ -19,6 +19,7 @@ export const metadata = { title: "Portfolio · Kira" };
 
 export default function PortfolioPage() {
   const ps = db.portfolioStats();
+  const topHolding = ps.shares[0];
 
   return (
     <div className="animate-in space-y-6">
@@ -40,7 +41,13 @@ export default function PortfolioPage() {
           tone={ps.pnl >= 0 ? "pos" : "crit"}
         />
         <StatTile label="Holdings" value={db.POSITIONS.length} sub="across 3 currencies" icon="bank" />
-        <StatTile label="Top concentration" value={`${ps.topShare}%`} sub={ps.shares[0].name} icon="alert" tone={ps.topShare >= 30 ? "warn" : "neutral"} />
+        <StatTile
+          label="Top concentration"
+          value={topHolding ? `${ps.topShare}%` : "—"}
+          sub={topHolding ? topHolding.name : "no linked holdings"}
+          icon="alert"
+          tone={ps.topShare >= 30 ? "warn" : "neutral"}
+        />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
@@ -97,9 +104,10 @@ export default function PortfolioPage() {
         <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">
           <Card>
             <CardHeader title="Concentration" subtitle="Share of portfolio value" icon="alert" />
+            {ps.shares.length > 0 ? (
             <div className="space-y-3">
               {ps.shares.map((s) => {
-                const share = Math.round((s.valueBase / ps.valueBase) * 100);
+                const share = ps.valueBase > 0 ? Math.round((s.valueBase / ps.valueBase) * 100) : 0;
                 return (
                   <div key={s.symbol}>
                     <div className="mb-1 flex items-baseline justify-between">
@@ -111,13 +119,18 @@ export default function PortfolioPage() {
                 );
               })}
             </div>
+            ) : (
+              <p className="text-[12.5px] leading-relaxed text-muted">
+                No read-only brokerage positions are linked yet.
+              </p>
+            )}
           </Card>
 
-          {ps.topShare >= 30 && (
+          {topHolding && ps.topShare >= 30 && (
             <Card>
               <CardHeader title="Suggestion (draft)" icon="spark" right={<TierBadge tier={3} />} />
               <p className="text-[12.5px] leading-relaxed text-ink-2">
-                {ps.shares[0].name} is {ps.topShare}% of the portfolio — above a balanced single-name target. A rebalance toward target weights is drafted.
+                {topHolding.name} is {ps.topShare}% of the portfolio — above a balanced single-name target. A rebalance toward target weights is drafted.
               </p>
               <div className="mt-3 flex items-center gap-2 rounded-lg border border-warn-fg/20 bg-warn-bg px-3 py-2 text-[12px] text-warn-fg">
                 <Icon name="lock" size={14} />

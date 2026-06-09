@@ -19,6 +19,7 @@ const NAV: { group: string; items: NavItem[] }[] = [
   {
     group: "Operate",
     items: [
+      { href: "/onboarding", label: "Get Started", icon: "bank" },
       { href: "/", label: "Daily Briefing", icon: "briefing" },
       { href: "/capture", label: "Capture", icon: "capture" },
       { href: "/approvals", label: "Approvals", icon: "approvals", badge: "4" },
@@ -40,6 +41,7 @@ const NAV: { group: string; items: NavItem[] }[] = [
     group: "Govern",
     items: [
       { href: "/audit", label: "Audit & Agents", icon: "audit" },
+      { href: "/roadmap", label: "Build Plan", icon: "doc" },
       { href: "/settings", label: "Settings", icon: "settings" },
     ],
   },
@@ -121,7 +123,7 @@ function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: 
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "/";
   const [open, setOpen] = useState(false);
 
   return (

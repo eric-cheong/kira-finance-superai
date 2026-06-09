@@ -1,6 +1,7 @@
 import * as db from "@/lib/data/store";
 import {
   Badge,
+  Button,
   Card,
   CardHeader,
   Icon,
@@ -37,6 +38,11 @@ export default function SettingsPage() {
       <PageHeader
         title="Settings"
         description="Organisation, tax profile, connectors, team, and the automation controls that govern how much the agents do on their own."
+        actions={
+          <Button variant="outline" size="sm" icon="spark" href="/onboarding">
+            Re-run onboarding
+          </Button>
+        }
       />
 
       <div className="grid gap-6 lg:grid-cols-2">

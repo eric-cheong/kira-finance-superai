@@ -5,7 +5,7 @@
 // splits money-touching items into an Approvals tray. It never approves itself.
 
 import * as db from "../data/store";
-import type { RunMemory } from "../types";
+import type { ProductPhase, RunMemory } from "../types";
 import {
   budgetSpendAgent,
   complianceGate,
@@ -24,6 +24,7 @@ import type {
   Finding,
   FindingKind,
   LoopStep,
+  Phase,
   RunContext,
 } from "./types";
 
@@ -42,7 +43,7 @@ function score(f: Finding): number {
   return f.confidence * KIND_WEIGHT[f.kind];
 }
 
-function buildContext(): RunContext {
+function buildContext(productPhase: ProductPhase): RunContext {
   const memory: RunMemory = {
     lastRunAt: "2026-06-08T07:30:00+08:00",
     recentThemes: ["e-invoicing", "Bangsar launch spend", "FX on imported services"],
@@ -51,6 +52,7 @@ function buildContext(): RunContext {
   return {
     runId: "run_20260609_0730",
     at: db.NOW,
+    productPhase,
     user: db.currentUser(),
     org: db.ORG,
     prefs: db.PREFERENCES,
@@ -59,30 +61,42 @@ function buildContext(): RunContext {
   };
 }
 
-export function runDailyBriefing(): BriefingRun {
-  const ctx = buildContext();
+export function runDailyBriefing({ maxPhase = 1 }: { maxPhase?: Phase } = {}): BriefingRun {
+  const ctx = buildContext(maxPhase);
   const orchestratorLog: string[] = [];
 
   orchestratorLog.push(`Run ${ctx.runId} started at ${ctx.at} for ${ctx.user.name}.`);
-  orchestratorLog.push("Plan: Preference → parallel(Budget, Risk, News, Market, Portfolio) → Compliance gate → merge → Notification.");
+  orchestratorLog.push(`Product phase ${ctx.productPhase}: ${ctx.productPhase === 1 ? "license-free MVP; partnered rails and investment actions remain unavailable" : "expanded intelligence enabled"}.`);
+  orchestratorLog.push(
+    maxPhase >= 2
+      ? "Plan: Preference → parallel(Budget, Risk, News, Market, Portfolio) → Compliance gate → merge → Notification."
+      : "Plan: Preference → Budget/Spend → Compliance gate → merge → Notification. Phase-2 intelligence agents are disabled for the MVP run.",
+  );
 
   // 1) Preference resolves the shared context.
   const pref = userPreferenceAgent(ctx);
 
-  // 2) Independent analysts (modelled as a parallel fan-out).
+  // 2) Independent analysts. In Phase 1, only Budget/Spend is live; the rest are
+  // Phase 2 intelligence agents and must not leak into the MVP briefing.
   const budget = budgetSpendAgent(ctx);
-  const risk = riskMonitoringAgent(ctx);
-  const news = newsRelevanceAgent(ctx);
-  const market = marketResearchAgent(ctx);
-  const portfolio = portfolioAnalysisAgent(ctx);
-  orchestratorLog.push(`Collected findings: Budget ${budget.findings.length}, Risk ${risk.findings.length}, News ${news.findings.length}, Market ${market.findings.length}, Portfolio ${portfolio.findings.length}.`);
+  const phaseTwoResults: AgentResult[] =
+    maxPhase >= 2
+      ? [
+          riskMonitoringAgent(ctx),
+          newsRelevanceAgent(ctx),
+          marketResearchAgent(ctx),
+          portfolioAnalysisAgent(ctx),
+        ]
+      : [];
+  orchestratorLog.push(
+    maxPhase >= 2
+      ? `Collected findings: Budget ${budget.findings.length}, ${phaseTwoResults.map((a) => `${a.agent} ${a.findings.length}`).join(", ")}.`
+      : `Collected findings: Budget ${budget.findings.length}. Phase-2 agents skipped.`,
+  );
 
   const incoming: Finding[] = [
     ...budget.findings,
-    ...risk.findings,
-    ...news.findings,
-    ...market.findings,
-    ...portfolio.findings,
+    ...phaseTwoResults.flatMap((a) => a.findings),
   ];
 
   // 3) Compliance/Safety gate (always before composing output).
@@ -133,7 +147,7 @@ export function runDailyBriefing(): BriefingRun {
   const headline = `${m.total} transactions imported · ${m.matched} auto-matched (${m.matchedPct}%) · ${approvals.length} need approval · close-readiness ${cr.score}%.`;
 
   const agentResults: AgentResult[] = [
-    orchestrator, pref, budget, risk, news, market, portfolio, gate.result, notif.result,
+    orchestrator, pref, budget, ...phaseTwoResults, gate.result, notif.result,
   ];
 
   return {
@@ -146,6 +160,7 @@ export function runDailyBriefing(): BriefingRun {
       locale: ctx.prefs.locale,
       automationThreshold: ctx.automationThreshold,
       riskTolerance: ctx.prefs.riskTolerance,
+      productPhase: ctx.productPhase,
     },
     agentResults,
     sections,
