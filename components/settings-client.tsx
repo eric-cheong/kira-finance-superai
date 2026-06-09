@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import type { UserPreference } from "@/lib/types";
 import { Badge, Button, Card, CardHeader, Icon } from "@/components/ui";
 import { cn } from "@/components/ui/cn";
@@ -8,11 +9,14 @@ import { cn } from "@/components/ui/cn";
 const RISK: UserPreference["riskTolerance"][] = ["conservative", "balanced", "growth"];
 
 export function AutomationControls({ prefs }: { prefs: UserPreference }) {
+  const router = useRouter();
   const [savedPrefs, setSavedPrefs] = useState(prefs);
   const [threshold, setThreshold] = useState(prefs.automationThreshold);
   const [risk, setRisk] = useState(prefs.riskTolerance);
   const [channels, setChannels] = useState(prefs.channels);
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
   const channelKeys = Object.keys(channels) as (keyof typeof channels)[];
   const dirty =
@@ -20,10 +24,32 @@ export function AutomationControls({ prefs }: { prefs: UserPreference }) {
     risk !== savedPrefs.riskTolerance ||
     channelKeys.some((key) => channels[key] !== savedPrefs.channels[key]);
 
-  function save() {
-    setSavedPrefs({ ...savedPrefs, automationThreshold: threshold, riskTolerance: risk, channels });
-    setSaved(true);
-    window.setTimeout(() => setSaved(false), 1800);
+  async function save() {
+    setSaving(true);
+    setError("");
+    try {
+      const response = await fetch("/api/settings/preferences", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ automationThreshold: threshold, riskTolerance: risk, channels }),
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error?.message ?? "Save failed.");
+      }
+      const nextPrefs = payload.data.preferences as UserPreference;
+      setSavedPrefs(nextPrefs);
+      setThreshold(nextPrefs.automationThreshold);
+      setRisk(nextPrefs.riskTolerance);
+      setChannels(nextPrefs.channels);
+      setSaved(true);
+      router.refresh();
+      window.setTimeout(() => setSaved(false), 1800);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Save failed.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   function reset() {
@@ -67,6 +93,11 @@ export function AutomationControls({ prefs }: { prefs: UserPreference }) {
             <Icon name="shield" size={13} className="mt-0.5 shrink-0" />
             Signals at or above {threshold}% can auto-pass; lower confidence queues for review. Money movement, e-invoice submission, and regulated advice <span className="font-medium text-ink-2">always</span> require approval regardless of confidence.
           </p>
+          {error && (
+            <p className="mt-2 rounded-lg border border-crit-fg/20 bg-crit-bg px-3 py-2 text-[12px] text-crit-fg">
+              {error}
+            </p>
+          )}
         </div>
 
         {/* Risk tolerance */}
@@ -119,11 +150,11 @@ export function AutomationControls({ prefs }: { prefs: UserPreference }) {
         </div>
 
         <div className="flex items-center justify-end gap-2 border-t border-border pt-4">
-          <Button variant="ghost" disabled={!dirty} onClick={reset}>
+          <Button variant="ghost" disabled={!dirty || saving} onClick={reset}>
             Cancel
           </Button>
-          <Button variant="primary" disabled={!dirty} onClick={save}>
-            Save changes
+          <Button variant="primary" disabled={!dirty || saving} onClick={save}>
+            {saving ? "Saving" : "Save changes"}
           </Button>
         </div>
       </div>

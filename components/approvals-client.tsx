@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import type { ApprovalRequest } from "@/lib/types";
 import { money } from "@/lib/format";
 import { Badge, Button, Card, ConfidenceChip, Icon, TierBadge } from "@/components/ui";
@@ -9,10 +10,13 @@ import { cn } from "@/components/ui/cn";
 type Decision = "open" | "approved" | "rejected";
 
 export function ApprovalQueue({ initial }: { initial: ApprovalRequest[] }) {
+  const router = useRouter();
   const [decisions, setDecisions] = useState<Record<string, Decision>>(
     Object.fromEntries(initial.map((a) => [a.id, a.state])),
   );
   const [confirming, setConfirming] = useState<string | null>(null);
+  const [pending, setPending] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const counts = {
     open: Object.values(decisions).filter((d) => d === "open").length,
@@ -20,9 +24,30 @@ export function ApprovalQueue({ initial }: { initial: ApprovalRequest[] }) {
     rejected: Object.values(decisions).filter((d) => d === "rejected").length,
   };
 
-  function decide(id: string, d: Decision) {
-    setDecisions((prev) => ({ ...prev, [id]: d }));
-    setConfirming(null);
+  async function decide(id: string, d: Decision, confirm = false) {
+    setPending(id);
+    setErrors((prev) => ({ ...prev, [id]: "" }));
+    try {
+      const response = await fetch(`/api/approvals/${id}/decision`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ decision: d, confirm }),
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error?.message ?? "Approval update failed.");
+      }
+      setDecisions((prev) => ({ ...prev, [id]: payload.data.approval.state }));
+      setConfirming(null);
+      router.refresh();
+    } catch (error) {
+      setErrors((prev) => ({
+        ...prev,
+        [id]: error instanceof Error ? error.message : "Approval update failed.",
+      }));
+    } finally {
+      setPending(null);
+    }
   }
 
   return (
@@ -98,11 +123,11 @@ export function ApprovalQueue({ initial }: { initial: ApprovalRequest[] }) {
                             : "Irreversible action. This cannot be undone after approval."}
                         </p>
                         <div className="mt-2 grid grid-cols-2 gap-2">
-                          <Button variant="outline" size="sm" onClick={() => setConfirming(null)} className="w-full">
+                          <Button variant="outline" size="sm" disabled={pending === a.id} onClick={() => setConfirming(null)} className="w-full">
                             Cancel
                           </Button>
-                          <Button variant="danger" size="sm" onClick={() => decide(a.id, "approved")} className="w-full">
-                            Confirm
+                          <Button variant="danger" size="sm" disabled={pending === a.id} onClick={() => decide(a.id, "approved", true)} className="w-full">
+                            {pending === a.id ? "Saving" : "Confirm"}
                           </Button>
                         </div>
                       </div>
@@ -111,12 +136,13 @@ export function ApprovalQueue({ initial }: { initial: ApprovalRequest[] }) {
                         <Button
                           variant="primary"
                           icon="check"
+                          disabled={pending === a.id}
                           onClick={() => (requiresExtraConfirm ? setConfirming(a.id) : decide(a.id, "approved"))}
                           className="w-full"
                         >
-                          Approve
+                          {pending === a.id ? "Saving" : "Approve"}
                         </Button>
-                        <Button variant="danger" onClick={() => decide(a.id, "rejected")} className="w-full">
+                        <Button variant="danger" disabled={pending === a.id} onClick={() => decide(a.id, "rejected")} className="w-full">
                           Reject
                         </Button>
                         <p className="text-center text-[11px] text-faint">
@@ -134,11 +160,16 @@ export function ApprovalQueue({ initial }: { initial: ApprovalRequest[] }) {
                       <Icon name={d === "approved" ? "check" : "alert"} size={18} />
                       <span className="text-[13px] font-semibold capitalize">{d}</span>
                       {(a.reversible || d === "rejected") && (
-                        <button onClick={() => decide(a.id, "open")} className="text-[11px] text-muted underline-offset-2 hover:underline">
+                        <button onClick={() => decide(a.id, "open")} disabled={pending === a.id} className="text-[11px] text-muted underline-offset-2 hover:underline disabled:opacity-50">
                           undo
                         </button>
                       )}
                     </div>
+                  )}
+                  {errors[a.id] && (
+                    <p className="rounded-lg border border-crit-fg/20 bg-crit-bg px-2 py-1.5 text-[11.5px] text-crit-fg">
+                      {errors[a.id]}
+                    </p>
                   )}
                 </div>
               </div>

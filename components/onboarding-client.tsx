@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Badge, Button, Card, Icon, type IconName } from "@/components/ui";
 import { cn } from "@/components/ui/cn";
 
@@ -63,16 +64,47 @@ function Choice({
 }
 
 export function OnboardingWizard() {
+  const router = useRouter();
   const [i, setI] = useState(0);
   const [country, setCountry] = useState<"MY" | "SG">("MY");
   const [accounting, setAccounting] = useState("AutoCount");
   const [orgName, setOrgName] = useState("Kira Roasters Sdn Bhd");
   const [industry, setIndustry] = useState("F&B · Specialty Coffee");
   const [done, setDone] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
   const step = STEPS[i];
   const pct = Math.round(((i + 1) / STEPS.length) * 100);
   const orgStepValid = orgName.trim().length > 1 && industry.trim().length > 1;
+
+  async function finishSetup() {
+    setSubmitting(true);
+    setError("");
+    try {
+      const response = await fetch("/api/onboarding", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          legalName: orgName,
+          country,
+          industry,
+          accountingProvider: accounting,
+          feeds: ["Maybank", "CIMB", "DBS"],
+        }),
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error?.message ?? "Onboarding failed.");
+      }
+      setDone(true);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Onboarding failed.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   if (done) {
     return (
@@ -188,7 +220,7 @@ export function OnboardingWizard() {
           {step.key === "accounting" && (
             <Field label="Connect your accounting system (records sync here)">
               <div className="grid grid-cols-2 gap-2">
-                {["AutoCount", "SQL Account", "Xero", "QuickBooks"].map((a) => (
+                {["AutoCount", "SQL Account", "Xero"].map((a) => (
                   <Choice
                     key={a}
                     label={a}
@@ -258,8 +290,14 @@ export function OnboardingWizard() {
           )}
         </div>
 
+        {error && (
+          <p className="mt-4 rounded-lg border border-crit-fg/20 bg-crit-bg px-3 py-2 text-[12px] text-crit-fg">
+            {error}
+          </p>
+        )}
+
         <div className="mt-6 flex items-center justify-between border-t border-border pt-4">
-          <Button variant="ghost" disabled={i === 0} onClick={() => setI((n) => Math.max(0, n - 1))}>
+          <Button variant="ghost" disabled={i === 0 || submitting} onClick={() => setI((n) => Math.max(0, n - 1))}>
             Back
           </Button>
           {i < STEPS.length - 1 ? (
@@ -272,8 +310,8 @@ export function OnboardingWizard() {
               Continue
             </Button>
           ) : (
-            <Button variant="primary" icon="check" onClick={() => setDone(true)}>
-              Finish setup
+            <Button variant="primary" icon="check" disabled={submitting} onClick={finishSetup}>
+              {submitting ? "Finishing" : "Finish setup"}
             </Button>
           )}
         </div>

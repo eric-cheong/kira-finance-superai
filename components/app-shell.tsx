@@ -12,7 +12,12 @@ interface NavItem {
   label: string;
   icon: IconName;
   phase?: 2;
-  badge?: string;
+}
+
+interface ShellSession {
+  user: { name: string; title: string };
+  org: { brandName: string };
+  navigationBadges: { approvals: number };
 }
 
 const NAV: { group: string; items: NavItem[] }[] = [
@@ -23,7 +28,7 @@ const NAV: { group: string; items: NavItem[] }[] = [
       { href: "/", label: "Daily Briefing", icon: "briefing" },
       { href: "/operating-functions", label: "Operating Functions", icon: "workflow" },
       { href: "/capture", label: "Capture", icon: "capture" },
-      { href: "/approvals", label: "Approvals", icon: "approvals", badge: "4" },
+      { href: "/approvals", label: "Approvals", icon: "approvals" },
       { href: "/transactions", label: "Transactions", icon: "transactions" },
       { href: "/bookings", label: "Bookings", icon: "flight" },
       { href: "/erp-close", label: "ERP Close", icon: "closeBooks" },
@@ -62,7 +67,18 @@ const SEARCH_ITEMS = NAV.flatMap((group) =>
   })),
 );
 
-function NavLink({ item, active, onClick }: { item: NavItem; active: boolean; onClick?: () => void }) {
+function NavLink({
+  item,
+  active,
+  approvalBadge,
+  onClick,
+}: {
+  item: NavItem;
+  active: boolean;
+  approvalBadge?: string;
+  onClick?: () => void;
+}) {
+  const badge = item.href === "/approvals" ? approvalBadge : undefined;
   return (
     <li>
       <Link
@@ -79,9 +95,9 @@ function NavLink({ item, active, onClick }: { item: NavItem; active: boolean; on
         {item.phase === 2 && (
           <span className="badge badge-outline badge-xs border-base-300 text-ink">P2</span>
         )}
-        {item.badge && (
+        {badge && (
           <span className="badge badge-outline badge-xs min-w-[18px] border-base-300 text-ink">
-            {item.badge}
+            {badge}
           </span>
         )}
       </Link>
@@ -201,7 +217,19 @@ function CommandSearch() {
   );
 }
 
-function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
+function SidebarBody({
+  pathname,
+  session,
+  onNavigate,
+}: {
+  pathname: string;
+  session: ShellSession | null;
+  onNavigate?: () => void;
+}) {
+  const approvalBadge = session?.navigationBadges.approvals ? String(session.navigationBadges.approvals) : undefined;
+  const userName = session?.user.name ?? "Amir Hafiz";
+  const userTitle = session?.user.title ?? "Finance Lead";
+  const orgName = session?.org.brandName ?? "Kira Roasters";
   return (
     <div className="flex h-full flex-col">
       <div className="px-3 pb-4 pt-5">
@@ -219,6 +247,7 @@ function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: 
                   key={item.href}
                   item={item}
                   active={item.href === "/" ? pathname === "/" : pathname.startsWith(item.href)}
+                  approvalBadge={approvalBadge}
                   onClick={onNavigate}
                 />
               ))}
@@ -228,10 +257,10 @@ function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: 
       </nav>
       <div className="border-t border-border p-3">
         <div className="flex items-center gap-2.5 rounded-lg px-1.5 py-1.5">
-          <Avatar name="Amir Hafiz" />
+          <Avatar name={userName} />
           <div className="min-w-0 flex-1 leading-tight">
-            <div className="truncate text-[13px] font-medium text-ink">Amir Hafiz</div>
-            <div className="truncate text-[11.5px] text-muted">Finance Lead · Kira Roasters</div>
+            <div className="truncate text-[13px] font-medium text-ink">{userName}</div>
+            <div className="truncate text-[11.5px] text-muted">{userTitle} · {orgName}</div>
           </div>
         </div>
       </div>
@@ -243,6 +272,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname() ?? "/";
   const [open, setOpen] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
+  const [session, setSession] = useState<ShellSession | null>(null);
 
   useEffect(() => {
     const query = window.matchMedia("(min-width: 1024px)");
@@ -251,6 +281,19 @@ export function AppShell({ children }: { children: ReactNode }) {
     query.addEventListener("change", sync);
     return () => query.removeEventListener("change", sync);
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/session")
+      .then((response) => response.json())
+      .then((payload) => {
+        if (!cancelled && payload.ok) setSession(payload.data);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname]);
 
   const navHidden = !open && !isDesktop;
 
@@ -286,7 +329,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <Icon name="bell" size={18} />
             </Link>
             <div className="lg:hidden">
-              <Avatar name="Amir Hafiz" size={28} />
+              <Avatar name={session?.user.name ?? "Amir Hafiz"} size={28} />
             </div>
           </div>
         </header>
@@ -308,7 +351,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           )}
           aria-hidden={navHidden}
         >
-          <SidebarBody pathname={pathname} onNavigate={() => setOpen(false)} />
+          <SidebarBody pathname={pathname} session={session} onNavigate={() => setOpen(false)} />
         </aside>
       </div>
     </div>

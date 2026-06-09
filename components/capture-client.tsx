@@ -1,41 +1,118 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import type { Receipt } from "@/lib/types";
 import { money } from "@/lib/format";
 import { Button, Card, ConfidenceChip, Icon } from "@/components/ui";
 import { Thumb } from "@/components/thumb";
 
 type Stage = "idle" | "scanning" | "extracted" | "confirmed";
+type CaptureSource = "mobile" | "email" | "upload";
 
-// A deterministic mock of the capture → OCR → suggest → confirm loop.
-const MOCK = {
-  supplier: "Common Roots Roastery",
-  docNo: "CRR-2026-0612",
-  docDate: "2026-06-09",
-  totalMinor: 128400,
-  currency: "MYR" as const,
-  fields: [
-    { k: "Account", v: "5010 · COGS — Coffee & Raw Materials", c: 96 },
-    { k: "Tax code", v: "OUT · Out of scope (goods)", c: 88 },
-    { k: "Cost centre", v: "CC-TTDI · TTDI Roastery", c: 84 },
-  ],
-};
+interface CaptureField {
+  label: string;
+  value: string;
+  confidence: number;
+}
+
+interface CaptureDraft {
+  receipt: Receipt;
+  fields: CaptureField[];
+  reviewThreshold: number;
+  needsReview: boolean;
+}
 
 export function CaptureBox() {
+  const router = useRouter();
   const [stage, setStage] = useState<Stage>("idle");
+  const [draft, setDraft] = useState<CaptureDraft | null>(null);
   const [reviewed, setReviewed] = useState(false);
-  const reviewThreshold = 85;
-  const needsReview = MOCK.fields.some((field) => field.c < reviewThreshold);
-  const canPost = !needsReview || reviewed;
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const reviewThreshold = draft?.reviewThreshold ?? 85;
+  const needsReview = draft?.needsReview ?? false;
+  const canPost = Boolean(draft) && (!needsReview || reviewed);
 
-  function snap() {
+  async function snap(source: CaptureSource) {
+    setBusy(true);
+    setError("");
+    setDraft(null);
     setReviewed(false);
     setStage("scanning");
-    setTimeout(() => setStage("extracted"), 900);
+    try {
+      const [response] = await Promise.all([
+        fetch("/api/capture", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ source }),
+        }),
+        new Promise((resolve) => window.setTimeout(resolve, 500)),
+      ]);
+      const payload = await response.json();
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error?.message ?? "Capture failed.");
+      }
+      setDraft(payload.data);
+      setReviewed(!payload.data.needsReview);
+      setStage("extracted");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Capture failed.");
+      setStage("idle");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function reviewCoding() {
+    if (!draft) return;
+    setBusy(true);
+    setError("");
+    try {
+      const response = await fetch(`/api/capture/${draft.receipt.id}/review`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error?.message ?? "Review failed.");
+      }
+      setDraft(payload.data);
+      setReviewed(true);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Review failed.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function confirmPost() {
+    if (!draft) return;
+    setBusy(true);
+    setError("");
+    try {
+      const response = await fetch(`/api/capture/${draft.receipt.id}/post`, { method: "POST" });
+      const payload = await response.json();
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error?.message ?? "Post failed.");
+      }
+      setDraft((current) => (current ? { ...current, receipt: payload.data.receipt, needsReview: false } : current));
+      setStage("confirmed");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Post failed.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   function reset() {
     setReviewed(false);
+    setDraft(null);
+    setError("");
     setStage("idle");
   }
 
@@ -51,13 +128,14 @@ export function CaptureBox() {
             <p className="mt-0.5 text-[12.5px] text-muted">Snap a photo, or forward to inbox@kiraroasters.kira.my</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="primary" icon="capture" onClick={snap}>
-              Snap receipt
+            <Button variant="primary" icon="capture" disabled={busy} onClick={() => snap("mobile")}>
+              {busy ? "Capturing" : "Snap receipt"}
             </Button>
-            <Button variant="outline" icon="doc" onClick={snap}>
+            <Button variant="outline" icon="doc" disabled={busy} onClick={() => snap("email")}>
               Forward invoice
             </Button>
           </div>
+          {error && <p className="text-[12px] text-crit-fg">{error}</p>}
         </div>
       )}
 
@@ -74,29 +152,29 @@ export function CaptureBox() {
         </div>
       )}
 
-      {(stage === "extracted" || stage === "confirmed") && (
+      {(stage === "extracted" || stage === "confirmed") && draft && (
         <div>
           <div className="flex items-start gap-3">
             <Thumb hint="beans" size={48} />
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between gap-2">
-                <h3 className="text-[15px] font-semibold text-ink">{MOCK.supplier}</h3>
-                <span className="tnum text-[15px] font-semibold text-ink">{money(MOCK.totalMinor, MOCK.currency)}</span>
+                <h3 className="text-[15px] font-semibold text-ink">{draft.receipt.supplier}</h3>
+                <span className="tnum text-[15px] font-semibold text-ink">{money(draft.receipt.totalMinor, draft.receipt.currency)}</span>
               </div>
               <p className="text-[12.5px] text-muted">
-                {MOCK.docNo} · {MOCK.docDate} · captured via mobile
+                {draft.receipt.docNo} · {draft.receipt.docDate} · captured via {draft.receipt.capturedVia}
               </p>
             </div>
           </div>
 
           <div className="mt-4 space-y-2">
-            {MOCK.fields.map((f) => (
-              <div key={f.k} className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface-2/40 px-3 py-2">
+            {draft.fields.map((f) => (
+              <div key={f.label} className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface-2/40 px-3 py-2">
                 <div className="min-w-0">
-                  <div className="text-[11px] font-medium uppercase tracking-wide text-faint">{f.k}</div>
-                  <div className="truncate text-[13px] text-ink">{f.v}</div>
+                  <div className="text-[11px] font-medium uppercase tracking-wide text-faint">{f.label}</div>
+                  <div className="truncate text-[13px] text-ink">{f.value}</div>
                 </div>
-                <ConfidenceChip value={f.c} showWord={false} />
+                <ConfidenceChip value={f.confidence} showWord={false} />
               </div>
             ))}
           </div>
@@ -110,10 +188,10 @@ export function CaptureBox() {
 
           {stage === "extracted" ? (
             <div className="mt-4 flex items-center gap-2">
-              <Button variant="primary" icon="check" disabled={!canPost} onClick={() => setStage("confirmed")}>
-                Confirm & post
+              <Button variant="primary" icon="check" disabled={!canPost || busy} onClick={confirmPost}>
+                {busy ? "Posting" : "Confirm & post"}
               </Button>
-              <Button variant={reviewed ? "outline" : "ghost"} onClick={() => setReviewed(true)}>
+              <Button variant={reviewed ? "outline" : "ghost"} disabled={busy} onClick={reviewCoding}>
                 {reviewed ? "Coding reviewed" : "Adjust coding"}
               </Button>
               <button onClick={reset} className="ml-auto text-[12px] text-muted hover:underline">
@@ -129,6 +207,11 @@ export function CaptureBox() {
                 capture another
               </button>
             </div>
+          )}
+          {error && (
+            <p className="mt-3 rounded-lg border border-crit-fg/20 bg-crit-bg px-3 py-2 text-[12px] text-crit-fg">
+              {error}
+            </p>
           )}
         </div>
       )}

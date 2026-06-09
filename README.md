@@ -67,10 +67,26 @@ KL coffee roaster with a Singapore outlet (SST-registered, MyInvois Phase 2).
 
 - **Next.js 14 (App Router) + TypeScript + Tailwind** — minimalist, consistent UI
   driven by design tokens in `app/globals.css` and `components/ui/`.
-- **No database required** — `lib/data/store.ts` is a pure query layer over
-  deterministic seed data; swap it for Postgres without touching the UI.
+- **Local backend included** — `app/api/**` exposes the product workflows over
+  HTTP, backed by a deterministic runtime state store seeded from
+  `lib/data/seed.ts`. Local mutations persist to `.kira-data/state.json`.
 - **Orchestrate, never settle** — every feature is designed to stay above the
   regulated perimeter (Singapore PSA, Malaysia FSA/BNM).
+
+## Local backend
+
+The backend is offline-first and needs no API keys or external services.
+
+- `lib/backend/state.ts` owns the local runtime store and hash-chained audit
+  materialization.
+- `lib/backend/services.ts` owns validation and workflow rules for approvals,
+  capture/posting, booking decisions, onboarding, preferences, and read models.
+- `app/api/**/route.ts` contains thin Next route handlers over those services.
+- `lib/data/store.ts` remains the server-page query facade so the UI can move to
+  Postgres or SQLite later without rewriting screens.
+
+See [docs/backend-api.md](docs/backend-api.md) for route contracts and safety
+constraints.
 
 ## Roadmap (per the build spec)
 
