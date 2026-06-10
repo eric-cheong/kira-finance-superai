@@ -11,6 +11,7 @@ import type {
   User,
   UserPreference,
 } from "../types";
+import type { BriefingRunState } from "../backend/state";
 
 export type AgentName =
   | "Orchestrator"
@@ -127,6 +128,7 @@ export interface BriefingRun {
     approvalsCount: number;
     escalationsCount: number;
   };
+  runControl: BriefingRunState;
   orchestratorLog: string[];
   notificationNote: string;
 }

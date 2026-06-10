@@ -45,6 +45,11 @@ const textareaCls =
   "min-h-[88px] w-full resize-y rounded-lg border border-border bg-surface px-3 py-2.5 text-[13px] leading-relaxed text-ink outline-none transition placeholder:text-faint focus:border-brand focus:ring-2 focus:ring-brand/10";
 const selectCls =
   "h-11 w-full rounded-lg border border-border bg-surface px-3 text-[13px] text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/10";
+const searchBlockCls =
+  "min-w-0 rounded-md border border-border bg-surface px-3 py-2 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/10";
+const searchLabelCls = "mb-1 block text-[10px] font-semibold uppercase tracking-[0.14em] text-faint";
+const searchInputCls =
+  "h-8 w-full min-w-0 bg-transparent text-[13.5px] font-semibold text-ink outline-none placeholder:text-faint";
 
 function Field({ label, children, hint }: { label: string; children: ReactNode; hint?: string }) {
   return (
@@ -89,8 +94,18 @@ function statusBadge(status: ReviewSearchResult["search"]["status"]) {
   return <Badge variant="warn" dot>provider fallback</Badge>;
 }
 
+function locationCode(value: string) {
+  const normal = value.toLowerCase();
+  if (/\b(kul|kl|kuala lumpur)\b/.test(normal)) return "KUL";
+  if (/\b(sin|singapore)\b/.test(normal)) return "SIN";
+  if (/\b(jhb|johor bahru)\b/.test(normal)) return "JHB";
+  return "";
+}
+
 export function BookingsResearchWorkspace() {
   const router = useRouter();
+  const [researchMode, setResearchMode] = useState<"quote" | "reviews">("quote");
+  const [advancedOpen, setAdvancedOpen] = useState(false);
   const [quoteForm, setQuoteForm] = useState({
     type: "flight" as BookingType,
     description: "KL to Singapore return for 2 travellers, 12-14 Jun",
@@ -124,7 +139,8 @@ export function BookingsResearchWorkspace() {
     try {
       const budgetMajor = Number(quoteForm.budget);
       if (!Number.isFinite(budgetMajor) || budgetMajor <= 0) throw new Error("Enter a positive budget.");
-      const travellers = Number(quoteForm.travellers);
+      const travellers = Number.parseInt(quoteForm.travellers, 10);
+      if (!Number.isFinite(travellers) || travellers < 1) throw new Error("Enter at least one traveller.");
       const data = await parsePayload(await fetch("/api/booking-quotes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -137,7 +153,7 @@ export function BookingsResearchWorkspace() {
           destination: quoteForm.destination.trim() || undefined,
           departDate: quoteForm.departDate || undefined,
           returnDate: quoteForm.returnDate || undefined,
-          travellers: Number.isFinite(travellers) ? travellers : 1,
+          travellers,
           userLocation: quoteForm.userLocation.trim() || undefined,
         }),
       }));
@@ -156,6 +172,8 @@ export function BookingsResearchWorkspace() {
     setReviewError("");
     setReviewResult(null);
     try {
+      const numResults = Number.parseInt(reviewForm.numResults, 10);
+      if (!Number.isFinite(numResults) || numResults < 1 || numResults > 10) throw new Error("Choose 1 to 10 results.");
       const data = await parsePayload(await fetch("/api/consumer/reviews/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -163,7 +181,7 @@ export function BookingsResearchWorkspace() {
           subject: reviewForm.subject.trim(),
           query: reviewForm.query.trim() || undefined,
           userLocation: reviewForm.userLocation.trim() || undefined,
-          numResults: Number(reviewForm.numResults),
+          numResults,
         }),
       }));
       setReviewResult(data as ReviewSearchResult);
@@ -176,84 +194,320 @@ export function BookingsResearchWorkspace() {
 
   const quoteFallback = quoteResult?.research?.provider === "local-fallback";
   const reviewFallback = reviewResult ? reviewResult.search.status !== "live" : false;
+  const activeState = researchMode === "quote" ? quoteState : reviewState;
+  const isBusy = activeState === "loading";
+  const quickValue = researchMode === "quote" ? quoteForm.description : reviewForm.subject;
+  const quickPlaceholder =
+    researchMode === "quote"
+      ? "Search a trip or item, e.g. KL to Singapore return for 2 travellers, 12-14 Jun"
+      : "Search reviews, caveats, refunds, baggage issues, or hidden fees";
+
+  function quoteFieldsFromText(value: string, current = quoteForm) {
+    const lower = value.toLowerCase();
+    const inferred = { ...current, description: value };
+    const routeMatch = value.match(/\b(.+?)\s+to\s+(.+?)(?:\s+(?:return|for|under|from|on|,)|$)/i);
+    const budgetMatch =
+      value.match(/\b(MYR|SGD|USD)\s*([0-9]+(?:\.[0-9]+)?)/i) ??
+      value.match(/\b(?:under|below|max|budget)\s*(MYR|SGD|USD)?\s*([0-9]+(?:\.[0-9]+)?)/i);
+    const travellerMatch = value.match(/\b([1-9])\s*(?:travellers|travelers|people|pax)\b/i);
+
+    if (/\b(hotel|stay|nights?|near)\b/i.test(value)) {
+      inferred.type = "hotel";
+      inferred.origin = "";
+      inferred.destination = /\bklcc\b/i.test(value) ? "KLCC" : inferred.destination;
+    } else if (routeMatch || /\b(flight|return|depart|airport)\b/i.test(value)) {
+      inferred.type = "flight";
+    }
+
+    if (routeMatch) {
+      const origin = locationCode(routeMatch[1]);
+      const destination = locationCode(routeMatch[2]);
+      if (origin) inferred.origin = origin;
+      if (destination) inferred.destination = destination;
+    }
+
+    if (budgetMatch) {
+      const currency = (budgetMatch[1] || inferred.currency).toUpperCase();
+      if (currency === "MYR" || currency === "SGD" || currency === "USD") inferred.currency = currency;
+      inferred.budget = budgetMatch[2];
+    }
+
+    if (travellerMatch) inferred.travellers = travellerMatch[1];
+    if (/\b12\s*[-–]\s*14\s+jun\b/i.test(value)) {
+      inferred.departDate = "2026-06-12";
+      inferred.returnDate = "2026-06-14";
+    }
+    if (lower.includes("hotel near klcc")) {
+      inferred.origin = "";
+      inferred.destination = "KLCC";
+      inferred.budget = inferred.budget || "900";
+      inferred.currency = "MYR";
+    }
+
+    return inferred;
+  }
+
+  function updateQuickValue(value: string) {
+    if (researchMode === "quote") {
+      setQuoteForm((current) => quoteFieldsFromText(value, current));
+      return;
+    }
+    setReviewForm((current) => ({ ...current, subject: value }));
+  }
+
+  function applySuggestion(mode: "quote" | "reviews", value: string) {
+    setResearchMode(mode);
+    if (mode === "quote") {
+      setQuoteForm((current) => quoteFieldsFromText(value, current));
+      return;
+    }
+    setReviewForm((current) => ({ ...current, subject: value }));
+  }
 
   return (
     <Card>
       <CardHeader
         title="AI research"
-        subtitle="Create a quote request or search consumer review sources before approval."
+        subtitle="Search once. Kira turns it into quote research or review evidence for approval."
         icon="spark"
         right={<Badge variant="info" dot>human approval required</Badge>}
       />
 
-      <div className="grid gap-5 lg:grid-cols-[1fr_1fr]">
-        <form onSubmit={submitQuote} className="min-w-0 space-y-4 rounded-lg border border-border bg-surface-2/35 p-4">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <h3 className="text-[14px] font-semibold text-ink">Create quote research</h3>
-              <p className="mt-0.5 text-[12px] text-muted">Posts to /api/booking-quotes and adds an approval-only quote.</p>
+      <form
+        onSubmit={researchMode === "quote" ? submitQuote : submitReviews}
+        className="space-y-4 rounded-lg border border-border bg-surface-2/45 p-3 sm:p-4"
+      >
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="inline-flex w-full rounded-lg border border-border bg-surface p-1 md:w-auto">
+            {[
+              { key: "quote" as const, label: "Quote research", icon: "flight" as const },
+              { key: "reviews" as const, label: "Reviews", icon: "search" as const },
+            ].map((mode) => (
+              <button
+                key={mode.key}
+                type="button"
+                onClick={() => setResearchMode(mode.key)}
+                aria-pressed={researchMode === mode.key}
+                className={cn(
+                  "inline-flex min-h-9 flex-1 items-center justify-center gap-2 rounded-md px-3 text-[12.5px] font-medium transition md:flex-none",
+                  researchMode === mode.key
+                    ? "bg-brand-soft text-ink shadow-card"
+                    : "text-muted hover:bg-surface-2 hover:text-ink",
+                )}
+              >
+                <Icon name={mode.icon} size={14} />
+                {mode.label}
+              </button>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {researchMode === "quote" ? (
+              <>
+                <span className="rounded-full border border-border bg-surface px-2 py-0.5 text-2xs font-medium text-muted">{quoteForm.type}</span>
+                <span className="rounded-full border border-border bg-surface px-2 py-0.5 text-2xs font-medium text-muted">{quoteForm.currency} {quoteForm.budget}</span>
+                <span className="rounded-full border border-border bg-surface px-2 py-0.5 text-2xs font-medium text-muted">{quoteForm.travellers} traveller{quoteForm.travellers === "1" ? "" : "s"}</span>
+              </>
+            ) : (
+              <>
+                <span className="rounded-full border border-border bg-surface px-2 py-0.5 text-2xs font-medium text-muted">{reviewForm.userLocation || "global"}</span>
+                <span className="rounded-full border border-border bg-surface px-2 py-0.5 text-2xs font-medium text-muted">{reviewForm.numResults} results</span>
+                {reviewResult && statusBadge(reviewResult.search.status)}
+              </>
+            )}
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-border bg-surface p-2 shadow-card">
+          {researchMode === "quote" ? (
+            <div className="grid gap-1.5 md:grid-cols-2 lg:grid-cols-[minmax(0,1.35fr)_minmax(4.5rem,.42fr)_minmax(4.5rem,.42fr)_minmax(7.5rem,.7fr)_minmax(7.5rem,.7fr)_minmax(8rem,.78fr)_8.25rem] lg:items-stretch">
+              <label className={searchBlockCls}>
+                <span className={searchLabelCls}>Request</span>
+                <input
+                  className={searchInputCls}
+                  value={quickValue}
+                  onChange={(event) => updateQuickValue(event.target.value)}
+                  placeholder={quickPlaceholder}
+                  required
+                />
+              </label>
+              <label className={searchBlockCls}>
+                <span className={searchLabelCls}>From</span>
+                <input className={searchInputCls} value={quoteForm.origin} onChange={(event) => setQuoteForm((current) => ({ ...current, origin: event.target.value.toUpperCase() }))} placeholder="KUL" />
+              </label>
+              <label className={searchBlockCls}>
+                <span className={searchLabelCls}>To</span>
+                <input className={searchInputCls} value={quoteForm.destination} onChange={(event) => setQuoteForm((current) => ({ ...current, destination: event.target.value.toUpperCase() }))} placeholder="SIN" />
+              </label>
+              <label className={searchBlockCls}>
+                <span className={searchLabelCls}>Depart</span>
+                <input aria-label="Depart date" type="date" className={cn(searchInputCls, "min-h-10 text-[12px]")} value={quoteForm.departDate} onChange={(event) => setQuoteForm((current) => ({ ...current, departDate: event.target.value }))} />
+              </label>
+              <label className={searchBlockCls}>
+                <span className={searchLabelCls}>Return</span>
+                <input aria-label="Return date" type="date" min={quoteForm.departDate || undefined} className={cn(searchInputCls, "min-h-10 text-[12px]")} value={quoteForm.returnDate} onChange={(event) => setQuoteForm((current) => ({ ...current, returnDate: event.target.value }))} />
+              </label>
+              <label className={searchBlockCls}>
+                <span className={searchLabelCls}>Budget</span>
+                <span className="flex items-center gap-1.5">
+                  <select className="h-7 bg-transparent text-[13px] font-semibold text-ink outline-none" value={quoteForm.currency} onChange={(event) => setQuoteForm((current) => ({ ...current, currency: event.target.value as CurrencyCode }))}>
+                    <option value="MYR">MYR</option>
+                    <option value="SGD">SGD</option>
+                    <option value="USD">USD</option>
+                  </select>
+                  <input className={searchInputCls} inputMode="decimal" value={quoteForm.budget} onChange={(event) => setQuoteForm((current) => ({ ...current, budget: event.target.value }))} required />
+                </span>
+              </label>
+              <Button type="submit" variant="primary" icon="search" disabled={isBusy} className="min-h-[58px] w-full lg:w-auto">
+                {isBusy ? "Researching" : "Research"}
+              </Button>
             </div>
-            {quoteState === "success" && <Badge variant={quoteFallback ? "neutral" : "pos"}>{quoteFallback ? "fallback" : "created"}</Badge>}
+          ) : (
+            <div className="grid gap-1.5 md:grid-cols-2 lg:grid-cols-[1.6fr_1fr_.45fr_.45fr_auto] lg:items-stretch">
+              <label className={searchBlockCls}>
+                <span className={searchLabelCls}>Subject</span>
+                <input
+                  className={searchInputCls}
+                  value={quickValue}
+                  onChange={(event) => updateQuickValue(event.target.value)}
+                  placeholder={quickPlaceholder}
+                  required
+                />
+              </label>
+              <label className={searchBlockCls}>
+                <span className={searchLabelCls}>Focus</span>
+                <input className={searchInputCls} value={reviewForm.query} onChange={(event) => setReviewForm((current) => ({ ...current, query: event.target.value }))} placeholder="refunds, fees, complaints" />
+              </label>
+              <label className={searchBlockCls}>
+                <span className={searchLabelCls}>Region</span>
+                <input className={searchInputCls} value={reviewForm.userLocation} onChange={(event) => setReviewForm((current) => ({ ...current, userLocation: event.target.value.toUpperCase() }))} placeholder="MY" />
+              </label>
+              <label className={searchBlockCls}>
+                <span className={searchLabelCls}>Results</span>
+                <input type="number" min={1} max={10} className={searchInputCls} value={reviewForm.numResults} onChange={(event) => setReviewForm((current) => ({ ...current, numResults: event.target.value }))} />
+              </label>
+              <Button type="submit" variant="primary" icon="search" disabled={isBusy} className="min-h-[58px] w-full lg:w-auto">
+                {isBusy ? "Searching" : "Search"}
+              </Button>
+            </div>
+          )}
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => applySuggestion("quote", "KL to Singapore return for 2 travellers, 12-14 Jun")}
+            className="rounded-full border border-border bg-surface px-3 py-1.5 text-[12px] text-muted hover:border-border-strong hover:text-ink"
+          >
+            KL to Singapore return
+          </button>
+          <button
+            type="button"
+            onClick={() => applySuggestion("reviews", "AirAsia KL to Singapore baggage and refund experience")}
+            className="rounded-full border border-border bg-surface px-3 py-1.5 text-[12px] text-muted hover:border-border-strong hover:text-ink"
+          >
+            AirAsia baggage reviews
+          </button>
+          <button
+            type="button"
+            onClick={() => applySuggestion("quote", "Hotel near KLCC for 3 nights under MYR 900")}
+            className="rounded-full border border-border bg-surface px-3 py-1.5 text-[12px] text-muted hover:border-border-strong hover:text-ink"
+          >
+            Hotel near KLCC
+          </button>
+        </div>
+
+        <p className="flex items-start gap-1.5 text-[12px] leading-relaxed text-muted">
+          <Icon name="lock" size={13} className="mt-0.5 shrink-0" />
+          {researchMode === "quote"
+            ? "Creates quote options only. No reservation, payment, supplier contact, or booking is made."
+            : "Searches public review evidence only. No quote, booking, payment, or supplier action is created."}
+        </p>
+
+        <details open={advancedOpen} onToggle={(event) => setAdvancedOpen(event.currentTarget.open)} className="group">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-lg border border-border bg-surface px-3 py-2.5 text-[12.5px] font-medium text-ink hover:border-border-strong">
+            <span>Advanced details</span>
+            <span className="flex items-center gap-2 text-faint">
+              {researchMode === "quote" ? "Dates, budget, route" : "Query, location, count"}
+              <Icon name="chevronRight" size={14} className="transition group-open:rotate-90" />
+            </span>
+          </summary>
+
+          <div className="mt-3 rounded-lg border border-border bg-surface p-3">
+            {researchMode === "quote" ? (
+              <div className="space-y-3">
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <Field label="Type">
+                    <select className={selectCls} value={quoteForm.type} onChange={(event) => setQuoteForm((current) => ({ ...current, type: event.target.value as BookingType }))}>
+                      <option value="flight">Flight</option>
+                      <option value="hotel">Hotel</option>
+                      <option value="rail">Rail</option>
+                      <option value="car">Car</option>
+                      <option value="product">Product</option>
+                    </select>
+                  </Field>
+                  <Field label="Budget">
+                    <input className={inputCls} inputMode="decimal" value={quoteForm.budget} onChange={(event) => setQuoteForm((current) => ({ ...current, budget: event.target.value }))} required />
+                  </Field>
+                  <Field label="Currency">
+                    <select className={selectCls} value={quoteForm.currency} onChange={(event) => setQuoteForm((current) => ({ ...current, currency: event.target.value as CurrencyCode }))}>
+                      <option value="MYR">MYR</option>
+                      <option value="SGD">SGD</option>
+                      <option value="USD">USD</option>
+                    </select>
+                  </Field>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  <Field label="Origin">
+                    <input className={inputCls} value={quoteForm.origin} onChange={(event) => setQuoteForm((current) => ({ ...current, origin: event.target.value }))} />
+                  </Field>
+                  <Field label="Destination">
+                    <input className={inputCls} value={quoteForm.destination} onChange={(event) => setQuoteForm((current) => ({ ...current, destination: event.target.value }))} />
+                  </Field>
+                  <Field label="Depart date">
+                    <input type="date" className={inputCls} value={quoteForm.departDate} onChange={(event) => setQuoteForm((current) => ({ ...current, departDate: event.target.value }))} />
+                  </Field>
+                  <Field label="Return date">
+                    <input type="date" className={inputCls} value={quoteForm.returnDate} onChange={(event) => setQuoteForm((current) => ({ ...current, returnDate: event.target.value }))} />
+                  </Field>
+                  <Field label="Travellers">
+                    <input type="number" min={1} max={9} className={inputCls} value={quoteForm.travellers} onChange={(event) => setQuoteForm((current) => ({ ...current, travellers: event.target.value }))} />
+                  </Field>
+                  <Field label="User location" hint="Two-letter country code for provider search.">
+                    <input className={inputCls} value={quoteForm.userLocation} onChange={(event) => setQuoteForm((current) => ({ ...current, userLocation: event.target.value.toUpperCase() }))} />
+                  </Field>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <Field label="Optional query">
+                  <textarea className={textareaCls} placeholder="Leave blank to let Kira build a complaint/refund/fee search query." value={reviewForm.query} onChange={(event) => setReviewForm((current) => ({ ...current, query: event.target.value }))} />
+                </Field>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Field label="User location">
+                    <input className={inputCls} value={reviewForm.userLocation} onChange={(event) => setReviewForm((current) => ({ ...current, userLocation: event.target.value.toUpperCase() }))} />
+                  </Field>
+                  <Field label="Results">
+                    <input type="number" min={1} max={10} className={inputCls} value={reviewForm.numResults} onChange={(event) => setReviewForm((current) => ({ ...current, numResults: event.target.value }))} />
+                  </Field>
+                </div>
+              </div>
+            )}
           </div>
+        </details>
 
-          <div className="grid gap-3 sm:grid-cols-3">
-            <Field label="Type">
-              <select className={selectCls} value={quoteForm.type} onChange={(event) => setQuoteForm((current) => ({ ...current, type: event.target.value as BookingType }))}>
-                <option value="flight">Flight</option>
-                <option value="hotel">Hotel</option>
-                <option value="rail">Rail</option>
-                <option value="car">Car</option>
-                <option value="product">Product</option>
-              </select>
-            </Field>
-            <Field label="Budget">
-              <input className={inputCls} inputMode="decimal" value={quoteForm.budget} onChange={(event) => setQuoteForm((current) => ({ ...current, budget: event.target.value }))} required />
-            </Field>
-            <Field label="Currency">
-              <select className={selectCls} value={quoteForm.currency} onChange={(event) => setQuoteForm((current) => ({ ...current, currency: event.target.value as CurrencyCode }))}>
-                <option value="MYR">MYR</option>
-                <option value="SGD">SGD</option>
-                <option value="USD">USD</option>
-              </select>
-            </Field>
-          </div>
+        {quoteState === "loading" && researchMode === "quote" && <Notice icon="clock" variant="info">Researching options, policies, and source citations. No supplier action is being taken.</Notice>}
+        {reviewState === "loading" && researchMode === "reviews" && <Notice icon="clock" variant="info">Searching evidence only. No quote or booking is created.</Notice>}
+        {quoteState === "error" && researchMode === "quote" && <Notice icon="alert" variant="crit">{quoteError}</Notice>}
+        {reviewState === "error" && researchMode === "reviews" && <Notice icon="alert" variant="crit">{reviewError}</Notice>}
+      </form>
 
-          <Field label="Request">
-            <textarea className={textareaCls} value={quoteForm.description} onChange={(event) => setQuoteForm((current) => ({ ...current, description: event.target.value }))} required />
-          </Field>
-
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Origin">
-              <input className={inputCls} value={quoteForm.origin} onChange={(event) => setQuoteForm((current) => ({ ...current, origin: event.target.value }))} />
-            </Field>
-            <Field label="Destination">
-              <input className={inputCls} value={quoteForm.destination} onChange={(event) => setQuoteForm((current) => ({ ...current, destination: event.target.value }))} />
-            </Field>
-            <Field label="Depart date">
-              <input type="date" className={inputCls} value={quoteForm.departDate} onChange={(event) => setQuoteForm((current) => ({ ...current, departDate: event.target.value }))} />
-            </Field>
-            <Field label="Return date">
-              <input type="date" className={inputCls} value={quoteForm.returnDate} onChange={(event) => setQuoteForm((current) => ({ ...current, returnDate: event.target.value }))} />
-            </Field>
-            <Field label="Travellers">
-              <input type="number" min={1} max={9} className={inputCls} value={quoteForm.travellers} onChange={(event) => setQuoteForm((current) => ({ ...current, travellers: event.target.value }))} />
-            </Field>
-            <Field label="User location" hint="Two-letter country code for provider search.">
-              <input className={inputCls} value={quoteForm.userLocation} onChange={(event) => setQuoteForm((current) => ({ ...current, userLocation: event.target.value.toUpperCase() }))} />
-            </Field>
-          </div>
-
-          <Button type="submit" variant="primary" icon="search" disabled={quoteState === "loading"} className="w-full sm:w-auto">
-            {quoteState === "loading" ? "Researching" : "Create quote"}
-          </Button>
-          {quoteState === "loading" && <Notice icon="clock" variant="info">Researching options, policies, and source citations. No supplier action is being taken.</Notice>}
-          {quoteState === "error" && <Notice icon="alert" variant="crit">{quoteError}</Notice>}
-          {quoteResult && (
+      <div className="mt-4">
+        {researchMode === "quote" && quoteResult && (
             <div className="space-y-3 rounded-lg border border-border bg-surface px-3 py-3">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
                   <p className="text-[13px] font-semibold text-ink">{quoteResult.quote.description}</p>
-                  <p className="mt-0.5 text-[12px] text-muted">{quoteResult.quote.options.length} options created · approval still required</p>
+                  <p className="mt-0.5 text-[12px] text-muted">{quoteResult.quote.options.length} options created · approval only · booking is outside Kira</p>
                 </div>
                 <Badge variant={quoteFallback ? "neutral" : "pos"} dot>{quoteFallback ? "local fallback" : quoteResult.research?.provider ?? "researched"}</Badge>
               </div>
@@ -280,42 +534,14 @@ export function BookingsResearchWorkspace() {
                 {quoteResult.quote.researchSources.length > 0 ? quoteResult.quote.researchSources.map((source, index) => <SourceLink key={`${source}-${index}`} value={source} />) : <li className="text-[12px] text-muted">No sources returned by the provider.</li>}
               </ul>
             </div>
-          )}
-        </form>
+        )}
 
-        <form onSubmit={submitReviews} className="min-w-0 space-y-4 rounded-lg border border-border bg-surface-2/35 p-4">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <h3 className="text-[14px] font-semibold text-ink">Review search</h3>
-              <p className="mt-0.5 text-[12px] text-muted">Searches /api/consumer/reviews/search for complaints, caveats, and citations.</p>
-            </div>
-            {reviewResult && statusBadge(reviewResult.search.status)}
-          </div>
-          <Field label="Subject">
-            <input className={inputCls} value={reviewForm.subject} onChange={(event) => setReviewForm((current) => ({ ...current, subject: event.target.value }))} required />
-          </Field>
-          <Field label="Optional query">
-            <textarea className={textareaCls} placeholder="Leave blank to let Kira build a complaint/refund/fee search query." value={reviewForm.query} onChange={(event) => setReviewForm((current) => ({ ...current, query: event.target.value }))} />
-          </Field>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="User location">
-              <input className={inputCls} value={reviewForm.userLocation} onChange={(event) => setReviewForm((current) => ({ ...current, userLocation: event.target.value.toUpperCase() }))} />
-            </Field>
-            <Field label="Results">
-              <input type="number" min={1} max={10} className={inputCls} value={reviewForm.numResults} onChange={(event) => setReviewForm((current) => ({ ...current, numResults: event.target.value }))} />
-            </Field>
-          </div>
-          <Button type="submit" variant="outline" icon="search" disabled={reviewState === "loading"} className="w-full sm:w-auto">
-            {reviewState === "loading" ? "Searching" : "Search reviews"}
-          </Button>
-          {reviewState === "loading" && <Notice icon="clock" variant="info">Searching consumer sources and preparing a concise review synthesis.</Notice>}
-          {reviewState === "error" && <Notice icon="alert" variant="crit">{reviewError}</Notice>}
-          {reviewResult && (
+        {researchMode === "reviews" && reviewResult && (
             <div className="space-y-3 rounded-lg border border-border bg-surface px-3 py-3">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
                   <p className="text-[13px] font-semibold text-ink">{reviewResult.summary?.subject ?? reviewForm.subject}</p>
-                  <p className="mt-0.5 text-[12px] text-muted">Query: <span className="text-ink-2">{reviewResult.search.query}</span></p>
+                  <p className="mt-0.5 min-w-0 break-words text-[12px] text-muted [overflow-wrap:anywhere]">Query: <span className="text-ink-2">{reviewResult.search.query}</span></p>
                 </div>
                 <Badge variant={reviewFallback ? "neutral" : "pos"} dot>{reviewResult.search.provider}</Badge>
               </div>
@@ -323,23 +549,23 @@ export function BookingsResearchWorkspace() {
               {reviewResult.summary?.summary && <p className="text-[12.5px] leading-relaxed text-ink-2">{reviewResult.summary.summary}</p>}
               {reviewResult.summary?.themes && reviewResult.summary.themes.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
-                  {reviewResult.summary.themes.slice(0, 6).map((theme) => (
-                    <span key={theme.theme} className="rounded border border-border bg-surface-2 px-2 py-1 text-[12px] text-muted">{theme.theme} · {theme.sentiment}</span>
+                  {reviewResult.summary.themes.slice(0, 6).map((theme, index) => (
+                    <span key={`${theme.theme}-${index}`} className="rounded border border-border bg-surface-2 px-2 py-1 text-[11.5px] text-muted">{theme.theme} · {theme.sentiment}</span>
                   ))}
                 </div>
               )}
               <div className="space-y-2">
                 {reviewResult.search.results.length > 0 ? reviewResult.search.results.map((item, index) => (
-                  <article key={`${item.url}-${index}`} className="rounded-lg border border-border bg-surface-2/45 px-3 py-2.5">
+                  <article key={`${item.url}-${index}`} className="min-w-0 rounded-lg border border-border bg-surface-2/45 px-3 py-2.5 [overflow-wrap:anywhere]">
                     {isExternalUrl(item.url) ? (
-                      <a href={item.url} target="_blank" rel="noreferrer" className="text-[12.5px] font-medium text-brand hover:underline">
+                      <a href={item.url} target="_blank" rel="noreferrer" className="break-words text-[12.5px] font-medium text-brand hover:underline">
                         {item.title}
                       </a>
                     ) : (
-                      <span className="text-[12.5px] font-medium text-ink">{item.title}</span>
+                      <span className="break-words text-[12.5px] font-medium text-ink">{item.title}</span>
                     )}
-                    {item.summary && <p className="mt-1 text-[12px] leading-relaxed text-muted">{item.summary}</p>}
-                    {item.highlights && item.highlights.length > 0 && <p className="mt-1 text-[12px] leading-relaxed text-faint">{item.highlights[0]}</p>}
+                    {item.summary && <p className="mt-1 break-words text-[12px] leading-relaxed text-muted">{item.summary}</p>}
+                    {item.highlights && item.highlights.length > 0 && <p className="mt-1 break-words text-[11.5px] leading-relaxed text-faint">{item.highlights[0]}</p>}
                   </article>
                 )) : <div className="rounded-lg border border-border bg-surface-2/45 px-3 py-6 text-center text-[12.5px] text-muted">No review sources returned.</div>}
               </div>
@@ -349,8 +575,7 @@ export function BookingsResearchWorkspace() {
                 </ul>
               )}
             </div>
-          )}
-        </form>
+        )}
       </div>
     </Card>
   );
@@ -400,7 +625,7 @@ export function BookingApproval({
       <div className="mt-4 flex flex-col gap-2 rounded-lg border border-pos-fg/20 bg-pos-bg p-4">
         <div className="flex items-center gap-2 text-[13.5px] font-semibold text-ink">
           <Icon name="check" size={16} />
-          Booking approved — {opt.label}
+          Spend approved — {opt.label}
         </div>
         <p className="text-[12.5px] text-muted">
           {money(opt.amountMinor, opt.currency)} · {opt.supplier}. Finance tracker has been updated with approved

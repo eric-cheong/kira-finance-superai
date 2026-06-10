@@ -182,6 +182,7 @@ export function runDailyBriefing({ maxPhase = 1 }: { maxPhase?: Phase } = {}): B
       approvalsCount: approvals.length,
       escalationsCount: escalations.length,
     },
+    runControl: db.briefingRunState(ctx.runId),
     orchestratorLog,
     notificationNote: notif.note,
   };

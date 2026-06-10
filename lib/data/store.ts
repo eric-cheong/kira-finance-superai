@@ -51,6 +51,7 @@ export const totalSpendBaseMinor = backend.totalSpendBaseMinor;
 export const matchStats = backend.matchStats;
 export const receiptStats = backend.receiptStats;
 export const einvoiceStats = backend.einvoiceStats;
+export const briefingRunState = backend.briefingRunState;
 export const listApprovals = backend.listApprovals;
 export const openApprovals = backend.openApprovals;
 export const closeReadiness = backend.closeReadiness;

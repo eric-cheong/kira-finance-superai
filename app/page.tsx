@@ -6,6 +6,7 @@ import { fmtDate, fmtTime } from "@/lib/format";
 import { DisclaimerBanner } from "@/components/disclaimer-banner";
 import { FindingCard } from "@/components/finding-card";
 import { OperatingFunctionsLandingSection } from "@/components/operating-functions";
+import { BriefingRunCockpit } from "@/components/briefing-run-cockpit";
 import {
   Badge,
   Button,
@@ -17,19 +18,6 @@ import {
 } from "@/components/ui";
 
 const LOOP_ORDER: LoopPhase[] = ["observe", "analyze", "plan", "act", "verify", "summarize", "escalate"];
-
-const PLAN_STEPS = [
-  "Resolve preferences",
-  "Scan finance data",
-  "Apply policy gate",
-  "Queue approvals",
-];
-
-const TOOL_ACTIVITY = [
-  { label: "ledger.scan", detail: "transactions + receipts", state: "complete" },
-  { label: "forecast.project", detail: "cash range", state: "complete" },
-  { label: "policy.evaluate", detail: "approval gates", state: "complete" },
-];
 
 function progressForStep(phase: LoopPhase) {
   const index = LOOP_ORDER.indexOf(phase);
@@ -59,70 +47,6 @@ function AgentRow({ a }: { a: AgentResult }) {
         <span className="mt-0.5 rounded-md border border-border px-1.5 text-[11px] font-semibold uppercase tracking-wide text-faint">P2</span>
       )}
     </div>
-  );
-}
-
-function RunCockpit({ approvalsCount }: { approvalsCount: number }) {
-  return (
-    <Card>
-      <CardHeader
-        title="Agent run cockpit"
-        subtitle="Plan, tool activity, and review controls are visible here; pause/edit/resume are static placeholders."
-        icon="workflow"
-        right={<Badge variant="warn">{approvalsCount} waiting</Badge>}
-      />
-      <div className="grid gap-4 xl:grid-cols-[1fr_1fr_0.9fr]">
-        <div>
-          <p className="mb-2 text-[11.5px] font-semibold uppercase tracking-wide text-faint">Plan</p>
-          <ol className="space-y-2">
-            {PLAN_STEPS.map((step, index) => (
-              <li key={step} className="flex items-center gap-2 rounded-lg border border-border bg-surface-2/45 px-3 py-2">
-                <span className="tnum flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-border bg-surface text-[11px] font-semibold text-faint">
-                  {index + 1}
-                </span>
-                <span className="min-w-0 truncate text-[12.5px] font-medium text-ink">{step}</span>
-                <Badge variant={index < 3 ? "pos" : "warn"} className="ml-auto">
-                  {index < 3 ? "done" : "review"}
-                </Badge>
-              </li>
-            ))}
-          </ol>
-        </div>
-
-        <div>
-          <p className="mb-2 text-[11.5px] font-semibold uppercase tracking-wide text-faint">Tool calls</p>
-          <div className="space-y-2">
-            {TOOL_ACTIVITY.map((item) => (
-              <div key={item.label} className="rounded-lg border border-border bg-surface-2/45 px-3 py-2">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="tnum truncate text-[12px] font-medium text-info-fg">{item.label}</span>
-                  <Badge variant="neutral">{item.state}</Badge>
-                </div>
-                <p className="mt-0.5 truncate text-[12px] text-muted">{item.detail}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <p className="mb-2 text-[11.5px] font-semibold uppercase tracking-wide text-faint">Human controls</p>
-          <div className="grid grid-cols-3 gap-2 xl:grid-cols-1">
-            <Button disabled variant="outline" size="sm" icon="clock">
-              Pause
-            </Button>
-            <Button disabled variant="outline" size="sm" icon="doc">
-              Edit plan
-            </Button>
-            <Button disabled variant="outline" size="sm" icon="arrowRight">
-              Resume
-            </Button>
-          </div>
-          <p className="mt-2 text-[12px] leading-relaxed text-muted">
-            Placeholder controls show the intended reviewer loop without mutating run state.
-          </p>
-        </div>
-      </div>
-    </Card>
   );
 }
 
@@ -179,7 +103,7 @@ export default function BriefingPage() {
 
       <DisclaimerBanner />
 
-      <RunCockpit approvalsCount={run.topline.approvalsCount} />
+      <BriefingRunCockpit approvalsCount={run.topline.approvalsCount} runControl={run.runControl} />
 
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         {/* Main column */}

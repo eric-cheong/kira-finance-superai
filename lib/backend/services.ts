@@ -36,7 +36,18 @@ import {
   type TripResearchInput,
 } from "./openai-consumer-agents";
 import { providerStatus } from "./provider-config";
-import { appendAudit, confirmationRef, nextId, resetState, snapshotPath, state, type OnboardingRun } from "./state";
+import {
+  appendAudit,
+  confirmationRef,
+  defaultBriefingRunState,
+  nextId,
+  persistState,
+  resetState,
+  snapshotPath,
+  state,
+  type BriefingRunState,
+  type OnboardingRun,
+} from "./state";
 
 type ApprovalDecision = "approved" | "rejected" | "open";
 type BookingDecision = "approve" | "reject";
@@ -208,6 +219,82 @@ export function summary() {
       closeReadiness: closeReadiness(),
     },
   };
+}
+
+export function briefingRunState(runId = "run_20260609_0730") {
+  return ensureBriefingRunState(runId);
+}
+
+export function updateBriefingRunState(runId: string, input: unknown) {
+  if (!isRecord(input) || typeof input.action !== "string") {
+    throw new ApiError(400, "INVALID_BRIEFING_ACTION", "Action must be pause, edit_plan, or resume.");
+  }
+
+  const run = ensureBriefingRunState(runId);
+  const now = new Date().toISOString();
+
+  if (input.action === "pause") {
+    if (run.status === "paused") {
+      throw new ApiError(409, "BRIEFING_ALREADY_PAUSED", `Briefing run ${run.id} is already paused.`);
+    }
+    run.status = "paused";
+    run.pausedAt = now;
+    run.updatedAt = now;
+    appendAudit({
+      actor: state.currentUserId,
+      action: "briefing.run.pause",
+      target: run.id,
+      detail: "Reviewer paused the briefing run. Queued tool work remains suspended; no external action was taken.",
+      tier: 2,
+    });
+    return { runControl: run };
+  }
+
+  if (input.action === "edit_plan") {
+    const labels = parsePlanStepLabels(input.planSteps);
+    if (labels) {
+      run.planSteps = labels.map((label, index) => {
+        const existing = run.planSteps[index];
+        return {
+          id: existing?.id ?? `plan-step-${index + 1}`,
+          label,
+          state: existing && existing.label === label ? existing.state : "review",
+        };
+      });
+    }
+    run.status = "editing";
+    run.editedAt = now;
+    run.updatedAt = now;
+    appendAudit({
+      actor: state.currentUserId,
+      action: "briefing.plan.edit",
+      target: run.id,
+      detail: labels
+        ? `Reviewer edited the briefing plan to ${labels.length} steps. Default remains no external action until resume.`
+        : "Reviewer opened the briefing plan for editing. Default remains no external action until resume.",
+      tier: 2,
+    });
+    return { runControl: run };
+  }
+
+  if (input.action === "resume") {
+    if (run.status === "running") {
+      throw new ApiError(409, "BRIEFING_ALREADY_RUNNING", `Briefing run ${run.id} is already running.`);
+    }
+    run.status = "running";
+    run.resumedAt = now;
+    run.updatedAt = now;
+    appendAudit({
+      actor: state.currentUserId,
+      action: "briefing.run.resume",
+      target: run.id,
+      detail: `Reviewer resumed the briefing run with ${run.planSteps.length} plan steps. Approval gates remain intact.`,
+      tier: 2,
+    });
+    return { runControl: run };
+  }
+
+  throw new ApiError(400, "INVALID_BRIEFING_ACTION", "Action must be pause, edit_plan, or resume.");
 }
 
 export function listApprovals() {
@@ -1661,6 +1748,27 @@ function parseExportDestination(value: unknown): ExportDestination {
     return value as ExportDestination;
   }
   throw new ApiError(400, "INVALID_EXPORT_DESTINATION", "Export destination must be AutoCount, SQL Account, Xero, or LHDN MyInvois.");
+}
+
+function ensureBriefingRunState(runId: string): BriefingRunState {
+  const existing = state.briefingRuns.find((item) => item.id === runId);
+  if (existing) return existing;
+  const next = defaultBriefingRunState(runId);
+  state.briefingRuns.unshift(next);
+  persistState();
+  return next;
+}
+
+function parsePlanStepLabels(value: unknown) {
+  if (value == null) return null;
+  if (!Array.isArray(value)) {
+    throw new ApiError(400, "INVALID_PLAN_STEPS", "Plan steps must be an array of step labels.");
+  }
+  const labels = value.map((item) => (typeof item === "string" ? item.trim() : ""));
+  if (labels.length === 0 || labels.some((label) => label.length < 2)) {
+    throw new ApiError(400, "INVALID_PLAN_STEPS", "Each plan step must include at least two characters.");
+  }
+  return labels.slice(0, 8);
 }
 
 function ensureMaskedSourceRef(value: string) {

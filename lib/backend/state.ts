@@ -67,6 +67,25 @@ export interface WorkflowRun {
   approvalId?: string;
 }
 
+export type BriefingRunStatus = "running" | "paused" | "editing";
+
+export interface BriefingPlanStep {
+  id: string;
+  label: string;
+  state: "done" | "review";
+}
+
+export interface BriefingRunState {
+  id: string;
+  status: BriefingRunStatus;
+  createdAt: string;
+  updatedAt: string;
+  planSteps: BriefingPlanStep[];
+  pausedAt?: string;
+  editedAt?: string;
+  resumedAt?: string;
+}
+
 export interface ExportBatch {
   id: string;
   createdAt: string;
@@ -102,6 +121,7 @@ export interface BackendState {
   forecastBuckets: ForecastBucket[];
   forecastRuns: ForecastRun[];
   workflowRuns: WorkflowRun[];
+  briefingRuns: BriefingRunState[];
   closeBookClients: CloseBookClient[];
   closeBookSuppliers: CloseBookSupplier[];
   closeBookRecords: VerifiedBillRecord[];
@@ -119,6 +139,23 @@ const INITIAL_CONNECTORS: ConnectorState[] = [
   { name: "Peppol / InvoiceNow", kind: "E-invoicing (SG)", state: "connected" },
   { name: "Maybank / CIMB / DBS", kind: "Transaction feed (CSV)", state: "connected" },
 ];
+
+const DEFAULT_BRIEFING_RUN_ID = "run_20260609_0730";
+
+export function defaultBriefingRunState(id = DEFAULT_BRIEFING_RUN_ID): BriefingRunState {
+  return {
+    id,
+    status: "running",
+    createdAt: seed.NOW,
+    updatedAt: seed.NOW,
+    planSteps: [
+      { id: "resolve-preferences", label: "Resolve preferences", state: "done" },
+      { id: "scan-finance-data", label: "Scan finance data", state: "done" },
+      { id: "apply-policy-gate", label: "Apply policy gate", state: "done" },
+      { id: "queue-approvals", label: "Queue approvals", state: "review" },
+    ],
+  };
+}
 
 export interface RuntimeState extends BackendState {
   audit: AuditLogEntry[];
@@ -162,6 +199,7 @@ function initialState(): RuntimeState {
     forecastBuckets: clone(seed.FORECAST_BUCKETS),
     forecastRuns: [],
     workflowRuns: [],
+    briefingRuns: [defaultBriefingRunState()],
     closeBookClients: clone(CLOSE_BOOK_CLIENTS),
     closeBookSuppliers: clone(CLOSE_BOOK_SUPPLIERS),
     closeBookRecords: clone(VERIFIED_BILL_RECORDS),
@@ -204,6 +242,7 @@ function readSnapshot(): RuntimeState | null {
       forecastBuckets: parsed.forecastBuckets ?? fallback.forecastBuckets,
       forecastRuns: parsed.forecastRuns ?? fallback.forecastRuns,
       workflowRuns: parsed.workflowRuns ?? fallback.workflowRuns,
+      briefingRuns: parsed.briefingRuns ?? fallback.briefingRuns,
       closeBookClients: parsed.closeBookClients ?? fallback.closeBookClients,
       closeBookSuppliers: parsed.closeBookSuppliers ?? fallback.closeBookSuppliers,
       closeBookRecords: parsed.closeBookRecords ?? fallback.closeBookRecords,
@@ -253,6 +292,7 @@ export function resetState() {
   replaceArray(state.forecastBuckets, next.forecastBuckets);
   replaceArray(state.forecastRuns, next.forecastRuns);
   replaceArray(state.workflowRuns, next.workflowRuns);
+  replaceArray(state.briefingRuns, next.briefingRuns);
   replaceArray(state.closeBookClients, next.closeBookClients);
   replaceArray(state.closeBookSuppliers, next.closeBookSuppliers);
   replaceArray(state.closeBookRecords, next.closeBookRecords);
