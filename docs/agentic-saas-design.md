@@ -25,16 +25,30 @@ Kira currently uses Tailwind with owned local primitives in `components/ui`.
 Future shadcn migration should preserve this rule: own the component code and
 keep design tokens explicit.
 
-## Stack Preference
+## Stack Alignment
 
-- Tailwind for tokens and layout.
-- Owned React primitives / shadcn-style components for product surfaces.
-- TanStack Table for serious data tables.
-- Recharts or Tremor for dashboards.
-- Lucide-style icons for tool buttons and nav.
-- Motion for restrained transitions only.
-- Vercel AI SDK/UI elements are worth evaluating for streaming agent turns and
-  tool-call rendering.
+Current implementation:
+
+- Next.js App Router, React, TypeScript, and Tailwind for tokens and layout.
+- DaisyUI is installed because `tailwind.config.ts` uses it for the active Kira
+  theme, drawer, navbar, and utility classes.
+- Owned React primitives in `components/ui` provide cards, tables, buttons,
+  badges, progress, notices, and the current inline SVG icon set.
+- OpenAI Agents SDK, OpenAI, Exa, and Zod are installed only for the live
+  provider seams that are already wired in `lib/backend`.
+
+Deferred until a screen or component actually imports them:
+
+- shadcn/Radix component copies for deeper owned accessibility primitives.
+- TanStack Table for heavier sortable/filterable data grids.
+- Recharts or Tremor for charting once dashboards need more than local bars and
+  tiles.
+- Lucide icons if the current owned icon set becomes a maintenance bottleneck.
+- Motion for restrained transitions.
+- Vercel AI SDK/UI elements for streaming agent turns and tool-call rendering.
+
+Do not add these candidate libraries to `package.json` pre-emptively. Add them
+only with the implementing feature so the lockfile reflects code that exists.
 
 ## Easy On The Eyes
 

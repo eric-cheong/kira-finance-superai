@@ -21,6 +21,38 @@ interface ShellSession {
 }
 
 type SessionStatus = "loading" | "live" | "fallback";
+type ThemeMode = "light" | "dark";
+
+const THEME_STORAGE_KEY = "kira-theme";
+
+function getPreferredTheme(): ThemeMode {
+  if (typeof window === "undefined") return "light";
+  try {
+    const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
+    if (stored === "light" || stored === "dark") return stored;
+  } catch {
+    return "light";
+  }
+  return window.matchMedia?.("(prefers-color-scheme: dark)")?.matches ? "dark" : "light";
+}
+
+function applyTheme(theme: ThemeMode) {
+  if (typeof document === "undefined") return;
+  const isDark = theme === "dark";
+  const root = document.documentElement;
+  root.dataset.theme = isDark ? "kira-dark" : "kira";
+  root.classList.toggle("dark", isDark);
+  root.style.colorScheme = theme;
+  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", isDark ? "#0d1016" : "#fbfaf7");
+}
+
+function persistTheme(theme: ThemeMode) {
+  try {
+    window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+  } catch {
+    // localStorage can be unavailable in private or restricted contexts.
+  }
+}
 
 const NAV: { group: string; items: NavItem[] }[] = [
   {
@@ -137,6 +169,25 @@ function Brand() {
         <div className="text-[10.5px] font-medium uppercase tracking-wide text-faint">Finance · SuperAI</div>
       </div>
     </Link>
+  );
+}
+
+function ThemeToggle({ theme, onToggle }: { theme: ThemeMode; onToggle: () => void }) {
+  const isDark = theme === "dark";
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-pressed={isDark}
+      aria-label={`Switch to ${isDark ? "light" : "dark"} mode`}
+      className="inline-flex h-11 min-h-11 items-center justify-center gap-1.5 rounded-lg border border-transparent px-2.5 text-ink hover:bg-surface-2/70 sm:h-9 sm:min-h-9"
+      suppressHydrationWarning
+    >
+      <Icon name="spark" size={16} className={isDark ? "text-brand" : "text-muted"} />
+      <span className="hidden text-[12px] font-medium lg:inline" suppressHydrationWarning>
+        {isDark ? "Dark" : "Light"}
+      </span>
+    </button>
   );
 }
 
@@ -343,6 +394,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [isDesktop, setIsDesktop] = useState(false);
   const [session, setSession] = useState<ShellSession | null>(null);
   const [sessionStatus, setSessionStatus] = useState<SessionStatus>("loading");
+  const [theme, setTheme] = useState<ThemeMode>("light");
 
   useEffect(() => {
     const query = window.matchMedia("(min-width: 1280px)");
@@ -350,6 +402,16 @@ export function AppShell({ children }: { children: ReactNode }) {
     sync();
     query.addEventListener("change", sync);
     return () => query.removeEventListener("change", sync);
+  }, []);
+
+  useEffect(() => {
+    applyTheme(theme);
+  }, [theme]);
+
+  useEffect(() => {
+    const preferredTheme = getPreferredTheme();
+    setTheme(preferredTheme);
+    applyTheme(preferredTheme);
   }, []);
 
   useEffect(() => {
@@ -374,6 +436,14 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const navHidden = !open && !isDesktop;
   const approvalCount = session?.navigationBadges.approvals ?? 0;
+  const toggleTheme = () => {
+    setTheme((current) => {
+      const next = current === "dark" ? "light" : "dark";
+      persistTheme(next);
+      applyTheme(next);
+      return next;
+    });
+  };
 
   return (
     <div className="drawer app-wash min-h-screen xl:drawer-open">
@@ -403,6 +473,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <span className={cn("h-1.5 w-1.5 rounded-full", sessionStatus === "live" ? "bg-pos-fg" : "bg-faint")} />
               {sessionStatus === "live" ? "System live" : sessionStatus === "loading" ? "Syncing" : "Offline fallback"}
             </div>
+            <ThemeToggle theme={theme} onToggle={toggleTheme} />
             <Link className="relative inline-flex h-11 min-h-11 w-11 items-center justify-center rounded-lg border border-transparent text-ink hover:bg-surface-2/70 sm:h-9 sm:min-h-9 sm:w-9" aria-label="Open approvals" href="/approvals">
               <Icon name="bell" size={18} />
               {approvalCount > 0 && (

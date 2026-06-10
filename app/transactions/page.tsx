@@ -6,6 +6,7 @@ import {
   Bar,
   Card,
   CardHeader,
+  FinanceTableControlsScript,
   Icon,
   PageHeader,
   StatTile,
@@ -27,6 +28,9 @@ const STATUS_LABEL: Record<TransactionEvent["status"], string> = {
   unmatched: "Unmatched",
   needs_review: "Review",
 };
+
+const tableControlClass =
+  "h-11 w-full rounded-lg border border-border bg-surface-2/65 px-3 text-[13px] text-ink outline-none transition placeholder:text-faint hover:border-border-strong focus:border-brand/50 sm:h-9";
 
 function duplicateIds(): Set<string> {
   const set = new Set<string>();
@@ -118,14 +122,86 @@ export default function TransactionsPage() {
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
-        <Card pad={false}>
+        <Card pad={false} data-finance-table data-storage-key="transactions-ledger" data-default-sort="date:desc">
+          <FinanceTableControlsScript />
           <div className="px-5 pt-5">
             <CardHeader title="Ledger lines" subtitle="Read-only · system of record-keeping, not a money ledger" icon="transactions" />
           </div>
-          <div className="divide-y divide-border md:hidden">
-            {rows.map((t) => (
-              <TransactionMobileCard key={t.id} t={t} duplicate={dupes.has(t.id)} />
-            ))}
+          <div className="grid gap-2 border-y border-border bg-surface-2/25 px-4 py-3 lg:grid-cols-[minmax(220px,1fr)_160px_170px_170px_auto]">
+            <label className="relative min-w-0">
+              <span className="sr-only">Search ledger lines</span>
+              <Icon name="search" size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-faint" />
+              <input
+                data-finance-search
+                className={`${tableControlClass} pl-9`}
+                placeholder="Search merchant, description, source"
+                type="search"
+              />
+            </label>
+            <label className="min-w-0">
+              <span className="sr-only">Filter by status</span>
+              <select data-finance-filter="status" className={tableControlClass} defaultValue="all">
+                <option value="all">All statuses</option>
+                <option value="matched">Matched</option>
+                <option value="needs_review">Review</option>
+                <option value="unmatched">Unmatched</option>
+              </select>
+            </label>
+            <label className="min-w-0">
+              <span className="sr-only">Filter by match state</span>
+              <select data-finance-filter="match" className={tableControlClass} defaultValue="all">
+                <option value="all">All match states</option>
+                <option value="with_receipt">With receipt</option>
+                <option value="missing_receipt">Missing receipt</option>
+                <option value="duplicate_risk">Duplicate risk</option>
+              </select>
+            </label>
+            <label className="min-w-0">
+              <span className="sr-only">Sort ledger lines</span>
+              <select data-finance-sort className={tableControlClass} defaultValue="date:desc">
+                <option value="date:desc">Newest first</option>
+                <option value="date:asc">Oldest first</option>
+                <option value="amount:desc">Amount high</option>
+                <option value="amount:asc">Amount low</option>
+                <option value="merchant:asc">Merchant A-Z</option>
+                <option value="status:asc">Status</option>
+              </select>
+            </label>
+            <button
+              type="button"
+              data-finance-reset
+              className="h-11 rounded-lg border border-border bg-surface px-3 text-[13px] font-medium text-ink transition hover:border-border-strong hover:bg-surface-2 sm:h-9"
+            >
+              Reset
+            </button>
+            <div className="lg:col-span-5 flex items-center gap-2 text-[12px] text-muted">
+              <span className="tnum font-semibold text-ink" data-finance-visible-count>{rows.length}</span>
+              <span>of</span>
+              <span className="tnum">{rows.length}</span>
+              <span>ledger lines shown</span>
+            </div>
+          </div>
+          <div className="divide-y divide-border md:hidden" data-finance-row-list>
+            {rows.map((t) => {
+              const match = db.matchForTransaction(t.id);
+              const matchState = dupes.has(t.id) && t.status !== "matched" ? "duplicate_risk" : match ? "with_receipt" : "missing_receipt";
+              const search = [t.merchant, t.description, t.sourceRef, t.source, t.currency, STATUS_LABEL[t.status]].join(" ");
+              return (
+                <div
+                  key={t.id}
+                  data-finance-row
+                  data-row-id={t.id}
+                  data-search={search}
+                  data-status={t.status}
+                  data-match={matchState}
+                  data-date={t.occurredAt}
+                  data-amount={db.toBase(t.amountMinor, t.currency)}
+                  data-merchant={t.merchant}
+                >
+                  <TransactionMobileCard t={t} duplicate={dupes.has(t.id)} />
+                </div>
+              );
+            })}
           </div>
           <Table className="hidden md:block">
             <thead>
@@ -138,12 +214,25 @@ export default function TransactionsPage() {
                 <Th>Match</Th>
               </tr>
             </thead>
-            <tbody>
+            <tbody data-finance-row-list>
               {rows.map((t) => {
                 const match = db.matchForTransaction(t.id);
                 const rcp = match ? db.receipt(match.receiptId) : undefined;
+                const matchState = dupes.has(t.id) && t.status !== "matched" ? "duplicate_risk" : match ? "with_receipt" : "missing_receipt";
+                const search = [t.merchant, t.description, t.sourceRef, t.source, t.currency, STATUS_LABEL[t.status], rcp?.supplier ?? ""].join(" ");
                 return (
-                  <tr key={t.id} className="hover:bg-surface-2/40">
+                  <tr
+                    key={t.id}
+                    className="hover:bg-surface-2/40"
+                    data-finance-row
+                    data-row-id={t.id}
+                    data-search={search}
+                    data-status={t.status}
+                    data-match={matchState}
+                    data-date={t.occurredAt}
+                    data-amount={db.toBase(t.amountMinor, t.currency)}
+                    data-merchant={t.merchant}
+                  >
                     <Td>
                       <span className="inline-flex items-center gap-1.5">
                         <span className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT[t.status]}`} />
@@ -185,6 +274,9 @@ export default function TransactionsPage() {
               })}
             </tbody>
           </Table>
+          <div data-finance-empty hidden className="px-5 py-8 text-center text-[13px] text-muted">
+            No ledger lines match the current controls.
+          </div>
         </Card>
 
         <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">

@@ -64,6 +64,7 @@ and file-backed for development. It persists mutable demo state to
 | `/api/forecast/runs` | `POST` | Run an informational forecast pass. |
 | `/api/operating-functions/:id/workflows` | `POST` | Start an approval-gated operating workflow. |
 | `/api/erp-close/bills/:id` | `GET/PATCH` | Read or update a Bill Record and blockers. |
+| `/api/erp-close/bills/:id/approve` | `POST` | Approve a Bill Record for local ERP/LHDN export after `{ confirm: true }`. |
 | `/api/erp-close/bills/:id/resolve-exception` | `POST` | Resolve a close-book exception with audit trail. |
 | `/api/erp-close/export/evidence-pack` | `POST` | Create a local evidence-pack export reference. |
 | `/api/erp-close/export/ready-bills` | `POST` | Export eligible bill records; blocked records stay blocked. |
@@ -89,10 +90,10 @@ and file-backed for development. It persists mutable demo state to
   `{ ok: false, error }`.
 - Unsafe state transitions return `409`; malformed payloads return `400`;
   unknown IDs return `404`.
-- Backend actions simulate orchestration only. Booking approval, ERP/LHDN export,
-  e-invoice submission, and operating workflows create records, approvals, audit
-  evidence, or local export refs. They do not charge, settle, pay, submit to a
-  live regulator, or touch external systems.
+- Backend actions simulate orchestration only. Booking approval, close-book bill
+  approval, ERP/LHDN export, e-invoice submission, and operating workflows create
+  records, approvals, audit evidence, or local export refs. They do not charge,
+  settle, pay, submit to a live regulator, or touch external systems.
 
 ## Optional Live AI Providers
 

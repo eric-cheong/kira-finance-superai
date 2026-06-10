@@ -16,7 +16,7 @@ import {
   Th,
   Notice,
 } from "@/components/ui";
-import { BookingApproval } from "@/components/bookings-client";
+import { BookingApproval, BookingsResearchWorkspace } from "@/components/bookings-client";
 
 export const metadata = { title: "Bookings · Kira" };
 
@@ -247,6 +247,8 @@ export default function BookingsPage() {
       </div>
 
       <ProviderTrustPanel />
+
+      <BookingsResearchWorkspace />
 
       {openQuotes.length > 0 && (
         <section className="space-y-4">

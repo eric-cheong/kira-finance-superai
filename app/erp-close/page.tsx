@@ -7,6 +7,7 @@ import {
   CardHeader,
   ConfidenceChip,
   Divider,
+  FinanceTableControlsScript,
   Icon,
   KeyValue,
   PageHeader,
@@ -50,6 +51,9 @@ interface WorkflowCard {
 }
 
 const NOW = "2026-06-09T09:12:00+08:00";
+
+const tableControlClass =
+  "h-11 w-full rounded-lg border border-border bg-surface-2/65 px-3 text-[13px] text-ink outline-none transition placeholder:text-faint hover:border-border-strong focus:border-brand/50 sm:h-9";
 
 function closeBookRecords() {
   return state.closeBookRecords;
@@ -347,7 +351,8 @@ function ExceptionQueue() {
 
 function BillRegister() {
   return (
-    <section>
+    <section data-finance-table data-storage-key="erp-close-bill-register" data-default-sort="date:desc">
+      <FinanceTableControlsScript />
       <SectionTitle
         title="Verified Bills"
         subtitle="Table-first close queue with status, source, SST/TIN/MSIC, confidence, evidence, and ERP/LHDN gate."
@@ -359,13 +364,103 @@ function BillRegister() {
           </div>
         }
       />
-      <div className="space-y-3 md:hidden">
+      <div className="mb-3 grid gap-2 rounded-lg border border-border bg-surface px-3 py-3 lg:grid-cols-[minmax(220px,1fr)_150px_140px_150px_170px_auto]">
+        <label className="relative min-w-0">
+          <span className="sr-only">Search bill register</span>
+          <Icon name="search" size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-faint" />
+          <input
+            data-finance-search
+            className={`${tableControlClass} pl-9`}
+            placeholder="Search supplier, bill, tax ID, owner"
+            type="search"
+          />
+        </label>
+        <label className="min-w-0">
+          <span className="sr-only">Filter bill status</span>
+          <select data-finance-filter="status" className={tableControlClass} defaultValue="all">
+            <option value="all">All statuses</option>
+            <option value="needs_review">Needs review</option>
+            <option value="ready">Ready</option>
+            <option value="approved">Approved</option>
+            <option value="exported">Exported</option>
+          </select>
+        </label>
+        <label className="min-w-0">
+          <span className="sr-only">Filter source</span>
+          <select data-finance-filter="channel" className={tableControlClass} defaultValue="all">
+            <option value="all">All sources</option>
+            <option value="whatsapp">WhatsApp</option>
+            <option value="email">Email</option>
+            <option value="upload">Upload</option>
+          </select>
+        </label>
+        <label className="min-w-0">
+          <span className="sr-only">Filter ERP gate</span>
+          <select data-finance-filter="gate" className={tableControlClass} defaultValue="all">
+            <option value="all">All gates</option>
+            <option value="exportable">Exportable</option>
+            <option value="blocked">Blocked</option>
+          </select>
+        </label>
+        <label className="min-w-0">
+          <span className="sr-only">Sort bill register</span>
+          <select data-finance-sort className={tableControlClass} defaultValue="date:desc">
+            <option value="date:desc">Newest received</option>
+            <option value="date:asc">Oldest received</option>
+            <option value="amount:desc">Amount high</option>
+            <option value="amount:asc">Amount low</option>
+            <option value="confidence:asc">Lowest confidence</option>
+            <option value="supplier:asc">Supplier A-Z</option>
+            <option value="status:asc">Status</option>
+          </select>
+        </label>
+        <button
+          type="button"
+          data-finance-reset
+          className="h-11 rounded-lg border border-border bg-surface-2/65 px-3 text-[13px] font-medium text-ink transition hover:border-border-strong hover:bg-surface sm:h-9"
+        >
+          Reset
+        </button>
+        <div className="lg:col-span-6 flex items-center gap-2 text-[12px] text-muted">
+          <span className="tnum font-semibold text-ink" data-finance-visible-count>{records.length}</span>
+          <span>of</span>
+          <span className="tnum">{records.length}</span>
+          <span>Bill Records shown</span>
+        </div>
+      </div>
+      <div className="space-y-3 md:hidden" data-finance-row-list>
         {records.map((record) => {
           const supplier = supplierFor(record);
           const blockers = getExportBlockers(record).filter((reason) => reason.code !== "already_exported");
           const client = clientFor(record);
+          const gate = blockers.length === 0 ? "exportable" : "blocked";
+          const search = [
+            record.id,
+            record.invoiceNumber ?? "",
+            record.supplierName ?? "Unknown supplier",
+            client?.tradingName ?? "Client",
+            recordOwner(record),
+            record.supplierTin ?? supplier?.tin ?? "",
+            supplier?.msic ?? client?.msic ?? "",
+            record.erpMapping?.taxCode ?? "",
+            CHANNEL_LABEL[record.intake.channel],
+            formatCloseBookStatus(record.status),
+          ].join(" ");
           return (
-            <Card key={`mobile-${record.id}`} className="space-y-3">
+            <Card
+              key={`mobile-${record.id}`}
+              className="space-y-3"
+              data-finance-row
+              data-row-id={record.id}
+              data-search={search}
+              data-status={record.status}
+              data-channel={record.intake.channel}
+              data-gate={gate}
+              data-date={record.intake.receivedAt}
+              data-amount={record.totalMinor ?? 0}
+              data-confidence={criticalConfidence(record)}
+              data-supplier={record.supplierName ?? "Unknown supplier"}
+            >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-1.5">
@@ -419,13 +514,39 @@ function BillRegister() {
               <Th className="text-right">Amount</Th>
             </tr>
           </thead>
-          <tbody>
+          <tbody data-finance-row-list>
             {records.map((record) => {
               const supplier = supplierFor(record);
               const blockers = getExportBlockers(record).filter((reason) => reason.code !== "already_exported");
               const client = clientFor(record);
+              const gate = blockers.length === 0 ? "exportable" : "blocked";
+              const search = [
+                record.id,
+                record.invoiceNumber ?? "",
+                record.supplierName ?? "Unknown supplier",
+                client?.tradingName ?? "Client",
+                recordOwner(record),
+                record.supplierTin ?? supplier?.tin ?? "",
+                supplier?.msic ?? client?.msic ?? "",
+                record.erpMapping?.taxCode ?? "",
+                CHANNEL_LABEL[record.intake.channel],
+                formatCloseBookStatus(record.status),
+              ].join(" ");
               return (
-                <tr key={record.id} className="hover:bg-surface-2/40">
+                <tr
+                  key={record.id}
+                  className="hover:bg-surface-2/40"
+                  data-finance-row
+                  data-row-id={record.id}
+                  data-search={search}
+                  data-status={record.status}
+                  data-channel={record.intake.channel}
+                  data-gate={gate}
+                  data-date={record.intake.receivedAt}
+                  data-amount={record.totalMinor ?? 0}
+                  data-confidence={criticalConfidence(record)}
+                  data-supplier={record.supplierName ?? "Unknown supplier"}
+                >
                   <Td>
                     <StatusBadge status={record.status} />
                   </Td>
@@ -473,6 +594,9 @@ function BillRegister() {
           </tbody>
         </Table>
       </Card>
+      <div data-finance-empty hidden className="rounded-lg border border-border bg-surface px-5 py-8 text-center text-[13px] text-muted">
+        No Bill Records match the current controls.
+      </div>
     </section>
   );
 }
@@ -721,6 +845,7 @@ export default function ErpClosePage() {
   ).length;
   const totalRegisterValue = totalValue(records);
   const readyValue = totalValue(dashboard.readyForExport);
+  const readyRecordIds = dashboard.readyForExport.map((record) => record.id);
 
   return (
     <div className="animate-in space-y-6">
@@ -732,7 +857,7 @@ export default function ErpClosePage() {
           <ErpCloseExportActions
             disabled={blockerCount > 0}
             destination={activeClient.erp}
-            readyRecordIds={dashboard.readyForExport.map((record) => record.id)}
+            readyRecordIds={readyRecordIds}
           />
         }
       />
@@ -773,6 +898,23 @@ export default function ErpClosePage() {
           </div>
           <KeyValue k="TIN / MSIC" v={<span className="tnum">{activeClient.tin} · {activeClient.msic}</span>} />
           <KeyValue k="Last refresh" v={<span className="tnum">{fmtDateTime(NOW)}</span>} />
+        </div>
+        <Divider className="my-4" />
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant={blockerCount > 0 ? "warn" : "pos"} dot>Bulk export guard</Badge>
+              <span className="text-[12px] font-medium text-ink">{activeClient.erp} ready-bill batch</span>
+            </div>
+            <p className="mt-1 max-w-2xl text-[12.5px] leading-relaxed text-muted">
+              Export action is held until blocked records are cleared; evidence packs remain available for review.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            <Badge variant="pos">{readyRecordIds.length} ready</Badge>
+            <Badge variant={blockerCount > 0 ? "crit" : "pos"}>{blockerCount} held</Badge>
+            <Badge variant="neutral">{readyRecordIds.slice(0, 3).join(", ") || "no ready records"}</Badge>
+          </div>
         </div>
       </Card>
 

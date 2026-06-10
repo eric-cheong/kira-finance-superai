@@ -2,7 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
+:root,
+[data-theme="kira"] {
+  color-scheme: light;
+
   /* Typography */
   --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
@@ -20,6 +23,12 @@
   --border-strong: 177 191 207;
   --wash-blue: 232 242 255;
   --wash-beige: 248 239 224;
+  --bg-mid: 255 255 255;
+  --overlay: 255 255 255;
+  --overlay-muted: 247 248 250;
+  --scrollbar: 201 211 224;
+  --scrollbar-hover: 158 174 194;
+  --shadow-rgb: 15 23 42;
 
   /* Restrained graphite text scale. Hierarchy comes from tone, weight, and layout. */
   --ink: 14 18 24;
@@ -42,6 +51,42 @@
   --info-bg: 240 245 251;
 }
 
+html[data-theme="kira-dark"] {
+  color-scheme: dark;
+
+  /* Soft charcoal companion to the light Apple / Notion surface scale. */
+  --bg: 13 16 22;
+  --surface: 25 29 38;
+  --surface-2: 34 40 52;
+  --border: 58 67 82;
+  --border-strong: 85 98 118;
+  --wash-blue: 29 55 87;
+  --wash-beige: 71 55 36;
+  --bg-mid: 18 22 30;
+  --overlay: 25 29 38;
+  --overlay-muted: 20 24 32;
+  --scrollbar: 68 78 94;
+  --scrollbar-hover: 101 116 138;
+  --shadow-rgb: 0 0 0;
+
+  --ink: 241 245 249;
+  --ink-2: 220 227 236;
+  --muted: 176 188 203;
+  --faint: 132 148 166;
+
+  --brand: 128 169 222;
+  --brand-soft: 31 47 67;
+
+  --pos-fg: 114 203 176;
+  --pos-bg: 22 54 45;
+  --warn-fg: 229 190 117;
+  --warn-bg: 65 49 24;
+  --crit-fg: 244 117 132;
+  --crit-bg: 69 28 36;
+  --info-fg: 128 169 222;
+  --info-bg: 31 47 67;
+}
+
 * {
   border-color: rgb(var(--border));
 }
@@ -56,7 +101,7 @@ body {
   background:
     radial-gradient(circle at 10% -10%, rgb(var(--wash-blue) / 0.72), transparent 32rem),
     radial-gradient(circle at 92% 0%, rgb(var(--wash-beige) / 0.7), transparent 34rem),
-    linear-gradient(180deg, rgb(var(--bg)) 0%, rgb(255 255 255) 48%, rgb(var(--bg)) 100%);
+    linear-gradient(180deg, rgb(var(--bg)) 0%, rgb(var(--bg-mid)) 48%, rgb(var(--bg)) 100%);
   color: rgb(var(--ink));
   font-family: var(--font-sans);
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
@@ -68,7 +113,7 @@ body {
   background:
     radial-gradient(circle at 10% -10%, rgb(var(--wash-blue) / 0.72), transparent 32rem),
     radial-gradient(circle at 92% 0%, rgb(var(--wash-beige) / 0.7), transparent 34rem),
-    linear-gradient(180deg, rgb(var(--bg)) 0%, rgb(255 255 255 / 0.94) 48%, rgb(var(--bg)) 100%);
+    linear-gradient(180deg, rgb(var(--bg)) 0%, rgb(var(--bg-mid) / 0.94) 48%, rgb(var(--bg)) 100%);
 }
 
 /* Tabular, mono figures for money and IDs — consistency across the app */
@@ -78,14 +123,14 @@ body {
 }
 
 .overlay-surface {
-  background: rgb(255 255 255 / 0.88);
+  background: rgb(var(--overlay) / 0.88);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  box-shadow: 0 1px 1px rgb(15 23 42 / 0.04), 0 22px 42px -34px rgb(15 23 42 / 0.24);
+  box-shadow: 0 1px 1px rgb(var(--shadow-rgb) / 0.08), 0 22px 42px -34px rgb(var(--shadow-rgb) / 0.36);
 }
 
 .overlay-subtle {
-  background: rgb(247 248 250 / 0.72);
+  background: rgb(var(--overlay-muted) / 0.72);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }
@@ -96,12 +141,12 @@ body {
   height: 10px;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgb(201 211 224);
+  background: rgb(var(--scrollbar));
   border-radius: 999px;
   border: 3px solid rgb(var(--bg));
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgb(158 174 194);
+  background: rgb(var(--scrollbar-hover));
 }
 
 /* Focus ring — accessible, consistent */

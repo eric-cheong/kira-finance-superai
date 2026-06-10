@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { runDailyBriefing } from "@/lib/agents";
-import type { AgentResult } from "@/lib/agents/types";
+import type { AgentResult, LoopPhase } from "@/lib/agents/types";
 import * as db from "@/lib/data/store";
 import { fmtDate, fmtTime } from "@/lib/format";
 import { DisclaimerBanner } from "@/components/disclaimer-banner";
@@ -16,11 +16,33 @@ import {
   Icon,
 } from "@/components/ui";
 
+const LOOP_ORDER: LoopPhase[] = ["observe", "analyze", "plan", "act", "verify", "summarize", "escalate"];
+
+const PLAN_STEPS = [
+  "Resolve preferences",
+  "Scan finance data",
+  "Apply policy gate",
+  "Queue approvals",
+];
+
+const TOOL_ACTIVITY = [
+  { label: "ledger.scan", detail: "transactions + receipts", state: "complete" },
+  { label: "forecast.project", detail: "cash range", state: "complete" },
+  { label: "policy.evaluate", detail: "approval gates", state: "complete" },
+];
+
+function progressForStep(phase: LoopPhase) {
+  const index = LOOP_ORDER.indexOf(phase);
+  return Math.round(((index + 1) / LOOP_ORDER.length) * 100);
+}
+
 function AgentRow({ a }: { a: AgentResult }) {
   const last = a.steps[a.steps.length - 1];
   const statusTone = a.status === "ok" ? "bg-brand/45" : a.status === "degraded" ? "bg-brand/30" : "bg-crit-fg/80";
+  const progress = last ? progressForStep(last.phase) : 0;
+  const barTone = a.status === "ok" ? "pos" : a.status === "degraded" ? "warn" : "crit";
   return (
-    <div className="flex items-start gap-2.5 py-2">
+    <div className="flex items-start gap-2.5 py-2.5">
       <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${statusTone}`} />
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">
@@ -28,11 +50,79 @@ function AgentRow({ a }: { a: AgentResult }) {
           <span className="shrink-0 tnum text-[11px] text-faint">{a.durationMs}ms</span>
         </div>
         {last && <p className="mt-0.5 truncate text-[11.5px] text-muted">{last.message}</p>}
+        <div className="mt-2 flex items-center gap-2">
+          <Bar value={progress} tone={barTone} />
+          <span className="tnum shrink-0 text-[10.5px] text-faint">{progress}%</span>
+        </div>
       </div>
       {a.phase === 2 && (
         <span className="mt-0.5 rounded border border-border px-1 text-[9.5px] font-semibold text-faint">P2</span>
       )}
     </div>
+  );
+}
+
+function RunCockpit({ approvalsCount }: { approvalsCount: number }) {
+  return (
+    <Card>
+      <CardHeader
+        title="Agent run cockpit"
+        subtitle="Plan, tool activity, and review controls are visible here; pause/edit/resume are static placeholders."
+        icon="workflow"
+        right={<Badge variant="warn">{approvalsCount} waiting</Badge>}
+      />
+      <div className="grid gap-4 xl:grid-cols-[1fr_1fr_0.9fr]">
+        <div>
+          <p className="mb-2 text-[11.5px] font-semibold uppercase tracking-wide text-faint">Plan</p>
+          <ol className="space-y-2">
+            {PLAN_STEPS.map((step, index) => (
+              <li key={step} className="flex items-center gap-2 rounded-lg border border-border bg-surface-2/45 px-3 py-2">
+                <span className="tnum flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-border bg-surface text-[10px] text-faint">
+                  {index + 1}
+                </span>
+                <span className="min-w-0 truncate text-[12.5px] font-medium text-ink">{step}</span>
+                <Badge variant={index < 3 ? "pos" : "warn"} className="ml-auto">
+                  {index < 3 ? "done" : "review"}
+                </Badge>
+              </li>
+            ))}
+          </ol>
+        </div>
+
+        <div>
+          <p className="mb-2 text-[11.5px] font-semibold uppercase tracking-wide text-faint">Tool calls</p>
+          <div className="space-y-2">
+            {TOOL_ACTIVITY.map((item) => (
+              <div key={item.label} className="rounded-lg border border-border bg-surface-2/45 px-3 py-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="tnum truncate text-[12px] font-medium text-info-fg">{item.label}</span>
+                  <Badge variant="neutral">{item.state}</Badge>
+                </div>
+                <p className="mt-0.5 truncate text-[11.5px] text-muted">{item.detail}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <p className="mb-2 text-[11.5px] font-semibold uppercase tracking-wide text-faint">Human controls</p>
+          <div className="grid gap-2 sm:grid-cols-3 xl:grid-cols-1">
+            <Button disabled variant="outline" size="sm" icon="clock">
+              Pause
+            </Button>
+            <Button disabled variant="outline" size="sm" icon="doc">
+              Edit plan
+            </Button>
+            <Button disabled variant="outline" size="sm" icon="arrowRight">
+              Resume
+            </Button>
+          </div>
+          <p className="mt-2 text-[12px] leading-relaxed text-muted">
+            Placeholder controls show the intended reviewer loop without mutating run state.
+          </p>
+        </div>
+      </div>
+    </Card>
   );
 }
 
@@ -88,6 +178,8 @@ export default function BriefingPage() {
       </div>
 
       <DisclaimerBanner />
+
+      <RunCockpit approvalsCount={run.topline.approvalsCount} />
 
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         {/* Main column */}

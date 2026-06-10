@@ -62,12 +62,16 @@ the loop **Observe → Analyze → Plan → Act → Verify → Summarize → Esc
 | `/capture` | Capture / Inbox — OCR receipt capture + suggested coding |
 | `/approvals` | Approvals queue — tier-3/4 human-in-the-loop sign-off |
 | `/transactions` | Transactions & reconciliation — read-only matching |
+| `/bookings` | Bookings — read-only trip research, quote comparison, and approval-gated booking records |
 | `/erp-close` | ERP Close — close-book workflow hub, supplier/bank reconciliation, export gates, and close audit trail |
 | `/compliance` | E-invoicing console — MyInvois + Peppol/InvoiceNow |
 | `/analytics` | Spend analytics — FX-normalised dashboards |
+| `/vendors` | Vendor intelligence — enrichment runs, risk notes, and supplier review metadata |
+| `/forecast` | Cashflow forecast — informational runway buckets and pending approval effects |
 | `/portfolio` | Portfolio (Phase 2) — read-only, advice-separated |
 | `/audit` | Audit & agents — decision traces + immutable hash-chained log |
 | `/settings` | Settings — automation thresholds, connectors, RBAC |
+| `/roadmap` | Roadmap — phase boundaries, action matrix, architecture choices, and failure handling |
 
 **ERP foundation coverage** (`/erp-foundation`) is the canonical MVP boundary:
 Kira has a structured finance control plane for source documents, record
@@ -92,6 +96,8 @@ KL coffee roaster with a Singapore outlet (SST-registered, MyInvois Phase 2).
   uses the OpenAI Agents SDK for read-only trip research and direct OpenAI
   Responses calls for review synthesis. `lib/backend/consumer-search.ts` uses
   Exa when `EXA_API_KEY` is present and falls back cleanly when it is not.
+  Candidate UI/chart/motion libraries from the design notes are not installed
+  until a screen actually imports them.
 - **Orchestrate, never settle** — every feature is designed to stay above the
   regulated perimeter (Singapore PSA, Malaysia FSA/BNM).
 

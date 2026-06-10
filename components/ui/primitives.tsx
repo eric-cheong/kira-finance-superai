@@ -1,4 +1,4 @@
-import type { ReactNode, TdHTMLAttributes, ThHTMLAttributes } from "react";
+import type { HTMLAttributes, ReactNode, TdHTMLAttributes, ThHTMLAttributes } from "react";
 import Link from "next/link";
 import { cn } from "./cn";
 import { Icon, type IconName } from "./icons";
@@ -10,11 +10,12 @@ export function Card({
   children,
   className,
   pad = true,
+  ...props
 }: {
   children: ReactNode;
   className?: string;
   pad?: boolean;
-}) {
+} & HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={cn(
@@ -22,6 +23,7 @@ export function Card({
         pad && "p-4 sm:p-5",
         className,
       )}
+      {...props}
     >
       {children}
     </div>
@@ -241,7 +243,7 @@ export function Avatar({ name, size = 30 }: { name: string; size?: number }) {
   return (
     <span className="avatar placeholder inline-flex shrink-0">
       <span
-        className="inline-flex items-center justify-center rounded-lg border border-base-300 bg-base-200 font-semibold text-ink"
+        className="inline-flex items-center justify-center rounded-lg border border-border bg-surface-2 font-semibold text-ink"
         style={{ width: size, height: size, fontSize: size * 0.4 }}
       >
         {inits}
@@ -253,7 +255,7 @@ export function Avatar({ name, size = 30 }: { name: string; size?: number }) {
 export function EmptyState({ icon = "check", title, sub }: { icon?: IconName; title: string; sub?: string }) {
   return (
     <div className="flex flex-col items-center justify-center gap-2 px-6 py-12 text-center">
-      <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-base-300 bg-surface-2 text-muted">
+      <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-surface-2 text-muted">
         <Icon name={icon} size={20} />
       </span>
       <p className="text-[14px] font-medium text-ink">{title}</p>
@@ -446,4 +448,149 @@ export function Th({ children, className, ...props }: { children?: ReactNode; cl
 
 export function Td({ children, className, ...props }: { children?: ReactNode; className?: string } & TdHTMLAttributes<HTMLTableCellElement>) {
   return <td className={cn("border-b border-border px-3 py-3 align-middle text-ink", className)} {...props}>{children}</td>;
+}
+
+export function FinanceTableControlsScript() {
+  return (
+    <script
+      dangerouslySetInnerHTML={{
+        __html: `
+(() => {
+  const ROOT_SELECTOR = "[data-finance-table]";
+
+  function getStoredState(key, defaults) {
+    try {
+      const raw = window.localStorage.getItem(key);
+      return raw ? { ...defaults, ...JSON.parse(raw) } : defaults;
+    } catch {
+      return defaults;
+    }
+  }
+
+  function storeState(key, state) {
+    try {
+      window.localStorage.setItem(key, JSON.stringify(state));
+    } catch {
+      // Ignore storage failures; table controls should still work for the session.
+    }
+  }
+
+  function compareValues(a, b, field) {
+    const left = a.dataset[field] ?? "";
+    const right = b.dataset[field] ?? "";
+    if (field === "amount" || field === "confidence") {
+      return Number(left || 0) - Number(right || 0);
+    }
+    return left.localeCompare(right, undefined, { numeric: true, sensitivity: "base" });
+  }
+
+  function applyTable(root, state) {
+    const lists = Array.from(root.querySelectorAll("[data-finance-row-list]"));
+    const firstListRows = lists[0] ? Array.from(lists[0].querySelectorAll("[data-finance-row]")) : [];
+    const search = state.search.trim().toLowerCase();
+    const filters = state.filters || {};
+    const [sortField, sortDir] = state.sort.split(":");
+    const direction = sortDir === "asc" ? 1 : -1;
+
+    lists.forEach((list) => {
+      const rows = Array.from(list.querySelectorAll("[data-finance-row]"));
+      rows
+        .sort((a, b) => compareValues(a, b, sortField) * direction)
+        .forEach((row) => list.appendChild(row));
+    });
+
+    let visible = 0;
+    firstListRows.forEach((referenceRow) => {
+      const id = referenceRow.dataset.rowId;
+      const matchesSearch = !search || (referenceRow.dataset.search || "").toLowerCase().includes(search);
+      const matchesFilters = Object.entries(filters).every(([name, value]) => {
+        return value === "all" || referenceRow.dataset[name] === value;
+      });
+      const shouldShow = matchesSearch && matchesFilters;
+      if (shouldShow) visible += 1;
+      root.querySelectorAll("[data-row-id='" + id + "']").forEach((row) => {
+        row.style.display = shouldShow ? "" : "none";
+      });
+    });
+
+    root.querySelectorAll("[data-finance-visible-count]").forEach((node) => {
+      node.textContent = String(visible);
+    });
+    root.querySelectorAll("[data-finance-empty]").forEach((node) => {
+      node.hidden = visible !== 0;
+    });
+  }
+
+  function initRoot(root) {
+    if (root.dataset.financeTableReady === "1") return;
+    root.dataset.financeTableReady = "1";
+
+    const storageKey = "kira:" + (root.dataset.storageKey || "finance-table");
+    const filterControls = Array.from(root.querySelectorAll("[data-finance-filter]"));
+    const defaults = {
+      search: "",
+      sort: root.dataset.defaultSort || "date:desc",
+      filters: Object.fromEntries(filterControls.map((control) => [control.dataset.financeFilter, "all"])),
+    };
+    const state = getStoredState(storageKey, defaults);
+    state.filters = { ...defaults.filters, ...(state.filters || {}) };
+
+    const searchInput = root.querySelector("[data-finance-search]");
+    const sortControl = root.querySelector("[data-finance-sort]");
+    const resetControl = root.querySelector("[data-finance-reset]");
+
+    if (searchInput) searchInput.value = state.search;
+    if (sortControl) sortControl.value = state.sort;
+    filterControls.forEach((control) => {
+      control.value = state.filters[control.dataset.financeFilter] || "all";
+    });
+
+    const persistAndApply = () => {
+      storeState(storageKey, state);
+      applyTable(root, state);
+    };
+
+    searchInput?.addEventListener("input", (event) => {
+      state.search = event.target.value;
+      persistAndApply();
+    });
+    sortControl?.addEventListener("change", (event) => {
+      state.sort = event.target.value;
+      persistAndApply();
+    });
+    filterControls.forEach((control) => {
+      control.addEventListener("change", (event) => {
+        state.filters[event.target.dataset.financeFilter] = event.target.value;
+        persistAndApply();
+      });
+    });
+    resetControl?.addEventListener("click", () => {
+      state.search = defaults.search;
+      state.sort = defaults.sort;
+      state.filters = { ...defaults.filters };
+      if (searchInput) searchInput.value = state.search;
+      if (sortControl) sortControl.value = state.sort;
+      filterControls.forEach((control) => {
+        control.value = state.filters[control.dataset.financeFilter] || "all";
+      });
+      persistAndApply();
+    });
+
+    applyTable(root, state);
+  }
+
+  function init() {
+    document.querySelectorAll(ROOT_SELECTOR).forEach(initRoot);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init, { once: true });
+  } else {
+    init();
+  }
+})();
+        `,
+      }}
+    />
+  );
 }
