@@ -93,7 +93,7 @@ export function BriefingRunCockpit({
         }
       />
       <div className="grid gap-4 xl:grid-cols-[1fr_1fr_0.9fr]">
-        <div>
+        <div className="min-w-0">
           <p className="mb-2 text-[11.5px] font-semibold uppercase tracking-wide text-faint">Plan</p>
           <ol className="space-y-2">
             {runControl.planSteps.map((step, index) => (
@@ -124,13 +124,13 @@ export function BriefingRunCockpit({
           )}
         </div>
 
-        <div>
+        <div className="min-w-0">
           <p className="mb-2 text-[11.5px] font-semibold uppercase tracking-wide text-faint">Tool calls</p>
           <div className="space-y-2">
             {TOOL_ACTIVITY.map((item) => (
               <div key={item.label} className="rounded-lg border border-border bg-surface-2/45 px-3 py-2">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="tnum truncate text-[12px] font-medium text-info-fg">{item.label}</span>
+                  <span className="tnum min-w-0 truncate text-[12px] font-medium text-info-fg">{item.label}</span>
                   <Badge variant="neutral">{item.state}</Badge>
                 </div>
                 <p className="mt-0.5 truncate text-[11.5px] text-muted">{item.detail}</p>
@@ -139,7 +139,7 @@ export function BriefingRunCockpit({
           </div>
         </div>
 
-        <div>
+        <div className="min-w-0">
           <p className="mb-2 text-[11.5px] font-semibold uppercase tracking-wide text-faint">Human controls</p>
           <div className="grid grid-cols-3 gap-2 xl:grid-cols-1">
             <Button

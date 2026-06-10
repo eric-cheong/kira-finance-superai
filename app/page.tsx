@@ -107,7 +107,7 @@ export default function BriefingPage() {
 
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         {/* Main column */}
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           {/* Approvals tray */}
           <section>
             <div className="mb-3 flex items-center justify-between">
@@ -149,7 +149,7 @@ export default function BriefingPage() {
         </div>
 
         {/* Right rail */}
-        <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">
+        <aside className="min-w-0 space-y-4 lg:sticky lg:top-20 lg:self-start">
           <Card>
             <CardHeader title="This run" subtitle={`${run.agentResults.length} agents · ${run.durationMs}ms`} icon="spark" />
             <div className="-my-1 divide-y divide-border">
