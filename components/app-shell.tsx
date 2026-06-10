@@ -437,13 +437,18 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="drawer-content flex min-h-screen flex-col">
         <header className="navbar overlay-surface sticky top-0 z-20 min-h-14 border-b border-border px-4 sm:px-6">
           <div className="navbar-start min-w-0 flex-1 gap-3">
-            <label
-              htmlFor="app-shell-drawer"
+            <button
+              type="button"
+              onClick={() => {
+                const toggle = document.getElementById("app-shell-drawer") as HTMLInputElement | null;
+                if (toggle) toggle.checked = !toggle.checked;
+              }}
               className="-ml-1 inline-flex h-11 min-h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-transparent text-ink hover:bg-surface-2/70 xl:hidden"
               aria-label="Open navigation"
+              aria-controls="app-shell-drawer"
             >
               <Icon name="menu" size={19} />
-            </label>
+            </button>
             <Link href="/" className="flex min-w-0 items-center gap-2 sm:hidden">
               <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-brand">
                 <Icon name="spark" size={15} />
