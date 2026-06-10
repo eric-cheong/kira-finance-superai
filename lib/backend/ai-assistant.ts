@@ -201,6 +201,16 @@ function enforceAssistantSafety(request: AssistantRequest, output: AssistantOutp
   };
 }
 
+function normalizeAssistantOutput(output: AssistantOutput): AssistantOutput {
+  const confidence = output.confidence <= 1
+    ? Math.round(output.confidence * 100)
+    : Math.round(output.confidence);
+  return {
+    ...output,
+    confidence: Math.max(0, Math.min(100, confidence)),
+  };
+}
+
 function realtimeKnowledgePrompt() {
   return KIRA_KNOWLEDGE_BASE.map((entry) => (
     `- ${entry.title} (${entry.route}): ${entry.summary} Facts: ${entry.facts.join(" ")}`
@@ -237,7 +247,7 @@ export async function runAssistant(requestInput: unknown) {
       workspace: assistantWorkspaceContext(),
       requiredOutput: "assistantOutputSchema",
     }), { maxTurns: 5 }), ASSISTANT_PROVIDER_TIMEOUT_MS, "openai_timeout");
-    const output = enforceAssistantSafety(request, assistantOutputSchema.parse(result.finalOutput));
+    const output = enforceAssistantSafety(request, normalizeAssistantOutput(assistantOutputSchema.parse(result.finalOutput)));
     return {
       provider: "openai-agents" as const,
       model: openaiModel(),
