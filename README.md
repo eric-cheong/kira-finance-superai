@@ -105,8 +105,9 @@ KL coffee roaster with a Singapore outlet (SST-registered, MyInvois Phase 2).
   `lib/data/seed.ts`. Local mutations persist to `.kira-data/state.json`.
 - **OpenAI + Exa provider layer** — `lib/backend/openai-consumer-agents.ts`
   uses the OpenAI Agents SDK for read-only trip research and direct OpenAI
-  Responses calls for review synthesis. `lib/backend/consumer-search.ts` uses
-  Exa when `EXA_API_KEY` is present and falls back cleanly when it is not.
+  Responses calls for review synthesis through the shared OpenAI base URL.
+  `lib/backend/consumer-search.ts` uses Exa when `EXA_API_KEY` is present and
+  falls back cleanly when it is not.
   `lib/backend/ai-assistant.ts` adds the in-app request-understanding agent,
   grounded by `lib/backend/kira-knowledge.ts`, plus guarded realtime voice
   session creation.

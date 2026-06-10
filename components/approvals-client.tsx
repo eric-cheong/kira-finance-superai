@@ -71,7 +71,15 @@ export function ApprovalQueue({ initial }: { initial: ApprovalRequest[] }) {
           const d = stateOf(a);
           const requiresExtraConfirm = !a.reversible || a.tier >= 4;
           return (
-            <Card key={a.id} className={cn("transition-colors", d !== "open" && "opacity-75")}>
+            <Card
+              key={a.id}
+              id={a.id}
+              tabIndex={-1}
+              className={cn(
+                "scroll-mt-24 transition-colors target:border-brand/40 target:ring-4 target:ring-brand/15 focus:outline-none focus:ring-4 focus:ring-brand/15",
+                d !== "open" && "opacity-75",
+              )}
+            >
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">

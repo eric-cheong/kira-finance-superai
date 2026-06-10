@@ -18,12 +18,24 @@ type AssistantOutput = {
   understoodRequest: string;
   intent: string;
   answer: string;
+  nextItem: {
+    id: string;
+    kind: "approval" | "receipt_review" | "booking_quote";
+    label: string;
+    href: string;
+    actionClass: string;
+    approvalTier: 1 | 2 | 3 | 4;
+    reason: string;
+    detail: string;
+    amount?: string;
+  } | null;
   routeSuggestion: { label: string; href: string; reason: string } | null;
   actionClass: string;
   approvalTier: 1 | 2 | 3 | 4;
   confidence: number;
   sources: Array<{ title: string; route: string }>;
   trace: string[];
+  followUps?: string[];
 };
 
 type AssistantResponse = {
@@ -57,7 +69,7 @@ type BrowserSpeechRecognition = {
 type SpeechRecognitionConstructor = new () => BrowserSpeechRecognition;
 
 type RealtimeSessionHandle = {
-  connect: (options: { apiKey: string }) => Promise<void>;
+  connect: (options: { apiKey: string; url?: string }) => Promise<void>;
   close: () => void;
   interrupt: () => void;
   sendMessage: (message: string) => void;
@@ -70,6 +82,7 @@ type WindowWithSpeech = Window & {
 };
 
 const PROMPTS = [
+  "What should I do next?",
   "What should I do about open approvals?",
   "Find where transaction matching lives",
   "Can Kira book my Singapore trip?",
@@ -90,6 +103,18 @@ function speak(text: string) {
   utterance.pitch = 1;
   window.speechSynthesis.speak(utterance);
   return true;
+}
+
+function nextItemKindLabel(kind: NonNullable<AssistantOutput["nextItem"]>["kind"]) {
+  if (kind === "approval") return "Open approval";
+  if (kind === "receipt_review") return "Receipt review";
+  return "Booking quote";
+}
+
+function nextItemIcon(kind: NonNullable<AssistantOutput["nextItem"]>["kind"]) {
+  if (kind === "approval") return "approvals";
+  if (kind === "receipt_review") return "capture";
+  return "flight";
 }
 
 export function AssistantClient() {
@@ -268,7 +293,10 @@ export function AssistantClient() {
           setVoiceStatus(transcript.trim().slice(0, 180));
         }
       });
-      await session.connect({ apiKey: payload.data.realtime.clientSecret });
+      await session.connect({
+        apiKey: payload.data.realtime.clientSecret,
+        url: payload.data.realtime.url,
+      });
       realtimeSessionRef.current = session;
       setRealtimeConnected(true);
       setVoiceStatus("Live voice is connected. Speak naturally; Kira will answer with audio.");
@@ -340,6 +368,37 @@ export function AssistantClient() {
                     </p>
                   )}
                   <p className="text-[13px] leading-relaxed text-ink-2">{answer}</p>
+                  {result?.output.nextItem && (
+                    <div className="mt-3 rounded-lg border border-brand/20 bg-brand-soft px-3 py-3">
+                      <div className="flex items-start gap-2.5">
+                        <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-surface text-brand">
+                          <Icon name={nextItemIcon(result.output.nextItem.kind)} size={15} />
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <Badge variant="brand">{nextItemKindLabel(result.output.nextItem.kind)}</Badge>
+                            <Badge variant={result.output.nextItem.actionClass === "human-approved" ? "warn" : "neutral"}>
+                              T{result.output.nextItem.approvalTier}
+                            </Badge>
+                            {result.output.nextItem.amount && <Badge variant="neutral">{result.output.nextItem.amount}</Badge>}
+                          </div>
+                          <p className="mt-1.5 text-[13px] font-semibold leading-snug text-ink">{result.output.nextItem.label}</p>
+                          <p className="mt-1 text-[12px] leading-relaxed text-muted">{result.output.nextItem.detail}</p>
+                          <p className="mt-2 text-[12px] leading-relaxed text-ink-2">
+                            <span className="font-medium text-ink">Why this:</span> {result.output.nextItem.reason}
+                          </p>
+                          <Link
+                            href={result.output.nextItem.href}
+                            className="btn-lift mt-3 inline-flex min-h-10 items-center gap-2 rounded-lg border border-brand/20 bg-surface px-3 py-2 text-[12px] font-medium text-brand shadow-card transition hover:border-brand/40 hover:bg-surface-2/60"
+                            onClick={() => setOpen(false)}
+                          >
+                            <Icon name="arrowRight" size={13} />
+                            Open exact item
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   {result?.output.routeSuggestion && (
                     <Link
                       href={result.output.routeSuggestion.href}

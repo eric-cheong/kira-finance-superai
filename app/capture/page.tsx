@@ -49,7 +49,12 @@ export default function CapturePage() {
               const tc = db.taxCode(r.suggestedTaxCode);
               const st = STATUS[r.status];
               return (
-                <div key={r.id} className="flex flex-col gap-3 px-4 py-4 transition hover:bg-surface-2/40 sm:flex-row sm:items-center sm:px-5">
+                <div
+                  key={r.id}
+                  id={r.id}
+                  tabIndex={-1}
+                  className="scroll-mt-24 flex flex-col gap-3 px-4 py-4 transition target:bg-brand-soft target:ring-4 target:ring-inset target:ring-brand/15 hover:bg-surface-2/40 focus:bg-brand-soft focus:outline-none focus:ring-4 focus:ring-inset focus:ring-brand/15 sm:flex-row sm:items-center sm:px-5"
+                >
                   <Thumb hint={r.thumbHint} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
