@@ -4,7 +4,7 @@ import { useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { money } from "@/lib/format";
 import type { Booking, BookingQuote, BookingQuoteOption, BookingType, CurrencyCode } from "@/lib/types";
-import { Badge, Button, Card, CardHeader, Icon, Notice } from "@/components/ui";
+import { Button, Card, Icon, Notice } from "@/components/ui";
 import { cn } from "@/components/ui/cn";
 
 type QuoteResearchResult = {
@@ -40,21 +40,22 @@ type ReviewSearchResult = {
 };
 
 const inputCls =
-  "h-11 w-full rounded-lg border border-border bg-surface px-3 text-[13px] text-ink outline-none transition placeholder:text-faint focus:border-brand focus:ring-2 focus:ring-brand/10";
+  "h-12 w-full border-0 border-b-2 border-black bg-white px-0 text-[14px] text-black outline-none transition-none placeholder:text-neutral-500 placeholder:italic focus:border-b-4 focus:ring-0";
 const textareaCls =
-  "min-h-[88px] w-full resize-y rounded-lg border border-border bg-surface px-3 py-2.5 text-[13px] leading-relaxed text-ink outline-none transition placeholder:text-faint focus:border-brand focus:ring-2 focus:ring-brand/10";
+  "min-h-[96px] w-full resize-y border-2 border-black bg-white px-3 py-2.5 text-[14px] leading-relaxed text-black outline-none transition-none placeholder:text-neutral-500 placeholder:italic focus:border-4 focus:ring-0";
 const selectCls =
-  "h-11 w-full rounded-lg border border-border bg-surface px-3 text-[13px] text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/10";
+  "h-12 w-full border-2 border-black bg-white px-3 text-[13px] uppercase tracking-widest text-black outline-none transition-none focus:border-4 focus:ring-0";
 const searchBlockCls =
-  "min-w-0 rounded-md border border-border bg-surface px-3 py-2 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/10";
-const searchLabelCls = "mb-1 block text-[10px] font-semibold uppercase tracking-[0.14em] text-faint";
+  "min-w-0 border border-black bg-white px-3 py-2 transition-none focus-within:border-2";
+const searchLabelCls = "editorial-mono mb-1 block text-[10px] font-semibold uppercase text-neutral-500";
 const searchInputCls =
-  "h-8 w-full min-w-0 bg-transparent text-[13.5px] font-semibold text-ink outline-none placeholder:text-faint";
+  "h-9 w-full min-w-0 bg-transparent text-[14px] font-semibold text-black outline-none placeholder:text-neutral-500 placeholder:italic";
+const exaSnippet = "const exa = new Exa(process.env.EXA_API_KEY); await exa.search(query, { type: 'auto', numResults, userLocation });";
 
 function Field({ label, children, hint }: { label: string; children: ReactNode; hint?: string }) {
   return (
     <label className="block min-w-0">
-      <span className="mb-1.5 block text-[12.5px] font-medium text-ink">{label}</span>
+      <span className="editorial-mono mb-1.5 block text-[10px] font-semibold uppercase text-neutral-500">{label}</span>
       {children}
       {hint && <span className="mt-1 block text-[12px] leading-relaxed text-faint">{hint}</span>}
     </label>
@@ -75,10 +76,10 @@ function isExternalUrl(value: string) {
 
 function SourceLink({ value }: { value: string }) {
   return (
-    <li className="flex min-w-0 items-start gap-1.5 text-[12px] text-muted">
-      <Icon name={isExternalUrl(value) ? "arrowUpRight" : "search"} size={12} className="mt-0.5 shrink-0 text-faint" />
+    <li className="flex min-w-0 items-start gap-1.5 text-[12px] text-neutral-700">
+      <Icon name={isExternalUrl(value) ? "arrowUpRight" : "search"} size={12} className="mt-0.5 shrink-0 text-black" />
       {isExternalUrl(value) ? (
-        <a href={value} target="_blank" rel="noreferrer" className="min-w-0 truncate text-brand hover:underline">
+        <a href={value} target="_blank" rel="noreferrer" className="min-w-0 truncate text-black underline-offset-2 hover:underline">
           {value}
         </a>
       ) : (
@@ -89,9 +90,33 @@ function SourceLink({ value }: { value: string }) {
 }
 
 function statusBadge(status: ReviewSearchResult["search"]["status"]) {
-  if (status === "live") return <Badge variant="pos" dot>live sources</Badge>;
-  if (status === "missing_exa_key") return <Badge variant="neutral" dot>fallback</Badge>;
-  return <Badge variant="warn" dot>provider fallback</Badge>;
+  if (status === "live") return <MonoChip>live sources</MonoChip>;
+  if (status === "missing_exa_key") return <MonoChip>fallback</MonoChip>;
+  return <MonoChip>provider fallback</MonoChip>;
+}
+
+function MonoChip({ children, inverted = false }: { children: ReactNode; inverted?: boolean }) {
+  return (
+    <span
+      className={cn(
+        "editorial-mono inline-flex min-h-7 max-w-full shrink-0 items-center border px-2 py-0.5 text-[10px] font-semibold uppercase",
+        inverted ? "border-black bg-black text-white" : "border-black bg-white text-black",
+      )}
+    >
+      <span className="truncate">{children}</span>
+    </span>
+  );
+}
+
+function ExaSnippetBar() {
+  return (
+    <div className="flex min-w-0 flex-col gap-2 border-2 border-black bg-white px-3 py-2 sm:flex-row sm:items-center">
+      <span className="editorial-mono shrink-0 text-[10px] font-semibold uppercase text-black">Exa code demo</span>
+      <code className="min-w-0 overflow-x-auto whitespace-nowrap border border-black bg-white px-2 py-1 font-mono text-[11px] text-black">
+        {exaSnippet}
+      </code>
+    </div>
+  );
 }
 
 function locationCode(value: string) {
@@ -265,20 +290,32 @@ export function BookingsResearchWorkspace() {
   }
 
   return (
-    <Card>
-      <CardHeader
-        title="AI research"
-        subtitle="Search once. Kira turns it into quote research or review evidence for approval."
-        icon="spark"
-        right={<Badge variant="info" dot>human approval required</Badge>}
-      />
+    <Card pad={false} className="kira-editorial overflow-hidden !border-black !bg-white !text-black">
+      <div className="border-b-4 border-black px-4 py-5 sm:px-6 sm:py-7">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div className="min-w-0">
+            <p className="editorial-mono text-[10px] font-semibold uppercase text-neutral-500">Kira provider research</p>
+            <h2 className="editorial-display mt-1 text-[52px] font-semibold leading-none text-black sm:text-[72px] lg:text-[96px]">
+              Research
+            </h2>
+            <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-neutral-700">
+              Search once. Kira turns it into quote candidates or review evidence. Approval remains human.
+            </p>
+          </div>
+          <MonoChip inverted>human approval required</MonoChip>
+        </div>
+        <div className="mt-5 flex items-center gap-2">
+          <div className="editorial-rule w-24" />
+          <div className="h-4 w-4 border-2 border-black bg-white" />
+        </div>
+      </div>
 
       <form
         onSubmit={researchMode === "quote" ? submitQuote : submitReviews}
-        className="space-y-4 rounded-lg border border-border bg-surface-2/45 p-3 sm:p-4"
+        className="space-y-4 bg-white p-4 sm:p-6"
       >
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div className="inline-flex w-full rounded-lg border border-border bg-surface p-1 md:w-auto">
+          <div className="inline-flex w-full border-2 border-black bg-white md:w-auto">
             {[
               { key: "quote" as const, label: "Quote research", icon: "flight" as const },
               { key: "reviews" as const, label: "Reviews", icon: "search" as const },
@@ -289,10 +326,10 @@ export function BookingsResearchWorkspace() {
                 onClick={() => setResearchMode(mode.key)}
                 aria-pressed={researchMode === mode.key}
                 className={cn(
-                  "inline-flex min-h-9 flex-1 items-center justify-center gap-2 rounded-md px-3 text-[12.5px] font-medium transition md:flex-none",
+                  "editorial-mono inline-flex min-h-11 flex-1 items-center justify-center gap-2 border-r border-black px-3 text-[10px] font-semibold uppercase transition-none last:border-r-0 md:flex-none",
                   researchMode === mode.key
-                    ? "bg-brand-soft text-ink shadow-card"
-                    : "text-muted hover:bg-surface-2 hover:text-ink",
+                    ? "bg-black text-white"
+                    : "bg-white text-black hover:bg-black hover:text-white",
                 )}
               >
                 <Icon name={mode.icon} size={14} />
@@ -303,21 +340,21 @@ export function BookingsResearchWorkspace() {
           <div className="flex flex-wrap gap-1.5">
             {researchMode === "quote" ? (
               <>
-                <span className="rounded-full border border-border bg-surface px-2 py-0.5 text-2xs font-medium text-muted">{quoteForm.type}</span>
-                <span className="rounded-full border border-border bg-surface px-2 py-0.5 text-2xs font-medium text-muted">{quoteForm.currency} {quoteForm.budget}</span>
-                <span className="rounded-full border border-border bg-surface px-2 py-0.5 text-2xs font-medium text-muted">{quoteForm.travellers} traveller{quoteForm.travellers === "1" ? "" : "s"}</span>
+                <MonoChip>{quoteForm.type}</MonoChip>
+                <MonoChip>{quoteForm.currency} {quoteForm.budget}</MonoChip>
+                <MonoChip>{quoteForm.travellers} traveller{quoteForm.travellers === "1" ? "" : "s"}</MonoChip>
               </>
             ) : (
               <>
-                <span className="rounded-full border border-border bg-surface px-2 py-0.5 text-2xs font-medium text-muted">{reviewForm.userLocation || "global"}</span>
-                <span className="rounded-full border border-border bg-surface px-2 py-0.5 text-2xs font-medium text-muted">{reviewForm.numResults} results</span>
+                <MonoChip>{reviewForm.userLocation || "global"}</MonoChip>
+                <MonoChip>{reviewForm.numResults} results</MonoChip>
                 {reviewResult && statusBadge(reviewResult.search.status)}
               </>
             )}
           </div>
         </div>
 
-        <div className="rounded-lg border border-border bg-surface p-2 shadow-card">
+        <div className="border-2 border-black bg-white p-2">
           {researchMode === "quote" ? (
             <div className="grid gap-1.5 md:grid-cols-2 lg:grid-cols-[minmax(0,1.35fr)_minmax(4.5rem,.42fr)_minmax(4.5rem,.42fr)_minmax(7.5rem,.7fr)_minmax(7.5rem,.7fr)_minmax(8rem,.78fr)_8.25rem] lg:items-stretch">
               <label className={searchBlockCls}>
@@ -349,7 +386,7 @@ export function BookingsResearchWorkspace() {
               <label className={searchBlockCls}>
                 <span className={searchLabelCls}>Budget</span>
                 <span className="flex items-center gap-1.5">
-                  <select className="h-7 bg-transparent text-[13px] font-semibold text-ink outline-none" value={quoteForm.currency} onChange={(event) => setQuoteForm((current) => ({ ...current, currency: event.target.value as CurrencyCode }))}>
+                  <select className="h-8 bg-transparent text-[13px] font-semibold uppercase tracking-widest text-black outline-none" value={quoteForm.currency} onChange={(event) => setQuoteForm((current) => ({ ...current, currency: event.target.value as CurrencyCode }))}>
                     <option value="MYR">MYR</option>
                     <option value="SGD">SGD</option>
                     <option value="USD">USD</option>
@@ -357,7 +394,7 @@ export function BookingsResearchWorkspace() {
                   <input className={searchInputCls} inputMode="decimal" value={quoteForm.budget} onChange={(event) => setQuoteForm((current) => ({ ...current, budget: event.target.value }))} required />
                 </span>
               </label>
-              <Button type="submit" variant="primary" icon="search" disabled={isBusy} className="min-h-[58px] w-full lg:w-auto">
+              <Button type="submit" variant="primary" icon="search" disabled={isBusy} className="!border-2 !border-black !bg-black !bg-none !text-white hover:!bg-white hover:!text-black min-h-[58px] w-full !rounded-none !shadow-none lg:w-auto">
                 {isBusy ? "Researching" : "Research"}
               </Button>
             </div>
@@ -385,7 +422,7 @@ export function BookingsResearchWorkspace() {
                 <span className={searchLabelCls}>Results</span>
                 <input type="number" min={1} max={10} className={searchInputCls} value={reviewForm.numResults} onChange={(event) => setReviewForm((current) => ({ ...current, numResults: event.target.value }))} />
               </label>
-              <Button type="submit" variant="primary" icon="search" disabled={isBusy} className="min-h-[58px] w-full lg:w-auto">
+              <Button type="submit" variant="primary" icon="search" disabled={isBusy} className="!border-2 !border-black !bg-black !bg-none !text-white hover:!bg-white hover:!text-black min-h-[58px] w-full !rounded-none !shadow-none lg:w-auto">
                 {isBusy ? "Searching" : "Search"}
               </Button>
             </div>
@@ -396,43 +433,45 @@ export function BookingsResearchWorkspace() {
           <button
             type="button"
             onClick={() => applySuggestion("quote", "KL to Singapore return for 2 travellers, 12-14 Jun")}
-            className="rounded-full border border-border bg-surface px-3 py-1.5 text-[12px] text-muted hover:border-border-strong hover:text-ink"
+            className="border border-black bg-white px-3 py-1.5 text-[12px] text-black transition-none hover:bg-black hover:text-white"
           >
             KL to Singapore return
           </button>
           <button
             type="button"
             onClick={() => applySuggestion("reviews", "AirAsia KL to Singapore baggage and refund experience")}
-            className="rounded-full border border-border bg-surface px-3 py-1.5 text-[12px] text-muted hover:border-border-strong hover:text-ink"
+            className="border border-black bg-white px-3 py-1.5 text-[12px] text-black transition-none hover:bg-black hover:text-white"
           >
             AirAsia baggage reviews
           </button>
           <button
             type="button"
             onClick={() => applySuggestion("quote", "Hotel near KLCC for 3 nights under MYR 900")}
-            className="rounded-full border border-border bg-surface px-3 py-1.5 text-[12px] text-muted hover:border-border-strong hover:text-ink"
+            className="border border-black bg-white px-3 py-1.5 text-[12px] text-black transition-none hover:bg-black hover:text-white"
           >
             Hotel near KLCC
           </button>
         </div>
 
-        <p className="flex items-start gap-1.5 text-[12px] leading-relaxed text-muted">
+        <p className="flex items-start gap-1.5 border-l-4 border-black pl-3 text-[12.5px] leading-relaxed text-neutral-700">
           <Icon name="lock" size={13} className="mt-0.5 shrink-0" />
           {researchMode === "quote"
             ? "Creates quote options only. No reservation, payment, supplier contact, or booking is made."
             : "Searches public review evidence only. No quote, booking, payment, or supplier action is created."}
         </p>
 
+        {researchMode === "reviews" && <ExaSnippetBar />}
+
         <details open={advancedOpen} onToggle={(event) => setAdvancedOpen(event.currentTarget.open)} className="group">
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-lg border border-border bg-surface px-3 py-2.5 text-[12.5px] font-medium text-ink hover:border-border-strong">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 border-2 border-black bg-white px-3 py-2.5 text-[12.5px] font-medium text-black transition-none hover:bg-black hover:text-white">
             <span>Advanced details</span>
-            <span className="flex items-center gap-2 text-faint">
+            <span className="flex items-center gap-2">
               {researchMode === "quote" ? "Dates, budget, route" : "Query, location, count"}
               <Icon name="chevronRight" size={14} className="transition group-open:rotate-90" />
             </span>
           </summary>
 
-          <div className="mt-3 rounded-lg border border-border bg-surface p-3">
+          <div className="mt-3 border border-black bg-white p-3">
             {researchMode === "quote" ? (
               <div className="space-y-3">
                 <div className="grid gap-3 sm:grid-cols-3">
@@ -495,79 +534,79 @@ export function BookingsResearchWorkspace() {
           </div>
         </details>
 
-        {quoteState === "loading" && researchMode === "quote" && <Notice icon="clock" variant="info">Researching options, policies, and source citations. No supplier action is being taken.</Notice>}
-        {reviewState === "loading" && researchMode === "reviews" && <Notice icon="clock" variant="info">Searching evidence only. No quote or booking is created.</Notice>}
-        {quoteState === "error" && researchMode === "quote" && <Notice icon="alert" variant="crit">{quoteError}</Notice>}
-        {reviewState === "error" && researchMode === "reviews" && <Notice icon="alert" variant="crit">{reviewError}</Notice>}
+        {quoteState === "loading" && researchMode === "quote" && <Notice icon="clock" variant="neutral" className="!border-black !bg-white [&_div]:!text-neutral-700">Researching options, policies, and source citations. No supplier action is being taken.</Notice>}
+        {reviewState === "loading" && researchMode === "reviews" && <Notice icon="clock" variant="neutral" className="!border-black !bg-white [&_div]:!text-neutral-700">Searching evidence only. No quote or booking is created.</Notice>}
+        {quoteState === "error" && researchMode === "quote" && <Notice icon="alert" variant="neutral" className="!border-2 !border-black !bg-white [&_div]:!text-black">{quoteError}</Notice>}
+        {reviewState === "error" && researchMode === "reviews" && <Notice icon="alert" variant="neutral" className="!border-2 !border-black !bg-white [&_div]:!text-black">{reviewError}</Notice>}
       </form>
 
-      <div className="mt-4">
+      <div className="border-t-4 border-black bg-white p-4 sm:p-6">
         {researchMode === "quote" && quoteResult && (
-            <div className="space-y-3 rounded-lg border border-border bg-surface px-3 py-3">
+            <div className="space-y-4 border-2 border-black bg-white px-3 py-3">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
-                  <p className="text-[13px] font-semibold text-ink">{quoteResult.quote.description}</p>
-                  <p className="mt-0.5 text-[12px] text-muted">{quoteResult.quote.options.length} options created · approval only · booking is outside Kira</p>
+                  <p className="editorial-display text-[24px] font-semibold leading-tight text-black">{quoteResult.quote.description}</p>
+                  <p className="editorial-mono mt-1 text-[10px] font-semibold uppercase text-neutral-500">{quoteResult.quote.options.length} options created · approval only · booking is outside Kira</p>
                 </div>
-                <Badge variant={quoteFallback ? "neutral" : "pos"} dot>{quoteFallback ? "local fallback" : quoteResult.research?.provider ?? "researched"}</Badge>
+                <MonoChip>{quoteFallback ? "local fallback" : quoteResult.research?.provider ?? "researched"}</MonoChip>
               </div>
-              {quoteResult.research?.summary && <p className="text-[12.5px] leading-relaxed text-ink-2">{quoteResult.research.summary}</p>}
+              {quoteResult.research?.summary && <p className="border-l-4 border-black pl-3 text-[13px] leading-relaxed text-neutral-700">{quoteResult.research.summary}</p>}
               <div className="grid gap-2 sm:grid-cols-2">
                 {quoteResult.quote.options.slice(0, 4).map((option) => (
-                  <div key={`${quoteResult.quote.id}-${option.index}`} className="rounded-lg border border-border bg-surface-2/45 px-3 py-2">
-                    <p className="text-[12.5px] font-medium text-ink">{option.label}</p>
-                    <p className="mt-0.5 text-[12px] text-muted">{option.supplier} · {money(option.amountMinor, option.currency)}</p>
+                  <div key={`${quoteResult.quote.id}-${option.index}`} className="border border-black bg-white px-3 py-2 transition-none hover:bg-black hover:text-white">
+                    <p className="text-[13px] font-semibold">{option.label}</p>
+                    <p className="tnum mt-0.5 text-[12px]">{option.supplier} · {money(option.amountMinor, option.currency)}</p>
                   </div>
                 ))}
               </div>
               {quoteResult.research?.riskNotes && quoteResult.research.riskNotes.length > 0 && (
                 <ul className="space-y-1">
                   {quoteResult.research.riskNotes.map((note, index) => (
-                    <li key={`${note}-${index}`} className="flex items-start gap-1.5 text-[12px] text-muted">
-                      <Icon name="alert" size={12} className="mt-0.5 shrink-0 text-faint" />
+                    <li key={`${note}-${index}`} className="flex items-start gap-1.5 text-[12px] text-neutral-700">
+                      <Icon name="alert" size={12} className="mt-0.5 shrink-0 text-black" />
                       {note}
                     </li>
                   ))}
                 </ul>
               )}
               <ul className="space-y-1">
-                {quoteResult.quote.researchSources.length > 0 ? quoteResult.quote.researchSources.map((source, index) => <SourceLink key={`${source}-${index}`} value={source} />) : <li className="text-[12px] text-muted">No sources returned by the provider.</li>}
+                {quoteResult.quote.researchSources.length > 0 ? quoteResult.quote.researchSources.map((source, index) => <SourceLink key={`${source}-${index}`} value={source} />) : <li className="text-[12px] text-neutral-700">No sources returned by the provider.</li>}
               </ul>
             </div>
         )}
 
         {researchMode === "reviews" && reviewResult && (
-            <div className="space-y-3 rounded-lg border border-border bg-surface px-3 py-3">
+            <div className="space-y-4 border-2 border-black bg-white px-3 py-3">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
-                  <p className="text-[13px] font-semibold text-ink">{reviewResult.summary?.subject ?? reviewForm.subject}</p>
-                  <p className="mt-0.5 min-w-0 break-words text-[12px] text-muted [overflow-wrap:anywhere]">Query: <span className="text-ink-2">{reviewResult.search.query}</span></p>
+                  <p className="editorial-display text-[24px] font-semibold leading-tight text-black">{reviewResult.summary?.subject ?? reviewForm.subject}</p>
+                  <p className="editorial-mono mt-1 min-w-0 break-words text-[10px] font-semibold uppercase text-neutral-500 [overflow-wrap:anywhere]">Query: <span className="text-black">{reviewResult.search.query}</span></p>
                 </div>
-                <Badge variant={reviewFallback ? "neutral" : "pos"} dot>{reviewResult.search.provider}</Badge>
+                <MonoChip>{reviewResult.search.provider}</MonoChip>
               </div>
-              {reviewFallback && <Notice icon="alert" variant="warn">Live review search is unavailable ({reviewResult.search.status}). Configure Exa for live results.</Notice>}
-              {reviewResult.summary?.summary && <p className="text-[12.5px] leading-relaxed text-ink-2">{reviewResult.summary.summary}</p>}
+              {reviewFallback && <Notice icon="alert" variant="neutral" className="!border-black !bg-white [&_div]:!text-neutral-700">Live review search is unavailable ({reviewResult.search.status}). Configure Exa for live results.</Notice>}
+              {reviewResult.summary?.summary && <p className="border-l-4 border-black pl-3 text-[13px] leading-relaxed text-neutral-700">{reviewResult.summary.summary}</p>}
               {reviewResult.summary?.themes && reviewResult.summary.themes.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
                   {reviewResult.summary.themes.slice(0, 6).map((theme, index) => (
-                    <span key={`${theme.theme}-${index}`} className="rounded border border-border bg-surface-2 px-2 py-1 text-[11.5px] text-muted">{theme.theme} · {theme.sentiment}</span>
+                    <span key={`${theme.theme}-${index}`} className="border border-black bg-white px-2 py-1 text-[11.5px] text-black">{theme.theme} · {theme.sentiment}</span>
                   ))}
                 </div>
               )}
               <div className="space-y-2">
                 {reviewResult.search.results.length > 0 ? reviewResult.search.results.map((item, index) => (
-                  <article key={`${item.url}-${index}`} className="min-w-0 rounded-lg border border-border bg-surface-2/45 px-3 py-2.5 [overflow-wrap:anywhere]">
+                  <article key={`${item.url}-${index}`} className="min-w-0 border border-black bg-white px-3 py-2.5 transition-none [overflow-wrap:anywhere] hover:bg-black hover:text-white">
                     {isExternalUrl(item.url) ? (
-                      <a href={item.url} target="_blank" rel="noreferrer" className="break-words text-[12.5px] font-medium text-brand hover:underline">
+                      <a href={item.url} target="_blank" rel="noreferrer" className="break-words text-[12.5px] font-semibold text-current underline-offset-2 hover:underline">
                         {item.title}
                       </a>
                     ) : (
-                      <span className="break-words text-[12.5px] font-medium text-ink">{item.title}</span>
+                      <span className="break-words text-[12.5px] font-semibold">{item.title}</span>
                     )}
-                    {item.summary && <p className="mt-1 break-words text-[12px] leading-relaxed text-muted">{item.summary}</p>}
-                    {item.highlights && item.highlights.length > 0 && <p className="mt-1 break-words text-[11.5px] leading-relaxed text-faint">{item.highlights[0]}</p>}
+                    {item.summary && <p className="mt-1 break-words text-[12px] leading-relaxed text-current opacity-80">{item.summary}</p>}
+                    {item.highlights && item.highlights.length > 0 && <p className="mt-1 break-words text-[11.5px] leading-relaxed text-current opacity-65">{item.highlights[0]}</p>}
                   </article>
-                )) : <div className="rounded-lg border border-border bg-surface-2/45 px-3 py-6 text-center text-[12.5px] text-muted">No review sources returned.</div>}
+                )) : <div className="border border-black bg-white px-3 py-6 text-center text-[12.5px] text-neutral-700">No review sources returned.</div>}
               </div>
               {reviewResult.summary?.sources && reviewResult.summary.sources.length > 0 && (
                 <ul className="space-y-1">

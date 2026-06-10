@@ -18,15 +18,37 @@ function assertSameOrigin(request: Request) {
   const origin = request.headers.get("origin");
   if (!origin) return;
   try {
-    const requestHost = new URL(request.url).host;
-    const originHost = new URL(origin).host;
-    if (requestHost !== originHost) {
+    const originHost = normalizeHost(new URL(origin).host);
+    const allowedHosts = hostCandidates(request);
+    if (!allowedHosts.has(originHost)) {
       throw new ApiError(403, "BAD_ORIGIN", "Provider-backed requests must come from the same app origin.");
     }
   } catch (error) {
     if (error instanceof ApiError) throw error;
     throw new ApiError(400, "BAD_ORIGIN", "Provider-backed request origin is invalid.");
   }
+}
+
+function hostCandidates(request: Request) {
+  const hosts = new Set<string>();
+  addHost(hosts, new URL(request.url).host);
+  addHost(hosts, request.headers.get("host"));
+  addHost(hosts, request.headers.get("x-forwarded-host"));
+  addHost(hosts, request.headers.get("x-original-host"));
+  return hosts;
+}
+
+function addHost(hosts: Set<string>, value: string | null) {
+  if (!value) return;
+  value
+    .split(",")
+    .map((host) => normalizeHost(host))
+    .filter(Boolean)
+    .forEach((host) => hosts.add(host));
+}
+
+function normalizeHost(host: string) {
+  return host.trim().toLowerCase();
 }
 
 function assertPayloadSize(request: Request, payload: unknown) {

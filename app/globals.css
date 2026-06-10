@@ -225,6 +225,69 @@ textarea {
   animation: fade-rise 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+/* Minimalist monochrome treatment for focused editorial surfaces. */
+.kira-editorial {
+  --editorial-fg: #000000;
+  --editorial-bg: #ffffff;
+  --editorial-muted: #525252;
+  --editorial-line: #000000;
+  --editorial-light: #e5e5e5;
+  position: relative;
+  isolation: isolate;
+  background: var(--editorial-bg);
+  color: var(--editorial-fg);
+  border-color: var(--editorial-line) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  font-family: "Source Serif 4", Georgia, serif;
+}
+
+.kira-editorial::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 1px,
+    #000 1px,
+    #000 2px
+  );
+  background-size: 100% 4px;
+  opacity: 0.018;
+}
+
+.kira-editorial :is(button, input, textarea, select, code, summary, a, span, div, article) {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.kira-editorial :is(input, textarea, select) {
+  font-family: "Source Serif 4", Georgia, serif;
+}
+
+.kira-editorial :is(input, textarea, select):focus {
+  outline: none;
+  border-color: var(--editorial-line) !important;
+}
+
+.editorial-display {
+  font-family: "Playfair Display", Georgia, serif;
+  letter-spacing: -0.035em;
+}
+
+.editorial-mono {
+  font-family: "JetBrains Mono", var(--font-mono);
+  letter-spacing: 0.08em;
+}
+
+.editorial-rule {
+  height: 4px;
+  background: var(--editorial-line);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-in {
     animation: none;
