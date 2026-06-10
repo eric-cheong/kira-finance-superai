@@ -1,9 +1,14 @@
 import { Agent, run, tool } from "@openai/agents";
-import OpenAI from "openai";
 import { zodTextFormat } from "openai/helpers/zod";
 import { z } from "zod";
 import { searchConsumerSources, type ConsumerSearchBundle } from "./consumer-search";
-import { hasOpenAIKey, openaiModel } from "./provider-config";
+import {
+  configureOpenAIAgentsProvider,
+  createOpenAIClient,
+  hasOpenAIProvider,
+  openaiModel,
+  openaiProviderReadiness,
+} from "./provider-config";
 
 const bookingTypeSchema = z.enum(["flight", "hotel", "rail", "car", "product"]);
 const currencySchema = z.enum(["MYR", "SGD", "USD"]);
@@ -114,8 +119,9 @@ function tripResearchAgent() {
 }
 
 export async function researchTripWithOpenAIAgents(input: TripResearchInput) {
-  if (!hasOpenAIKey()) {
-    throw new Error("OPENAI_API_KEY is not configured.");
+  const readiness = configureOpenAIAgentsProvider();
+  if (!readiness.configured) {
+    throw new Error(readiness.fallbackReason ?? "openai_provider_unavailable");
   }
 
   const result = await run(tripResearchAgent(), inputPrompt(input), { maxTurns: 6 });
@@ -144,9 +150,12 @@ function fallbackReviewSummary(subject: string, bundle: ConsumerSearchBundle, re
 }
 
 export async function summarizeReviewsWithOpenAI(subject: string, bundle: ConsumerSearchBundle): Promise<ReviewSummary> {
-  if (!hasOpenAIKey()) return fallbackReviewSummary(subject, bundle, "missing_openai_key");
+  if (!hasOpenAIProvider()) {
+    const readiness = openaiProviderReadiness();
+    return fallbackReviewSummary(subject, bundle, readiness.fallbackReason ?? "openai_provider_unavailable");
+  }
 
-  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const client = createOpenAIClient();
   const response = await client.responses.parse({
     model: openaiModel(),
     input: [

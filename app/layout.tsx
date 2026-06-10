@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AppShell } from "@/components/app-shell";
+import { HashTargetFocus } from "@/components/hash-target-focus";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" data-theme="kira" suppressHydrationWarning>
       <body>
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
+        <HashTargetFocus />
         <AppShell>{children}</AppShell>
       </body>
     </html>

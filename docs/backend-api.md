@@ -24,8 +24,8 @@ and file-backed for development. It persists mutable demo state to
 |---|---:|---|
 | `/api/health` | `GET` | Backend status, persistence mode, entity counts. |
 | `/api/ai/status` | `GET` | OpenAI/Exa provider configuration status and booking boundary. |
-| `/api/assistant` | `GET` | Kira AI bot knowledge base and workspace context. |
-| `/api/assistant` | `POST` | Guarded Agent SDK request understanding over the local Kira knowledge base; falls back locally without working OpenAI access. |
+| `/api/assistant` | `GET` | Kira AI bot knowledge base and workspace context, including counts, providers, `nextItems`, and `recommendedNextItem`. |
+| `/api/assistant` | `POST` | Guarded Agent SDK request understanding over the local Kira knowledge base; falls back locally without working OpenAI access. "What next?" requests are post-processed against live workspace state. |
 | `/api/assistant/voice-session` | `POST` | Guarded ephemeral OpenAI Realtime client-secret minting for browser live voice when OpenAI credentials are valid. |
 | `/api/session` | `GET` | Current user, org, preferences, nav badges. |
 | `/api/reference` | `GET` | Accounts, tax codes, cost centres, country configs, FX rates. |
@@ -106,15 +106,18 @@ and file-backed for development. It persists mutable demo state to
   selected models; otherwise assistant text falls back locally and realtime
   session creation returns `502 REALTIME_SESSION_FAILED`.
 - `OPENAI_MODEL` overrides the model; default is `gpt-5.5`.
+- OpenAI clients use the shared hard-coded base URL
+  `https://api.openai.com/v1` for SDK, Agents SDK, and realtime flows.
 - `OPENAI_REALTIME_MODEL` overrides the realtime model; default is
   `gpt-realtime-2`.
 - `EXA_API_KEY` enables live Exa consumer search for flights, hotels, policies,
   trip sources, and reviews.
 - The assistant remains usable without OpenAI keys via local knowledge-base
-  matching. Browser voice input/readback uses SpeechRecognition and
-  speechSynthesis as a chained voice path; live speech-to-speech uses the
-  OpenAI Realtime Agents SDK in the browser after the ephemeral session route
-  returns a client secret.
+  matching. Its concrete next-item recommendation is always local/state-derived
+  and works whether the OpenAI agent succeeds or falls back. Browser voice
+  input/readback uses SpeechRecognition and speechSynthesis as a chained voice
+  path; live speech-to-speech uses the OpenAI Realtime Agents SDK in the browser
+  after the ephemeral session route returns a client secret.
 - Provider-backed routes are same-origin guarded and rate-limited by
   `KIRA_PROVIDER_RATE_LIMIT_PER_MINUTE`, `KIRA_PROVIDER_MAX_PAYLOAD_BYTES`,
   `KIRA_PROVIDER_MAX_STRING_LENGTH`, and
@@ -137,7 +140,46 @@ and file-backed for development. It persists mutable demo state to
 ```
 
 `message` is required and capped at 1200 characters. `mode` is `text` or
-`voice`. All API responses use the shared wrapper:
+`voice`. For "what should I do next?"-style prompts, `output.nextItem` is a
+hard-coded selection from open approvals, receipts needing review, or open
+booking quotes with at least one unexpired option:
+
+```json
+{
+  "ok": true,
+  "data": {
+    "provider": "local-fallback",
+    "model": null,
+    "output": {
+      "understoodRequest": "What should I do next?",
+      "intent": "approval",
+      "answer": "Look at Review out-of-policy spend — Starbucks RM64.80 (MYR 64.80). It is an open tier-4 approval with 76% confidence, so Kira is blocked until a human decides. Staff/competitor visit · exceeds RM50 meal policy",
+      "nextItem": {
+        "id": "apr_03",
+        "kind": "approval",
+        "label": "Review out-of-policy spend — Starbucks RM64.80",
+        "href": "/approvals?item=apr_03#apr_03",
+        "actionClass": "human-approved",
+        "approvalTier": 4,
+        "reason": "It is an open tier-4 approval with 76% confidence, so Kira is blocked until a human decides.",
+        "detail": "Staff/competitor visit · exceeds RM50 meal policy",
+        "amount": "MYR 64.80"
+      }
+    },
+    "knowledgeBase": [],
+    "workspace": {
+      "counts": {},
+      "nextItems": [],
+      "recommendedNextItem": null,
+      "providers": {}
+    }
+  }
+}
+```
+
+When the queue is empty, `nextItem` is `null`, `routeSuggestion` points to `/`,
+and the action remains read-only / tier 1. All API responses use the shared
+wrapper:
 
 ```json
 { "ok": true, "data": {} }

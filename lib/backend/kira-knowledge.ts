@@ -1,5 +1,7 @@
 import { providerStatus } from "./provider-config";
 import { state } from "./state";
+import { money } from "@/lib/format";
+import type { ActionClass, ApprovalTier } from "@/lib/types";
 
 export type KnowledgeEntry = {
   id: string;
@@ -9,6 +11,19 @@ export type KnowledgeEntry = {
   summary: string;
   facts: string[];
   keywords: string[];
+};
+
+export type AssistantNextItem = {
+  id: string;
+  kind: "approval" | "receipt_review" | "booking_quote";
+  label: string;
+  href: string;
+  priority: number;
+  actionClass: ActionClass;
+  approvalTier: ApprovalTier;
+  reason: string;
+  detail: string;
+  amount?: string;
 };
 
 export const KIRA_KNOWLEDGE_BASE: KnowledgeEntry[] = [
@@ -182,8 +197,71 @@ export function assistantKnowledge(query = "", limit = 5) {
   return scored.length > 0 ? scored : KIRA_KNOWLEDGE_BASE.slice(0, limit);
 }
 
+function hasLiveBookingOption(options: { expiresAt?: string }[], nowMs: number) {
+  return options.some((option) => !option.expiresAt || Date.parse(option.expiresAt) > nowMs);
+}
+
+export function assistantNextItems(limit = 5): AssistantNextItem[] {
+  const nowMs = Date.now();
+  const approvals = state.approvals
+    .filter((item) => item.state === "open")
+    .map((item): AssistantNextItem => ({
+      id: item.id,
+      kind: "approval",
+      label: item.title,
+      href: `/approvals?item=${encodeURIComponent(item.id)}#${encodeURIComponent(item.id)}`,
+      priority: item.tier * 100 + (100 - item.confidence),
+      actionClass: "human-approved",
+      approvalTier: item.tier,
+      reason: `It is an open tier-${item.tier} approval with ${item.confidence}% confidence, so Kira is blocked until a human decides.`,
+      detail: item.subject,
+      amount: item.amountMinor != null && item.currency ? money(item.amountMinor, item.currency) : undefined,
+    }));
+
+  const receipts = state.receipts
+    .filter((item) => item.status === "needs_review")
+    .map((item): AssistantNextItem => ({
+      id: item.id,
+      kind: "receipt_review",
+      label: `${item.supplier} ${item.kind} needs review`,
+      href: `/capture?item=${encodeURIComponent(item.id)}#${encodeURIComponent(item.id)}`,
+      priority: 250 + (100 - item.ocrConfidence),
+      actionClass: "suggestion",
+      approvalTier: 2,
+      reason: `Its OCR confidence is ${item.ocrConfidence}%, below the review threshold, so posting stays locked until coding is reviewed.`,
+      detail: `${item.docNo ?? item.id} · ${item.docDate} · suggested ${item.suggestedAccount ?? "account"} / ${item.suggestedTaxCode ?? "tax code"}`,
+      amount: money(item.totalMinor, item.currency),
+    }));
+
+  const quotes = state.bookingQuotes
+    .filter((item) => item.status === "open")
+    .filter((item) => hasLiveBookingOption(item.options, nowMs))
+    .map((item): AssistantNextItem => {
+      const liveOptions = item.options.filter((option) => !option.expiresAt || Date.parse(option.expiresAt) > nowMs);
+      const cheapest = [...liveOptions].sort((a, b) => a.amountMinor - b.amountMinor)[0];
+      return {
+        id: item.id,
+        kind: "booking_quote",
+        label: item.description,
+        href: `/bookings?item=${encodeURIComponent(item.id)}#${encodeURIComponent(item.id)}`,
+        priority: 200 + item.options.length,
+        actionClass: "human-approved",
+        approvalTier: 3,
+        reason: "It is an open booking quote with researched options, and no supplier reservation can happen until you inspect and approve one.",
+        detail: cheapest ? `Cheapest live option: ${cheapest.label} from ${cheapest.supplier}` : `${item.options.length} researched options`,
+        amount: cheapest ? money(cheapest.amountMinor, cheapest.currency) : undefined,
+      };
+    });
+
+  return [...approvals, ...receipts, ...quotes]
+    .sort((a, b) => b.priority - a.priority || a.label.localeCompare(b.label))
+    .slice(0, limit);
+}
+
 export function assistantWorkspaceContext() {
   const providers = providerStatus();
+  const nowMs = Date.now();
+  const nextItems = assistantNextItems(6);
   return {
     org: {
       name: state.org.legalName,
@@ -195,10 +273,12 @@ export function assistantWorkspaceContext() {
       openApprovals: state.approvals.filter((item) => item.state === "open").length,
       transactions: state.transactions.length,
       receiptsInReview: state.receipts.filter((item) => item.status === "needs_review").length,
-      openBookingQuotes: state.bookingQuotes.filter((item) => item.status === "open").length,
+      openBookingQuotes: state.bookingQuotes.filter((item) => item.status === "open" && hasLiveBookingOption(item.options, nowMs)).length,
       vendors: state.vendors.length,
       auditEntries: state.audit.length,
     },
+    nextItems,
+    recommendedNextItem: nextItems[0] ?? null,
     providers,
   };
 }

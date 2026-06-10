@@ -93,7 +93,11 @@ function QuoteCard({ q }: { q: BookingQuote }) {
   const cheapest = sorted[0];
   const icon = TYPE_ICON[q.type] ?? "transactions";
   return (
-    <Card>
+    <Card
+      id={q.id}
+      tabIndex={-1}
+      className="scroll-mt-24 target:border-brand/40 target:ring-4 target:ring-brand/15 focus:outline-none focus:ring-4 focus:ring-brand/15"
+    >
       <CardHeader
         title={q.description}
         subtitle={`Requested by ${db.user(q.requestedBy)?.name ?? q.requestedBy} · ${fmtDate(q.createdAt)}`}

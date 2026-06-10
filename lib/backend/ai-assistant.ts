@@ -1,10 +1,18 @@
 import { Agent, run, tool } from "@openai/agents";
 import { createHash } from "crypto";
-import OpenAI from "openai";
 import { z } from "zod";
 import { ApiError } from "./http";
-import { assistantKnowledge, assistantWorkspaceContext, KIRA_KNOWLEDGE_BASE } from "./kira-knowledge";
-import { hasOpenAIKey, openaiModel, providerStatus } from "./provider-config";
+import { assistantKnowledge, assistantNextItems, assistantWorkspaceContext, KIRA_KNOWLEDGE_BASE, type AssistantNextItem } from "./kira-knowledge";
+import {
+  configureOpenAIAgentsProvider,
+  createOpenAIClient,
+  hasOpenAIProvider,
+  openaiModel,
+  openaiProviderReadiness,
+  openaiRealtimeConnectionURL,
+  openaiRealtimeModel,
+  providerStatus,
+} from "./provider-config";
 
 export const assistantRequestSchema = z.object({
   message: z.string().min(1).max(1200),
@@ -27,6 +35,17 @@ const assistantOutputSchema = z.object({
   understoodRequest: z.string(),
   intent: assistantIntentSchema,
   answer: z.string(),
+  nextItem: z.object({
+    id: z.string(),
+    kind: z.enum(["approval", "receipt_review", "booking_quote"]),
+    label: z.string(),
+    href: z.string(),
+    actionClass: z.enum(["read-only", "suggestion", "notification", "human-approved", "prohibited"]),
+    approvalTier: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]),
+    reason: z.string(),
+    detail: z.string(),
+    amount: z.string().optional(),
+  }).nullable().default(null),
   routeSuggestion: z.object({
     label: z.string(),
     href: z.string(),
@@ -76,6 +95,7 @@ function assistantAgent() {
     instructions: [
       "You are Kira's in-app AI assistant for an APAC SME finance workspace.",
       "First infer what the user is asking for. Ground every answer in the Kira knowledge base or current workspace context.",
+      "When the user asks what to do next, pick exactly one item from workspace.recommendedNextItem or workspace.nextItems; name the concrete approval, receipt, or booking quote; include why it was picked; and deep-link to that exact item.",
       "Recommend the most relevant route when useful.",
       "Never claim Kira moved money, paid, submitted to a regulator, booked travel, contacted a supplier, issued cards, stored PAN, executed FX, or placed trades.",
       "If the request is consequential, classify it as human-approved or prohibited and explain the approval boundary.",
@@ -109,6 +129,71 @@ function classifyLocal(message: string): Pick<AssistantOutput, "intent" | "actio
   return { intent: "explain", actionClass: "read-only", approvalTier: 1 };
 }
 
+function isNextItemRequest(message: string) {
+  return /\b(what|where|which).*\b(next|now)\b|\b(next item|next task|do next|look at next|inspect next|review next)\b/i.test(message);
+}
+
+function nextItemSource(nextItem: AssistantNextItem) {
+  if (nextItem.kind === "approval") return { title: "Approvals", route: "/approvals" };
+  if (nextItem.kind === "receipt_review") return { title: "Capture Inbox", route: "/capture" };
+  return { title: "Bookings Research", route: "/bookings" };
+}
+
+function nextItemAnswer(nextItem: AssistantNextItem) {
+  const amount = nextItem.amount ? ` (${nextItem.amount})` : "";
+  return `Look at ${nextItem.label}${amount}. ${nextItem.reason} ${nextItem.detail}`;
+}
+
+function applyNextItemRecommendation(output: AssistantOutput, request: AssistantRequest): AssistantOutput {
+  if (!isNextItemRequest(`${request.message} ${request.transcript ?? ""}`)) return output;
+  const nextItem = assistantNextItems(1)[0];
+  if (!nextItem) {
+    return {
+      ...output,
+      answer: "There is no open approval, receipt review, or booking quote waiting right now. The workspace queue is clear.",
+      nextItem: null,
+      routeSuggestion: {
+        label: "Daily Briefing",
+        href: "/",
+        reason: "The briefing is the fastest place to verify there are no queued items.",
+      },
+      actionClass: "read-only",
+      approvalTier: 1,
+      confidence: Math.max(output.confidence, 92),
+      trace: [...output.trace, "Checked live workspace next-item queue"].slice(0, 8),
+    };
+  }
+  const source = nextItemSource(nextItem);
+  return {
+    ...output,
+    understoodRequest: request.transcript || request.message,
+    intent: nextItem.kind === "approval" ? "approval" : nextItem.kind === "receipt_review" ? "reconcile" : "research",
+    answer: nextItemAnswer(nextItem),
+    nextItem: {
+      id: nextItem.id,
+      kind: nextItem.kind,
+      label: nextItem.label,
+      href: nextItem.href,
+      actionClass: nextItem.actionClass,
+      approvalTier: nextItem.approvalTier,
+      reason: nextItem.reason,
+      detail: nextItem.detail,
+      amount: nextItem.amount,
+    },
+    routeSuggestion: {
+      label: `Open ${nextItem.label}`,
+      href: nextItem.href,
+      reason: nextItem.reason,
+    },
+    actionClass: nextItem.actionClass,
+    approvalTier: nextItem.approvalTier,
+    confidence: Math.max(output.confidence, 94),
+    sources: [source, ...output.sources.filter((item) => item.route !== source.route)].slice(0, 6),
+    trace: [...output.trace.filter((step) => step !== "Selected live next item"), "Selected live next item"].slice(0, 8),
+    followUps: ["Open the linked item", "Show the other queued items", "Explain the approval boundary"],
+  };
+}
+
 function localAssistantAnswer(request: AssistantRequest, reason: string): AssistantOutput {
   const entries = assistantKnowledge(`${request.message} ${request.transcript ?? ""}`, 4);
   const primary = entries[0] ?? KIRA_KNOWLEDGE_BASE[0];
@@ -119,10 +204,11 @@ function localAssistantAnswer(request: AssistantRequest, reason: string): Assist
       ? "That path needs explicit human approval before any state-changing record is created."
       : "This is safe as read-only guidance or navigation.";
 
-  return {
+  const output: AssistantOutput = {
     understoodRequest: request.transcript || request.message,
     intent: classification.intent,
     answer: `${boundary} The closest Kira area is ${primary.title}: ${primary.summary}`,
+    nextItem: null,
     routeSuggestion: {
       label: primary.title,
       href: primary.route,
@@ -139,6 +225,7 @@ function localAssistantAnswer(request: AssistantRequest, reason: string): Assist
     ],
     followUps: ["Open the suggested route", "Ask for the evidence behind this", "Ask what action is safely allowed next"],
   };
+  return applyNextItemRecommendation(output, request);
 }
 
 function withTimeout<T>(promise: Promise<T>, ms: number, label: string) {
@@ -207,6 +294,7 @@ function normalizeAssistantOutput(output: AssistantOutput): AssistantOutput {
     : Math.round(output.confidence);
   return {
     ...output,
+    nextItem: output.nextItem ?? null,
     confidence: Math.max(0, Math.min(100, confidence)),
   };
 }
@@ -227,11 +315,22 @@ function safetyIdentifier(request?: Request) {
 
 export async function runAssistant(requestInput: unknown) {
   const request = assistantRequestSchema.parse(requestInput);
-  if (!hasOpenAIKey()) {
+  if (isNextItemRequest(`${request.message} ${request.transcript ?? ""}`)) {
     return {
       provider: "local-fallback" as const,
       model: null,
-      output: localAssistantAnswer(request, "missing_openai_key"),
+      output: localAssistantAnswer(request, "workspace_next_item"),
+      knowledgeBase: assistantKnowledge(request.message, 6),
+      workspace: assistantWorkspaceContext(),
+    };
+  }
+
+  const openai = configureOpenAIAgentsProvider();
+  if (!openai.configured) {
+    return {
+      provider: "local-fallback" as const,
+      model: null,
+      output: localAssistantAnswer(request, openai.fallbackReason ?? "openai_provider_unavailable"),
       knowledgeBase: assistantKnowledge(request.message, 6),
       workspace: assistantWorkspaceContext(),
     };
@@ -247,7 +346,7 @@ export async function runAssistant(requestInput: unknown) {
       workspace: assistantWorkspaceContext(),
       requiredOutput: "assistantOutputSchema",
     }), { maxTurns: 5 }), ASSISTANT_PROVIDER_TIMEOUT_MS, "openai_timeout");
-    const output = enforceAssistantSafety(request, normalizeAssistantOutput(assistantOutputSchema.parse(result.finalOutput)));
+    const output = enforceAssistantSafety(request, applyNextItemRecommendation(normalizeAssistantOutput(assistantOutputSchema.parse(result.finalOutput)), request));
     return {
       provider: "openai-agents" as const,
       model: openaiModel(),
@@ -269,15 +368,22 @@ export async function runAssistant(requestInput: unknown) {
 }
 
 export async function createAssistantRealtimeSession(request?: Request) {
-  if (!hasOpenAIKey()) {
-    throw new ApiError(409, "OPENAI_NOT_CONFIGURED", "OPENAI_API_KEY is required for realtime voice sessions.");
+  if (!hasOpenAIProvider()) {
+    const readiness = openaiProviderReadiness();
+    throw new ApiError(
+      409,
+      "OPENAI_NOT_CONFIGURED",
+      readiness.fallbackReason === "missing_openai_key"
+        ? "OPENAI_API_KEY is required for realtime voice sessions."
+        : "OPENAI_BASE_URL must be a valid http(s) URL for realtime voice sessions.",
+      { reason: readiness.fallbackReason },
+    );
   }
-  const client = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
+  const client = createOpenAIClient({
     timeout: ASSISTANT_PROVIDER_TIMEOUT_MS,
     defaultHeaders: { "OpenAI-Safety-Identifier": safetyIdentifier(request) },
   });
-  const realtimeModel = process.env.OPENAI_REALTIME_MODEL?.trim() || "gpt-realtime-2";
+  const realtimeModel = openaiRealtimeModel();
   try {
     const secret = await withTimeout(client.realtime.clientSecrets.create({
       expires_after: { anchor: "created_at", seconds: 600 },
@@ -318,6 +424,7 @@ export async function createAssistantRealtimeSession(request?: Request) {
       provider: providerStatus(),
       realtime: {
         model: realtimeModel,
+        url: openaiRealtimeConnectionURL(),
         sessionId: secret.session.id,
         expiresAt: secret.expires_at,
         clientSecret: secret.value,
