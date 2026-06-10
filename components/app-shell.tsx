@@ -457,10 +457,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="navbar-start min-w-0 flex-1 gap-3">
             <button
               type="button"
-              onClick={() => {
-                const toggle = document.getElementById("app-shell-drawer") as HTMLInputElement | null;
-                if (toggle) toggle.checked = !toggle.checked;
-              }}
+              onClick={() => setOpen((current) => !current)}
               className="-ml-1 inline-flex h-11 min-h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-transparent text-ink hover:bg-surface-2/70 xl:hidden"
               aria-label="Open navigation"
               aria-controls="app-shell-drawer"

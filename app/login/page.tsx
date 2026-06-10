@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { safeRedirectPath } from "@/lib/safe-redirect";
 import styles from "./login.module.css";
 
 const REMEMBER_KEY = "kira-remembered-login";
@@ -76,8 +77,7 @@ export default function LoginPage() {
 
       const name = payload?.data?.user?.name;
       setStatus({ kind: "ok", message: name ? `Signed in as ${name}.` : "Signed in." });
-      const from = searchParams?.get("from");
-      router.replace(from && from.startsWith("/") ? from : "/");
+      router.replace(safeRedirectPath(searchParams?.get("from")));
       router.refresh();
     } catch {
       setStatus({ kind: "error", message: "Network error. Is the server running?" });

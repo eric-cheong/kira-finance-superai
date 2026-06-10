@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { ApiError, fail, ok, readJson } from "@/lib/backend/http";
+import { createSessionCookie } from "@/lib/backend/session-cookie";
 import { session } from "@/lib/backend/services";
 import { appendAudit, state } from "@/lib/backend/state";
 
@@ -25,7 +26,7 @@ export async function POST(request: Request) {
 
     let user = null;
     if (login === "123" && password === "123") {
-      user = state.users.find((candidate) => candidate.id === state.currentUserId) ?? state.users[0];
+      user = state.users[0];
     } else {
       user = state.users.find((candidate) => candidate.email.toLowerCase() === login) ?? null;
     }
@@ -34,7 +35,6 @@ export async function POST(request: Request) {
       throw new ApiError(401, "INVALID_CREDENTIALS", "Login not found. Try 123 for username and 123 for password.");
     }
 
-    state.currentUserId = user.id;
     appendAudit({
       actor: user.id,
       action: "auth.login",
@@ -43,14 +43,14 @@ export async function POST(request: Request) {
       tier: 1,
     });
 
-    cookies().set(SESSION_COOKIE, user.id, {
+    cookies().set(SESSION_COOKIE, await createSessionCookie(user.id), {
       httpOnly: true,
       sameSite: "lax",
       path: "/",
       maxAge: 60 * 60 * 24 * 7,
     });
 
-    return ok(session());
+    return ok(session(user.id));
   } catch (error) {
     return fail(error);
   }

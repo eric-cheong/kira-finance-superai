@@ -91,9 +91,9 @@ export function health() {
   };
 }
 
-export function session() {
+export function session(userId?: string) {
   return {
-    user: currentUser(),
+    user: user(userId) ?? currentUser(),
     org: state.org,
     preferences: state.preferences,
     navigationBadges: {
