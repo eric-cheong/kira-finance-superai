@@ -355,6 +355,19 @@ function SidebarBody({
           )}>
             {sessionStatus === "live" ? "live" : sessionStatus === "loading" ? "sync" : "offline"}
           </span>
+          <button
+            type="button"
+            onClick={() => {
+              fetch("/api/auth/logout", { method: "POST" }).finally(() => {
+                window.location.assign("/login");
+              });
+            }}
+            aria-label="Sign out"
+            title="Sign out"
+            className="btn-lift inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-transparent text-muted transition hover:bg-surface-2/70 hover:text-ink"
+          >
+            <Icon name="arrowRight" size={15} />
+          </button>
         </div>
       </div>
     </div>
@@ -422,6 +435,11 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const navHidden = !open && !isDesktop;
   const approvalCount = session?.navigationBadges.approvals ?? 0;
+
+  // The login screen renders its own full-bleed layout without workspace chrome.
+  if (pathname === "/login") {
+    return <>{children}</>;
+  }
 
   return (
     <div className="drawer app-wash min-h-screen xl:drawer-open">
