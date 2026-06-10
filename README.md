@@ -29,6 +29,8 @@ Other scripts: `npm run build`, `npm start`, `npm run typecheck`.
 Optional live providers:
 
 ```bash
+AI_GATEWAY_API_KEY=...        # enables Vercel AI SDK / AI Gateway booking research
+VERCEL_AI_MODEL=alibaba/qwen3.7-plus  # optional override
 OPENAI_API_KEY=...      # enables OpenAI Responses + Agents SDK flows
 OPENAI_MODEL=gpt-5.5   # optional override
 EXA_API_KEY=...         # enables live Exa consumer search for trips/reviews
@@ -103,8 +105,11 @@ KL coffee roaster with a Singapore outlet (SST-registered, MyInvois Phase 2).
 - **Local backend included** — `app/api/**` exposes the product workflows over
   HTTP, backed by a deterministic runtime state store seeded from
   `lib/data/seed.ts`. Local mutations persist to `.kira-data/state.json`.
-- **OpenAI + Exa provider layer** — `lib/backend/openai-consumer-agents.ts`
-  uses the OpenAI Agents SDK for read-only trip research and direct OpenAI
+- **AI Gateway + OpenAI + Exa provider layer** —
+  `lib/backend/vercel-ai-consumer-agents.ts` uses the Vercel AI SDK + AI
+  Gateway as the primary booking-research path, defaulting to
+  `alibaba/qwen3.7-plus`. `lib/backend/openai-consumer-agents.ts` uses the
+  OpenAI Agents SDK for fallback read-only trip research and direct OpenAI
   Responses calls for review synthesis through the shared OpenAI base URL.
   `lib/backend/consumer-search.ts` uses Exa when `EXA_API_KEY` is present and
   falls back cleanly when it is not.

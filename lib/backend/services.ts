@@ -35,6 +35,7 @@ import {
   tripResearchInputSchema,
   type TripResearchInput,
 } from "./openai-consumer-agents";
+import { researchTripWithVercelAI } from "./vercel-ai-consumer-agents";
 import { providerStatus } from "./provider-config";
 import {
   appendAudit,
@@ -538,34 +539,51 @@ export function decideBooking(
 export async function createBookingQuote(input: unknown) {
   const request = parseTripResearchRequest(input);
   try {
-    const research = await researchTripWithOpenAIAgents(request);
+    const research = await researchTripWithVercelAI(request);
     return createBookingQuoteFromResearch(request, research);
   } catch (error) {
-    const reason = providerFailureCode(error);
-    return createOfflineBookingQuote(request, reason);
+    const vercelReason = providerFailureCode(error);
+    try {
+      const research = await researchTripWithOpenAIAgents(request);
+      return createBookingQuoteFromResearch(request, research);
+    } catch (fallbackError) {
+      const openaiReason = providerFailureCode(fallbackError);
+      return createOfflineBookingQuote(request, `${vercelReason}; ${openaiReason}`);
+    }
   }
 }
 
 export async function researchConsumerTrip(input: unknown) {
   const request = parseTripResearchRequest(input);
   try {
-    const research = await researchTripWithOpenAIAgents(request);
+    const research = await researchTripWithVercelAI(request);
     return {
       request,
       providers: providerStatus(),
       ...research,
     };
   } catch (error) {
-    const reason = providerFailureCode(error);
-    return {
-      request,
-      providers: providerStatus(),
-      provider: "local-fallback" as const,
-      model: null,
-      output: offlineTripResearchOutput(request, reason),
-      interruptions: 0,
-      error: reason,
-    };
+    const vercelReason = providerFailureCode(error);
+    try {
+      const research = await researchTripWithOpenAIAgents(request);
+      return {
+        request,
+        providers: providerStatus(),
+        ...research,
+      };
+    } catch (fallbackError) {
+      const openaiReason = providerFailureCode(fallbackError);
+      const reason = `${vercelReason}; ${openaiReason}`;
+      return {
+        request,
+        providers: providerStatus(),
+        provider: "local-fallback" as const,
+        model: null,
+        output: offlineTripResearchOutput(request, reason),
+        interruptions: 0,
+        error: reason,
+      };
+    }
   }
 }
 
@@ -599,8 +617,10 @@ export function aiProviderStatus() {
 
 function providerFailureCode(error: unknown) {
   const message = error instanceof Error ? error.message : "";
+  if (/AI_GATEWAY_API_KEY|VERCEL_AI_GATEWAY_API_KEY/i.test(message)) return "missing_ai_gateway_key";
   if (/OPENAI_API_KEY/i.test(message)) return "missing_openai_key";
   if (/EXA_API_KEY/i.test(message)) return "missing_exa_key";
+  if (/AI Gateway|ai gateway|gateway|401|authentication|unauthorized/i.test(message)) return "ai_gateway_unavailable";
   if (/timeout|timed out/i.test(message)) return "provider_timeout";
   return "provider_unavailable";
 }
@@ -655,7 +675,7 @@ function createOfflineBookingQuote(request: TripResearchInput, reason: string) {
 
 function createBookingQuoteFromResearch(
   request: TripResearchInput,
-  research: Awaited<ReturnType<typeof researchTripWithOpenAIAgents>>,
+  research: Awaited<ReturnType<typeof researchTripWithOpenAIAgents>> | Awaited<ReturnType<typeof researchTripWithVercelAI>>,
 ) {
   const now = new Date();
   const expiresAt = new Date(now.getTime() + 8 * 60 * 60 * 1000).toISOString();
@@ -705,7 +725,7 @@ function createBookingQuoteFromResearch(
     actor: "Booking Agent",
     action: "booking.quote.create",
     target: quote.id,
-    detail: `Created ${request.type} quote options using OpenAI Agents + Exa research. Approval required; no supplier action was taken.`,
+    detail: `Created ${request.type} quote options using ${research.provider} research. Approval required; no supplier action was taken.`,
     tier: 1,
   });
   return {

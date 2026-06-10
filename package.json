@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@openai/agents": "^0.11.6",
+    "ai": "^6.0.199",
     "exa-js": "^2.13.0",
     "next": "14.2.35",
     "openai": "^6.42.0",

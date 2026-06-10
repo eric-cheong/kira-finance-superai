@@ -100,11 +100,17 @@ and file-backed for development. It persists mutable demo state to
 
 ## Optional Live AI Providers
 
+- `AI_GATEWAY_API_KEY` enables Vercel AI SDK / AI Gateway booking research.
+  `VERCEL_AI_GATEWAY_API_KEY` is also accepted as a local alias; the app maps it
+  to the AI SDK's default `AI_GATEWAY_API_KEY` environment variable at runtime.
+- `VERCEL_AI_MODEL` overrides the Vercel AI Gateway model; default is
+  `alibaba/qwen3.7-plus`.
 - `OPENAI_API_KEY` enables the OpenAI Agents SDK trip-research flow and direct
   Responses API review synthesis, plus the Kira AI bot's Agent SDK request
-  understanding and realtime voice-session route. The key must be valid for the
-  selected models; otherwise assistant text falls back locally and realtime
-  session creation returns `502 REALTIME_SESSION_FAILED`.
+  understanding and realtime voice-session route. For booking research, OpenAI
+  Agents are used as a fallback when AI Gateway is unavailable. The key must be
+  valid for the selected models; otherwise assistant text falls back locally and
+  realtime session creation returns `502 REALTIME_SESSION_FAILED`.
 - `OPENAI_MODEL` overrides the model; default is `gpt-5.5`.
 - OpenAI clients use the shared hard-coded base URL
   `https://api.openai.com/v1` for SDK, Agents SDK, and realtime flows.
