@@ -40,7 +40,7 @@ export default function CapturePage() {
         </div>
 
         <Card pad={false}>
-          <div className="px-5 pt-5">
+          <div className="px-4 pt-4 sm:px-5 sm:pt-5">
             <CardHeader title="Inbox" subtitle={`${inbox.length} captured documents`} icon="capture" />
           </div>
           <div className="divide-y divide-border">
@@ -49,14 +49,14 @@ export default function CapturePage() {
               const tc = db.taxCode(r.suggestedTaxCode);
               const st = STATUS[r.status];
               return (
-                <div key={r.id} className="flex flex-col gap-3 px-4 py-3.5 hover:bg-surface-2/40 sm:flex-row sm:items-center sm:px-5">
+                <div key={r.id} className="flex flex-col gap-3 px-4 py-4 transition hover:bg-surface-2/40 sm:flex-row sm:items-center sm:px-5">
                   <Thumb hint={r.thumbHint} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <span className="truncate text-[13.5px] font-medium text-ink">{r.supplier}</span>
                       <Badge variant="neutral">{r.kind}</Badge>
                     </div>
-                    <p className="mt-0.5 truncate text-[12px] text-muted">
+                    <p className="mt-1 truncate text-[12px] leading-5 text-muted">
                       {r.docNo} · {fmtDate(r.docDate)} · via {r.capturedVia}
                     </p>
                     <div className="mt-1.5 flex flex-wrap items-center gap-1.5">

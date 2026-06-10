@@ -48,7 +48,7 @@ function ProviderTrustPanel() {
         icon="spark"
         right={<Badge variant={liveOpenAI || liveExa ? "brand" : "neutral"} dot>{liveOpenAI || liveExa ? "live-ready" : "offline"}</Badge>}
       />
-      <div className="grid gap-2 text-[12.5px] sm:grid-cols-2">
+      <div className="grid gap-3 text-[12.5px] sm:grid-cols-2">
         <div className="rounded-lg border border-border bg-surface-2/45 px-3 py-2">
           <div className="flex items-center justify-between gap-2">
             <span className="font-medium text-ink">OpenAI Agents</span>
@@ -130,7 +130,7 @@ function QuoteCard({ q }: { q: BookingQuote }) {
                   </ul>
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {opt.breakdown.map((b, i) => (
-                      <span key={i} className="tnum rounded border border-border px-2 py-0.5 text-[11.5px] text-muted">
+                      <span key={i} className="tnum rounded border border-border px-2 py-0.5 text-[12px] text-muted">
                         {b.item}: {b.amountMinor === 0 ? "incl." : money(b.amountMinor, opt.currency)}
                       </span>
                     ))}
@@ -139,7 +139,7 @@ function QuoteCard({ q }: { q: BookingQuote }) {
                 <div className="w-full shrink-0 text-left sm:w-auto sm:text-right">
                   <div className="tnum text-[17px] font-semibold text-ink">{money(opt.amountMinor, opt.currency)}</div>
                   {opt.expiresAt && (
-                    <div className="mt-0.5 text-[11px] text-faint">expires {fmtDate(opt.expiresAt)}</div>
+                    <div className="mt-0.5 text-[12px] text-faint">expires {fmtDate(opt.expiresAt)}</div>
                   )}
                 </div>
               </div>
@@ -174,7 +174,7 @@ function BookingRow({ b }: { b: Booking }) {
   const st = STATUS[b.status];
   const icon = TYPE_ICON[b.type] ?? "transactions";
   return (
-    <tr className="hover:bg-surface-2/40">
+    <tr className="transition hover:bg-surface-2/40">
       <Td>
         <div className="flex items-center gap-2">
           <Icon name={icon} size={15} className="shrink-0 text-faint" />
@@ -189,7 +189,7 @@ function BookingRow({ b }: { b: Booking }) {
           {st.label}
         </Badge>
       </Td>
-      <Td className="whitespace-nowrap tnum text-[11.5px] text-faint">{b.confirmationRef ?? "—"}</Td>
+      <Td className="whitespace-nowrap tnum text-[12px] text-faint">{b.confirmationRef ?? "—"}</Td>
     </tr>
   );
 }
@@ -206,7 +206,7 @@ function BookingMobileCard({ b }: { b: Booking }) {
             <h3 className="truncate text-[14px] font-semibold text-ink">{b.description}</h3>
           </div>
           <p className="mt-1 text-[12px] text-muted">{fmtDate(b.startDate)} · {b.supplier}</p>
-          <p className="tnum mt-1 text-[11.5px] text-faint">{b.confirmationRef ?? "No reference yet"}</p>
+          <p className="tnum mt-1 text-[12px] text-faint">{b.confirmationRef ?? "No reference yet"}</p>
         </div>
         <div className="shrink-0 text-right">
           <div className="tnum text-[13.5px] font-semibold text-ink">{money(b.amountMinor, b.currency)}</div>
@@ -239,7 +239,7 @@ export default function BookingsPage() {
         }
       />
 
-      <div className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatTile label="Open quotes" value={openQuotes.length} sub="need your selection" icon="flight" tone="warn" />
         <StatTile label="Approved" value={confirmed.length} sub="commitments on record" icon="check" tone="pos" />
         <StatTile label="Committed" value={money(bookings.reduce((s, b) => s + b.amountMinor, 0), "MYR", { compact: true })} sub="this period" icon="transactions" />

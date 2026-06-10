@@ -28,7 +28,7 @@ function Row({ e }: { e: EInvoice }) {
   const st = STATE[e.state];
   const needsAction = e.state === "queued" || e.state === "draft" || e.state === "rejected";
   return (
-    <div className="px-5 py-4 hover:bg-surface-2/30">
+    <div className="px-4 py-4 transition hover:bg-surface-2/40 sm:px-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
@@ -38,32 +38,32 @@ function Row({ e }: { e: EInvoice }) {
               {st.label}
             </Badge>
           </div>
-          <h3 className="mt-2 text-[14.5px] font-semibold text-ink">{e.counterparty}</h3>
-          <p className="text-[12px] text-muted">
+          <h3 className="mt-2.5 text-[15px] font-semibold text-ink">{e.counterparty}</h3>
+          <p className="mt-0.5 text-[12.5px] text-muted">
             {e.counterpartyId && <>TIN {e.counterpartyId} · </>}issued {fmtDate(e.issueDate)}
           </p>
 
           {e.uuid && (
-            <p className="mt-1.5 flex items-center gap-1.5 text-[11.5px] text-muted">
-              <Icon name="lock" size={12} className="text-faint" />
+            <p className="mt-2 flex items-center gap-1.5 text-[12px] text-muted">
+              <Icon name="lock" size={13} className="text-faint" />
               <span className="tnum">{e.uuid}</span>
-              {e.qrHint && <span className="rounded bg-surface-2 px-1.5 py-px text-[10px] text-faint">QR ✓</span>}
+              {e.qrHint && <span className="rounded-md bg-surface-2 px-1.5 py-px text-[11px] font-semibold text-faint">QR ✓</span>}
             </p>
           )}
           {e.validationResponse && (
-            <p className="mt-1 text-[11.5px] italic text-pos-fg">{e.validationResponse}</p>
+            <p className="mt-1.5 text-[12px] italic text-pos-fg">{e.validationResponse}</p>
           )}
           {e.rejectionReason && (
-            <p className="mt-1.5 flex items-start gap-1.5 rounded-md border border-crit-fg/20 bg-crit-bg px-2 py-1.5 text-[11.5px] text-crit-fg">
-              <Icon name="alert" size={13} className="mt-0.5 shrink-0" />
+            <p className="mt-2 flex items-start gap-2 rounded-lg border border-crit-fg/20 bg-crit-bg px-2.5 py-2 text-[12px] leading-relaxed text-crit-fg">
+              <Icon name="alert" size={14} className="mt-0.5 shrink-0" />
               {e.rejectionReason}
             </p>
           )}
         </div>
 
-        <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
+        <div className="flex shrink-0 flex-col items-start gap-2.5 sm:items-end">
           <span className="tnum text-[15px] font-semibold text-ink">{money(e.grossMinor, e.currency)}</span>
-          <span className="tnum text-[11px] text-faint">
+          <span className="tnum text-[12px] text-faint">
             net {money(e.netMinor, e.currency)} · tax {money(e.taxMinor, e.currency)}
           </span>
           {needsAction &&
@@ -139,7 +139,7 @@ export default function CompliancePage() {
           </Card>
           <Card>
             <CardHeader title="Retention" icon="lock" />
-            <p className="text-[12px] leading-relaxed text-muted">
+            <p className="text-[13px] leading-relaxed text-muted">
               Every submission stores its validation response and UUID/QR. Documents are retained per LHDN/IRAS rules; the audit trail is immutable and hash-chained.
             </p>
           </Card>

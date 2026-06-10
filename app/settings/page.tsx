@@ -39,7 +39,7 @@ export default function SettingsPage() {
         title="Settings"
         description="Organisation, tax profile, connectors, team, and the automation controls that govern how much the agents do on their own."
         actions={
-          <Button variant="outline" size="sm" icon="spark" href="/onboarding">
+          <Button variant="outline" icon="spark" href="/onboarding">
             Re-run onboarding
           </Button>
         }
@@ -62,12 +62,12 @@ export default function SettingsPage() {
 
         <Card>
           <CardHeader title="Connectors" subtitle="Accounting write-back, e-invoicing, feeds" icon="transactions" />
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             {CONNECTORS.map((c) => (
-              <div key={c.name} className="flex items-center justify-between rounded-lg border border-border px-3 py-2.5">
-                <div>
+              <div key={c.name} className="flex min-h-11 items-center justify-between gap-3 rounded-lg border border-border px-3.5 py-2.5">
+                <div className="min-w-0">
                   <div className="text-[13px] font-medium text-ink">{c.name}</div>
-                  <div className="text-[11.5px] text-muted">{c.kind}</div>
+                  <div className="text-[12px] text-muted">{c.kind}</div>
                 </div>
                 <Badge variant={c.state === "connected" ? "pos" : "neutral"} dot>
                   {c.state}
@@ -75,7 +75,7 @@ export default function SettingsPage() {
               </div>
             ))}
           </div>
-          <p className="mt-3 flex items-start gap-1.5 text-[11.5px] text-faint">
+          <p className="mt-3 flex items-start gap-1.5 text-[12px] leading-relaxed text-faint">
             <Icon name="spark" size={13} className="mt-0.5 shrink-0" />
             AutoCount & SQL Account are the local-connector moat global tools lack — validate demand before committing.
           </p>
@@ -83,13 +83,13 @@ export default function SettingsPage() {
 
         <Card>
           <CardHeader title="Team & roles" subtitle="RBAC" icon="approvals" />
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             {db.USERS.map((u) => (
-              <div key={u.id} className="flex items-center gap-3 rounded-lg border border-border px-3 py-2.5">
+              <div key={u.id} className="flex min-h-11 items-center gap-3 rounded-lg border border-border px-3.5 py-2.5">
                 <Avatar name={u.name} />
                 <div className="min-w-0 flex-1">
                   <div className="text-[13px] font-medium text-ink">{u.name}</div>
-                  <div className="truncate text-[11.5px] text-muted">{u.title} · {u.email}</div>
+                  <div className="truncate text-[12px] text-muted">{u.title} · {u.email}</div>
                 </div>
                 <Badge variant={ROLE_VARIANT[u.role]}>{u.role.replace("_", " ")}</Badge>
               </div>
@@ -109,7 +109,7 @@ export default function SettingsPage() {
 
         <Card>
           <CardHeader title="The line we never cross" icon="shield" />
-          <div className="space-y-2 text-[12.5px] text-ink-2">
+          <div className="space-y-2.5 text-[12.5px] text-ink-2">
             {[
               "Never holds, moves, or stores customer money",
               "Never issues cards or e-money instruments",
@@ -122,7 +122,7 @@ export default function SettingsPage() {
               </div>
             ))}
           </div>
-          <p className="mt-3 text-[11.5px] text-faint">
+          <p className="mt-3 text-[12px] leading-relaxed text-faint">
             Orchestrate, never settle. Money movement is delegated to a licensed BaaS partner only in Phase 2, after the software layer has traction.
           </p>
         </Card>

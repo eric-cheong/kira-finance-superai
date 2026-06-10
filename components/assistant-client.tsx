@@ -287,7 +287,7 @@ export function AssistantClient() {
         onClick={() => setOpen((current) => !current)}
         aria-expanded={open}
         aria-label={open ? "Close Kira assistant" : "Open Kira assistant"}
-        className="fixed bottom-4 right-4 z-30 inline-flex h-12 w-12 items-center justify-center rounded-full border border-brand/20 bg-gradient-to-br from-brand-soft to-surface text-ink shadow-pop hover:border-brand/40 sm:bottom-5 sm:right-5"
+        className="btn-lift fixed bottom-4 right-4 z-30 inline-flex h-12 min-h-12 w-12 items-center justify-center rounded-full border border-transparent bg-brand-strong text-on-brand shadow-btn transition hover:bg-brand-strong-hover hover:shadow-btn-hover sm:bottom-5 sm:right-5"
       >
         <Icon name="bot" size={20} />
       </button>
@@ -304,7 +304,7 @@ export function AssistantClient() {
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <Icon name="bot" size={16} className="text-brand" />
-                  <h2 id="kira-assistant-title" className="text-[14px] font-semibold text-ink">Kira AI bot</h2>
+                  <h2 id="kira-assistant-title" className="text-[15px] font-semibold text-ink">Kira AI bot</h2>
                   <Badge variant={result?.provider === "openai-agents" ? "pos" : "neutral"} dot>
                     {result?.provider === "openai-agents" ? "Agent SDK" : "local"}
                   </Badge>
@@ -317,9 +317,9 @@ export function AssistantClient() {
                 type="button"
                 onClick={() => setOpen(false)}
                 aria-label="Close Kira assistant"
-                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-surface-2 hover:text-ink"
+                className="btn-lift inline-flex h-11 min-h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-transparent text-muted transition hover:bg-surface-2/70 hover:text-ink sm:h-10 sm:min-h-10 sm:w-10"
               >
-                <Icon name="close" size={16} />
+                <Icon name="close" size={18} />
               </button>
             </div>
 
@@ -343,7 +343,7 @@ export function AssistantClient() {
                   {result?.output.routeSuggestion && (
                     <Link
                       href={result.output.routeSuggestion.href}
-                      className="mt-3 inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 text-[12.5px] font-medium text-ink hover:border-brand/30"
+                      className="btn-lift mt-3 inline-flex min-h-11 items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-[13px] font-medium text-ink shadow-card transition hover:border-border-strong hover:bg-surface-2/60 sm:min-h-10"
                       onClick={() => setOpen(false)}
                     >
                       <Icon name="arrowRight" size={14} />
@@ -395,7 +395,7 @@ export function AssistantClient() {
                         setMessage(prompt);
                         void submit(prompt);
                       }}
-                      className="rounded-full border border-border bg-surface px-2.5 py-1 text-[11.5px] text-muted hover:border-brand/30 hover:text-ink"
+                      className="btn-lift inline-flex min-h-11 sm:min-h-9 items-center rounded-full border border-border bg-surface px-3 py-1.5 text-[12px] text-muted transition hover:border-border-strong hover:bg-surface-2/60 hover:text-ink"
                     >
                       {prompt}
                     </button>
@@ -418,7 +418,7 @@ export function AssistantClient() {
                       type="button"
                       onClick={toggleRealtimeVoice}
                       className={cn(
-                        "rounded-full border border-border px-2 py-0.5 text-[11px] font-medium text-muted hover:border-brand/30 hover:text-ink",
+                        "btn-lift inline-flex min-h-11 sm:min-h-9 items-center rounded-full border border-border px-3 py-1 text-[12px] font-medium text-muted transition hover:border-border-strong hover:bg-surface-2/60 hover:text-ink",
                         realtimeConnected && "border-pos-fg/20 bg-pos-bg text-ink",
                         !speechSupported && !realtimeConnected && "border-warn-fg/20 bg-warn-bg text-ink",
                       )}
@@ -432,13 +432,13 @@ export function AssistantClient() {
                         key={entry.id}
                         href={entry.route}
                         onClick={() => setOpen(false)}
-                        className="rounded-lg border border-border bg-surface-2/35 px-3 py-2 hover:border-brand/30"
+                        className="block min-h-11 rounded-lg border border-border bg-surface-2/35 px-3 py-2.5 transition hover:border-border-strong hover:bg-surface-2/70 sm:min-h-10"
                       >
                         <div className="flex items-center justify-between gap-2">
-                          <span className="truncate text-[12.5px] font-medium text-ink">{entry.title}</span>
-                          <span className="shrink-0 text-[10.5px] text-faint">{entry.route}</span>
+                          <span className="truncate text-[13px] font-medium text-ink">{entry.title}</span>
+                          <span className="shrink-0 text-[12px] text-faint">{entry.route}</span>
                         </div>
-                        <p className="mt-0.5 line-clamp-2 text-[11.5px] leading-relaxed text-muted">{entry.summary}</p>
+                        <p className="mt-1 line-clamp-2 text-[12px] leading-relaxed text-muted">{entry.summary}</p>
                       </Link>
                     ))}
                     {knowledge.length === 0 && (
@@ -460,7 +460,7 @@ export function AssistantClient() {
                               key={`${source.title}-${source.route}`}
                               href={source.route}
                               onClick={() => setOpen(false)}
-                              className="rounded-full border border-border bg-surface px-2 py-0.5 text-[11px] text-muted hover:border-brand/30 hover:text-ink"
+                              className="btn-lift inline-flex min-h-11 sm:min-h-9 items-center rounded-full border border-border bg-surface px-3 py-1 text-[12px] text-muted transition hover:border-border-strong hover:bg-surface-2/60 hover:text-ink"
                             >
                               {source.title}
                             </Link>
@@ -469,10 +469,10 @@ export function AssistantClient() {
                       </div>
                     )}
                     <p className="mb-2 text-[12px] font-semibold text-ink">Agent trace</p>
-                    <ol className="space-y-1">
+                    <ol className="space-y-1.5">
                       {result.output.trace.map((step) => (
-                        <li key={step} className="flex items-start gap-1.5 text-[11.5px] text-muted">
-                          <Icon name="dot" size={10} className="mt-1 shrink-0 text-faint" />
+                        <li key={step} className="flex items-start gap-1.5 text-[12px] leading-relaxed text-muted">
+                          <Icon name="dot" size={10} className="mt-1.5 shrink-0 text-faint" />
                           {step}
                         </li>
                       ))}

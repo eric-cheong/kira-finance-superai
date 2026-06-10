@@ -12,10 +12,10 @@ export default function OperatingFunctionsPage() {
         badge={<Badge variant="brand">AI operating layer</Badge>}
         actions={
           <>
-            <Button variant="outline" size="sm" icon="benchmark" href="#finance-fpa" className="w-full sm:w-auto">
+            <Button variant="outline" icon="benchmark" href="#finance-fpa" className="w-full sm:w-auto">
               Benchmark your workflows
             </Button>
-            <Button variant="primary" size="sm" icon="workflow" href="#accounts-receivable" className="w-full sm:w-auto">
+            <Button variant="primary" icon="workflow" href="#accounts-receivable" className="w-full sm:w-auto">
               Map your operating gaps
             </Button>
           </>

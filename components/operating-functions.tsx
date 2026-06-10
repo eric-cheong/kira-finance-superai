@@ -48,14 +48,14 @@ function ListBlock({
   icon: "database" | "alert" | "benchmark" | "spark" | "workflow" | "route" | "timeline";
 }) {
   return (
-    <div className="rounded-lg border border-border bg-surface px-3 py-3">
-      <div className="mb-2 flex items-center gap-2 text-[12.5px] font-semibold text-ink">
+    <div className="rounded-lg border border-border bg-surface px-3.5 py-3.5">
+      <div className="mb-2.5 flex items-center gap-2 text-[12.5px] font-semibold text-ink">
         <Icon name={icon} size={15} className="text-faint" />
         {title}
       </div>
-      <ul className="space-y-1.5">
+      <ul className="space-y-2">
         {items.map((item) => (
-          <li key={item} className="flex items-start gap-2 text-[12px] leading-relaxed text-muted">
+          <li key={item} className="flex items-start gap-2 text-[12.5px] leading-relaxed text-muted">
             <Icon name="dot" size={9} className="mt-1.5 shrink-0 text-faint" />
             <span>{item}</span>
           </li>
@@ -67,7 +67,7 @@ function ListBlock({
 
 export function OperatingFunctionsLandingSection() {
   return (
-    <section className="overflow-hidden rounded-lg border border-border bg-surface/85 shadow-card">
+    <section className="overflow-hidden rounded-xl border border-border bg-surface/85 shadow-card">
       <div className="grid gap-0 lg:grid-cols-[1fr_360px]">
         <div className="p-5 sm:p-6">
           <div className="max-w-3xl">
@@ -101,9 +101,9 @@ export function OperatingFunctionsLandingSection() {
           </div>
         </div>
 
-        <div className="border-t border-base-300 bg-base-200/60 p-5 lg:border-l lg:border-t-0">
+        <div className="border-t border-border bg-surface-2/60 p-5 lg:border-l lg:border-t-0">
           <div className="mb-3 flex items-center justify-between">
-            <span className="text-[12px] font-semibold uppercase tracking-wide text-faint">Operating impact</span>
+            <span className="text-[11.5px] font-semibold uppercase tracking-wide text-faint">Operating impact</span>
             <Badge variant="brand" dot>
               approval-gated
             </Badge>
@@ -111,13 +111,13 @@ export function OperatingFunctionsLandingSection() {
           <div className="grid grid-cols-2 gap-2">
             {OPERATING_FUNCTIONS.slice(0, 4).map((fn) => (
               <div key={fn.id} className="rounded-lg border border-border bg-surface px-3 py-2.5 shadow-none">
-                <div className="text-[12px] font-semibold text-ink">{fn.shortName}</div>
+                <div className="text-[12.5px] font-semibold text-ink">{fn.shortName}</div>
                 <div className="mt-1 tnum text-[12px] text-brand">{fn.impactMetric}</div>
-                <div className="mt-0.5 text-[10.5px] text-faint">{fn.financialImpact}</div>
+                <div className="mt-0.5 text-[12px] leading-snug text-muted">{fn.financialImpact}</div>
               </div>
             ))}
           </div>
-          <p className="mt-3 text-[11.5px] leading-relaxed text-muted">
+          <p className="mt-3 text-[12px] leading-relaxed text-muted">
             KIRA does not overrun the operator. Permissions, approvals, escalation rules, and audit logs stay attached to every workflow.
           </p>
         </div>
@@ -133,10 +133,10 @@ export function OperatingFunctionsLandingSection() {
         </thead>
         <tbody>
           {OPERATING_FUNCTIONS.map((fn) => (
-            <tr key={fn.id} className="hover">
+            <tr key={fn.id} className="transition hover:bg-surface-2/40">
               <Td>
                 <div className="font-semibold text-ink">{fn.function}</div>
-                <div className="mt-0.5 text-[11.5px] text-faint">{fn.financialImpact}</div>
+                <div className="mt-0.5 text-[12px] text-muted">{fn.financialImpact}</div>
               </Td>
               <Td>
                 <div className="flex flex-wrap gap-1.5">
@@ -173,11 +173,11 @@ function ModuleList({ functions }: { functions: readonly OperatingFunction[] }) 
       <ul className="divide-y divide-border p-0">
         {functions.map((fn) => (
           <li key={fn.id}>
-            <Link href={`#${fn.id}`} className="group flex min-h-11 px-4 py-3 hover:bg-surface-2/70">
+            <Link href={`#${fn.id}`} className="group flex min-h-11 px-4 py-3 transition hover:bg-surface-2/70 sm:min-h-10">
               <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
                 <div className="min-w-0">
                   <div className="truncate text-[13px] font-semibold text-ink group-hover:text-brand">{fn.function}</div>
-                  <div className="mt-0.5 truncate text-[11.5px] text-muted">{fn.financialImpact}</div>
+                  <div className="mt-0.5 truncate text-[12px] text-muted">{fn.financialImpact}</div>
                 </div>
                 <Icon name="chevronRight" size={15} className="shrink-0 text-faint" />
               </div>
@@ -204,21 +204,21 @@ function FunctionModule({ fn }: { fn: OperatingFunction }) {
           />
         </div>
 
-        <div className="grid gap-0 border-b border-border md:grid-cols-4 md:divide-x md:divide-y-0">
+        <div className="grid gap-0 divide-y divide-border border-b border-border md:grid-cols-4 md:divide-x md:divide-y-0">
           <div className="p-4">
-            <div className="text-[11px] font-semibold uppercase tracking-wide text-faint">Detected risks</div>
+            <div className="text-[11.5px] font-semibold uppercase tracking-wide text-faint">Detected risks</div>
             <div className="mt-2 tnum text-2xl font-semibold text-ink">{fn.riskCount}</div>
           </div>
           <div className="p-4">
-            <div className="text-[11px] font-semibold uppercase tracking-wide text-faint">Benchmark gap</div>
+            <div className="text-[11.5px] font-semibold uppercase tracking-wide text-faint">Benchmark gap</div>
             <div className="mt-2 text-[13px] font-medium leading-snug text-ink">{fn.benchmarkGap}</div>
           </div>
           <div className="p-4">
-            <div className="text-[11px] font-semibold uppercase tracking-wide text-faint">Estimated impact</div>
+            <div className="text-[11.5px] font-semibold uppercase tracking-wide text-faint">Estimated impact</div>
             <div className="mt-2 text-[13px] font-medium leading-snug text-brand">{fn.impactEstimate}</div>
           </div>
           <div className="p-4">
-            <div className="text-[11px] font-semibold uppercase tracking-wide text-faint">Human approvals</div>
+            <div className="text-[11.5px] font-semibold uppercase tracking-wide text-faint">Human approvals</div>
             <div className="mt-2 flex items-baseline gap-2">
               <span className="tnum text-2xl font-semibold text-ink">{fn.approvalsRequired}</span>
               <span className="text-[12px] text-muted">required</span>
@@ -231,7 +231,7 @@ function FunctionModule({ fn }: { fn: OperatingFunction }) {
             <div className="mb-3 flex items-center justify-between gap-3">
               <div>
                 <h3 className="text-[14px] font-semibold text-ink">Recommended workflows</h3>
-                <p className="mt-0.5 text-[12.5px] text-muted">Detection intelligence separated from workflow execution.</p>
+                <p className="mt-0.5 text-[12.5px] leading-relaxed text-muted">Detection intelligence separated from workflow execution.</p>
               </div>
               <Badge variant="neutral">{fn.workflowStatus === "approval" ? "operator review" : "policy checked"}</Badge>
             </div>
@@ -264,15 +264,15 @@ function FunctionModule({ fn }: { fn: OperatingFunction }) {
         <div className="grid gap-4 border-t border-border bg-surface-2/35 p-5 lg:grid-cols-3">
           <ListBlock title="Escalation rules" items={fn.escalationRules} icon="route" />
           <ListBlock title="Audit trail" items={fn.auditTrail} icon="timeline" />
-          <div className="rounded-lg border border-border bg-surface px-3 py-3">
-            <div className="mb-2 flex items-center gap-2 text-[12.5px] font-semibold text-ink">
+          <div className="rounded-lg border border-border bg-surface px-3.5 py-3.5">
+            <div className="mb-2.5 flex items-center gap-2 text-[12.5px] font-semibold text-ink">
               <Icon name="hash" size={15} className="text-faint" />
               Workflow logic
             </div>
-            <ol className="space-y-1.5">
+            <ol className="space-y-2">
               {fn.workflowLogic.map((step, index) => (
-                <li key={step} className="flex gap-2 text-[12px] leading-relaxed text-muted">
-                  <span className="tnum mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-brand-soft text-[9.5px] font-semibold text-brand">
+                <li key={step} className="flex gap-2 text-[12.5px] leading-relaxed text-muted">
+                  <span className="tnum mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-soft text-[11px] font-semibold text-brand">
                     {index + 1}
                   </span>
                   <span>{step}</span>

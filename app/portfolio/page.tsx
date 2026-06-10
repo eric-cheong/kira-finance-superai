@@ -71,25 +71,25 @@ export default function PortfolioPage() {
                 const valBase = db.toBase(p.lastMinor * p.units, p.instrument.currency);
                 const pnl = db.toBase((p.lastMinor - p.avgCostMinor) * p.units, p.instrument.currency);
                 return (
-                  <tr key={p.instrument.symbol} className="hover:bg-surface-2/40">
+                  <tr key={p.instrument.symbol} className="transition hover:bg-surface-2/40">
                     <Td>
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-ink">{p.instrument.symbol}</span>
                         <Badge variant="neutral">{p.instrument.kind}</Badge>
                       </div>
-                      <span className="text-[11.5px] text-faint">{p.instrument.name}</span>
+                      <span className="text-[12px] text-muted">{p.instrument.name}</span>
                     </Td>
-                    <Td className="whitespace-nowrap text-right tnum text-[12.5px]">{num(p.units, p.units < 1 ? 2 : 0)}</Td>
-                    <Td className="whitespace-nowrap text-right tnum text-[12.5px]">{money(p.lastMinor, p.instrument.currency)}</Td>
+                    <Td className="whitespace-nowrap text-right tnum">{num(p.units, p.units < 1 ? 2 : 0)}</Td>
+                    <Td className="whitespace-nowrap text-right tnum">{money(p.lastMinor, p.instrument.currency)}</Td>
                     <Td className="whitespace-nowrap text-right">
-                      <span className={`tnum text-[12.5px] font-medium ${p.dayChangePct >= 0 ? "text-pos-fg" : "text-crit-fg"}`}>
+                      <span className={`tnum font-medium ${p.dayChangePct >= 0 ? "text-pos-fg" : "text-crit-fg"}`}>
                         {p.dayChangePct >= 0 ? "+" : ""}
                         {p.dayChangePct.toFixed(1)}%
                       </span>
                     </Td>
-                    <Td className="whitespace-nowrap text-right tnum text-[12.5px] font-semibold text-ink">{money(valBase, "MYR")}</Td>
+                    <Td className="whitespace-nowrap text-right tnum font-semibold text-ink">{money(valBase, "MYR")}</Td>
                     <Td className="whitespace-nowrap text-right">
-                      <span className={`tnum text-[12.5px] font-medium ${pnl >= 0 ? "text-pos-fg" : "text-crit-fg"}`}>
+                      <span className={`tnum font-medium ${pnl >= 0 ? "text-pos-fg" : "text-crit-fg"}`}>
                         {pnl >= 0 ? "+" : ""}
                         {money(pnl, "MYR", { compact: true })}
                       </span>
@@ -132,11 +132,11 @@ export default function PortfolioPage() {
               <p className="text-[12.5px] leading-relaxed text-ink-2">
                 {topHolding.name} is {ps.topShare}% of the portfolio — above a balanced single-name target. A rebalance toward target weights is drafted.
               </p>
-              <div className="mt-3 flex items-center gap-2 rounded-lg border border-warn-fg/20 bg-warn-bg px-3 py-2 text-[12px] text-warn-fg">
-                <Icon name="lock" size={14} />
+              <div className="mt-3 flex items-center gap-2.5 rounded-lg border border-warn-fg/20 bg-warn-bg px-3.5 py-2.5 text-[12.5px] leading-relaxed text-warn-fg">
+                <Icon name="lock" size={14} className="shrink-0" />
                 Requires your explicit approval. Kira never places trades.
               </div>
-              <p className="mt-2 text-[11px] italic text-faint">Educational / informational only — not financial advice.</p>
+              <p className="mt-2.5 text-[12px] italic leading-relaxed text-faint">Educational / informational only — not financial advice.</p>
             </Card>
           )}
         </aside>

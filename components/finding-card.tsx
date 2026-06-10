@@ -34,8 +34,8 @@ function SourceLink({ href, label }: { href?: string; label: string }) {
 export function FindingCard({ finding: f }: { finding: Finding }) {
   const internalHref = f.relatedHref && !f.relatedHref.startsWith("http") ? f.relatedHref : undefined;
   const className = cn(
-    "block rounded-lg border border-border bg-surface p-3.5 transition-colors sm:p-4",
-    internalHref && "hover:border-border-strong",
+    "block rounded-xl border border-border bg-surface p-4 shadow-card transition sm:p-5",
+    internalHref && "hover:border-border-strong hover:bg-surface-2/40",
   );
 
   const body = (
@@ -93,27 +93,27 @@ export function FindingCard({ finding: f }: { finding: Finding }) {
         </div>
 
         <div className="grid gap-2 sm:grid-cols-3">
-          <div className="min-w-0 rounded-md border border-border bg-surface px-2.5 py-2">
-            <p className="truncate text-[11px] font-medium text-faint">Plan</p>
-            <p className="mt-0.5 truncate text-[12px] text-ink">{f.agent}</p>
-            <p className="mt-0.5 truncate text-[11.5px] text-muted">{f.kind} classification</p>
+          <div className="min-w-0 rounded-lg border border-border bg-surface px-3 py-2.5">
+            <p className="truncate text-[12px] font-medium text-faint">Plan</p>
+            <p className="mt-0.5 truncate text-[12.5px] text-ink">{f.agent}</p>
+            <p className="mt-0.5 truncate text-[12px] text-muted">{f.kind} classification</p>
           </div>
-          <div className="min-w-0 rounded-md border border-border bg-surface px-2.5 py-2">
-            <p className="truncate text-[11px] font-medium text-faint">Tool calls</p>
-            <p className="mt-0.5 truncate text-[12px] text-ink">{pluralize(f.sources.length, "source")} checked</p>
-            <p className="mt-0.5 truncate text-[11.5px] text-muted">read-only evidence</p>
+          <div className="min-w-0 rounded-lg border border-border bg-surface px-3 py-2.5">
+            <p className="truncate text-[12px] font-medium text-faint">Tool calls</p>
+            <p className="mt-0.5 truncate text-[12.5px] text-ink">{pluralize(f.sources.length, "source")} checked</p>
+            <p className="mt-0.5 truncate text-[12px] text-muted">read-only evidence</p>
           </div>
-          <div className="min-w-0 rounded-md border border-border bg-surface px-2.5 py-2">
+          <div className="min-w-0 rounded-lg border border-border bg-surface px-3 py-2.5">
             <div className="mb-1.5 flex items-center justify-between gap-2">
-              <p className="truncate text-[11px] font-medium text-faint">Progress</p>
-              <span className="tnum shrink-0 text-[11px] text-muted">{f.confidence}%</span>
+              <p className="truncate text-[12px] font-medium text-faint">Progress</p>
+              <span className="tnum shrink-0 text-[12px] text-muted">{f.confidence}%</span>
             </div>
             <Bar value={f.confidence} tone={f.band === "high" ? "pos" : f.band === "medium" ? "warn" : "crit"} />
           </div>
         </div>
 
         {f.escalate && (
-          <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11.5px] text-muted">
+          <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[12px] text-muted">
             <span className="mr-0.5 font-medium text-ink">Placeholders:</span>
             {["Pause", "Edit plan", "Resume"].map((label) => (
               <span key={label} className="rounded-full border border-border bg-surface px-2 py-0.5 text-faint">
@@ -125,7 +125,7 @@ export function FindingCard({ finding: f }: { finding: Finding }) {
       </div>
 
       {f.disclaimer && (
-        <p className="mt-2 border-t border-border pt-2 text-[11.5px] italic text-faint">{f.disclaimer}</p>
+        <p className="mt-2.5 border-t border-border pt-2.5 text-[12px] italic leading-relaxed text-faint">{f.disclaimer}</p>
       )}
     </>
   );

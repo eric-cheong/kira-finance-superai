@@ -19,7 +19,7 @@ export function Card({
   return (
     <div
       className={cn(
-        "min-w-0 rounded-lg border border-border bg-surface text-ink shadow-none",
+        "min-w-0 rounded-xl border border-border bg-surface text-ink shadow-card",
         pad && "p-4 sm:p-5",
         className,
       )}
@@ -43,15 +43,15 @@ export function CardHeader({
 }) {
   return (
     <div className="mb-4 flex items-start justify-between gap-3">
-      <div className="flex min-w-0 items-start gap-2.5">
+      <div className="flex min-w-0 items-start gap-3">
         {icon && (
-          <span className="mt-0.5 text-muted">
-            <Icon name={icon} size={18} />
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-brand">
+            <Icon name={icon} size={17} />
           </span>
         )}
         <div className="min-w-0">
           <h3 className="min-w-0 text-[15px] font-semibold leading-snug text-ink">{title}</h3>
-          {subtitle && <p className="mt-0.5 min-w-0 text-[12.5px] leading-snug text-muted sm:text-[13px]">{subtitle}</p>}
+          {subtitle && <p className="mt-1 min-w-0 text-[13px] leading-relaxed text-muted">{subtitle}</p>}
         </div>
       </div>
       {right && <div className="shrink-0">{right}</div>}
@@ -70,6 +70,17 @@ const VARIANT: Record<Variant, string> = {
   crit: "border-crit-fg/20 bg-crit-bg text-ink",
   info: "border-info-fg/20 bg-info-bg text-ink",
   brand: "border-brand/20 bg-brand-soft text-ink",
+};
+
+/* Colored icon treatment for soft chips (StatTile, EmptyState). Overrides the
+   text-ink coming from VARIANT so the icon reads in the status hue. */
+const CHIP_ICON: Record<Variant, string> = {
+  neutral: "!text-muted",
+  pos: "!text-pos-fg",
+  warn: "!text-warn-fg",
+  crit: "!text-crit-fg",
+  info: "!text-info-fg",
+  brand: "!text-brand",
 };
 
 const DOT_VARIANT: Record<Variant, string> = {
@@ -98,7 +109,7 @@ export function Badge({
   return (
     <span
       className={cn(
-        "inline-flex h-auto min-h-0 max-w-full shrink-0 items-center gap-1.5 rounded-full border px-2 py-0.5 text-2xs font-medium",
+        "inline-flex h-auto min-h-0 max-w-full shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[12px] font-medium leading-5",
         VARIANT[variant],
         className,
       )}
@@ -173,18 +184,18 @@ export function StatTile({
   tone?: Variant;
 }) {
   return (
-    <div className="min-w-0 rounded-lg border border-border bg-surface px-3 py-3 shadow-none sm:p-4">
+    <div className="min-w-0 rounded-xl border border-border bg-surface px-3.5 py-3.5 shadow-card sm:p-4">
       <div className="flex min-w-0 items-start justify-between gap-2 sm:gap-3">
         <div className="min-w-0">
-          <div className="min-w-0 truncate text-[11.5px] font-medium leading-4 text-muted sm:text-[12px]">{label}</div>
-          <div className="tnum mt-1.5 min-w-0 truncate text-lg font-semibold leading-none text-ink sm:text-2xl">
+          <div className="min-w-0 truncate text-[12px] font-medium leading-5 text-muted sm:text-[12.5px]">{label}</div>
+          <div className="tnum mt-1.5 min-w-0 truncate text-xl font-semibold leading-none text-ink sm:text-[26px]">
             {value}
           </div>
-          {sub && <div className="mt-1 min-w-0 truncate text-[11.5px] leading-4 text-muted sm:text-[12px]">{sub}</div>}
+          {sub && <div className="mt-1.5 min-w-0 truncate text-[12px] leading-5 text-muted sm:text-[12.5px]">{sub}</div>}
         </div>
         {icon && (
-          <span className={cn("hidden h-8 w-8 shrink-0 items-center justify-center rounded-lg border sm:flex", VARIANT[tone])}>
-            <Icon name={icon} size={15} />
+          <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border", VARIANT[tone], CHIP_ICON[tone])}>
+            <Icon name={icon} size={16} />
           </span>
         )}
       </div>
@@ -210,7 +221,7 @@ export function Bar({ value, tone = "brand" }: { value: number; tone?: Variant }
   const clamped = Math.max(2, Math.min(100, value));
   return (
     <div
-      className="h-1.5 w-full overflow-hidden rounded-full bg-surface-2"
+      className="h-2 w-full overflow-hidden rounded-full bg-surface-2"
       role="progressbar"
       aria-valuemin={0}
       aria-valuemax={100}
@@ -227,9 +238,9 @@ export function Divider({ className }: { className?: string }) {
 
 export function KeyValue({ k, v }: { k: ReactNode; v: ReactNode }) {
   return (
-    <div className="flex flex-col gap-0.5 py-1.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
-      <span className="text-[13px] text-muted">{k}</span>
-      <span className="min-w-0 text-[13px] font-medium text-ink sm:text-right">{v}</span>
+    <div className="flex flex-col gap-0.5 py-2 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
+      <span className="text-[13px] leading-relaxed text-muted">{k}</span>
+      <span className="min-w-0 text-[13px] font-medium leading-relaxed text-ink sm:text-right">{v}</span>
     </div>
   );
 }
@@ -254,12 +265,12 @@ export function Avatar({ name, size = 30 }: { name: string; size?: number }) {
 
 export function EmptyState({ icon = "check", title, sub }: { icon?: IconName; title: string; sub?: string }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-2 px-6 py-12 text-center">
-      <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-surface-2 text-muted">
-        <Icon name={icon} size={20} />
+    <div className="flex flex-col items-center justify-center gap-2.5 px-6 py-12 text-center">
+      <span className="flex h-12 w-12 items-center justify-center rounded-xl border border-brand/15 bg-brand-soft text-brand">
+        <Icon name={icon} size={22} />
       </span>
-      <p className="text-[14px] font-medium text-ink">{title}</p>
-      {sub && <p className="max-w-xs text-[13px] text-muted">{sub}</p>}
+      <p className="text-[14.5px] font-semibold text-ink">{title}</p>
+      {sub && <p className="max-w-xs text-[13px] leading-relaxed text-muted">{sub}</p>}
     </div>
   );
 }
@@ -324,10 +335,10 @@ export function PageHeader({
     <div className="mb-6 flex flex-col gap-3 border-b border-border pb-5 sm:flex-row sm:items-end sm:justify-between">
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2.5">
-          <h1 className="min-w-0 text-[22px] font-semibold leading-tight text-ink">{title}</h1>
+          <h1 className="min-w-0 text-[24px] font-semibold leading-tight tracking-[-0.01em] text-ink">{title}</h1>
           {badge}
         </div>
-        {description && <p className="mt-1.5 max-w-2xl text-[13.5px] leading-relaxed text-muted">{description}</p>}
+        {description && <p className="mt-2 max-w-2xl text-[14px] leading-relaxed text-muted">{description}</p>}
       </div>
       {actions && <ActionBar>{actions}</ActionBar>}
     </div>
@@ -348,7 +359,7 @@ export function Button({
 }: {
   children: ReactNode;
   variant?: "primary" | "ghost" | "outline" | "danger";
-  size?: "sm" | "md";
+  size?: "sm" | "md" | "lg";
   icon?: IconName;
   iconRight?: IconName;
   className?: string;
@@ -358,23 +369,26 @@ export function Button({
   onClick?: () => void;
 }) {
   const base =
-    "inline-flex min-w-0 transform-gpu items-center justify-center gap-1.5 rounded-lg border font-medium shadow-none transition disabled:pointer-events-none disabled:opacity-50 active:translate-y-[1px]";
+    "btn-lift inline-flex min-w-0 transform-gpu items-center justify-center gap-2 rounded-lg border font-medium transition disabled:pointer-events-none disabled:opacity-50";
   const sizes = {
-    sm: "h-11 min-h-11 px-3 text-[13px] sm:h-8 sm:min-h-8 sm:px-2.5 sm:text-[12.5px]",
-    md: "h-11 min-h-11 px-3.5 text-[13.5px] sm:h-9 sm:min-h-9",
+    sm: "h-11 min-h-11 px-3.5 text-[13px] sm:h-9 sm:min-h-9 sm:px-3",
+    md: "h-11 min-h-11 px-4 text-[13.5px] sm:h-10 sm:min-h-10",
+    lg: "h-12 min-h-12 px-5 text-[14.5px]",
   };
   const variants = {
-    primary: "border-brand/25 bg-gradient-to-r from-brand-soft to-surface text-ink hover:border-brand/40 hover:bg-brand-soft",
+    primary:
+      "border-transparent bg-brand-strong text-on-brand shadow-btn hover:bg-brand-strong-hover hover:shadow-btn-hover",
     ghost: "border-transparent bg-transparent text-ink hover:bg-surface-2/70",
-    outline: "border-border bg-surface-2/65 text-ink hover:border-border-strong hover:bg-surface",
-    danger: "border-crit-fg/20 bg-crit-bg text-ink hover:border-crit-fg/35",
+    outline: "border-border bg-surface text-ink shadow-card hover:border-border-strong hover:bg-surface-2/60",
+    danger: "border-crit-fg/25 bg-crit-bg text-crit-fg hover:border-crit-fg/45 hover:bg-crit-bg/80",
   };
   const classes = cn(base, sizes[size], variants[variant], className);
+  const iconSize = size === "sm" ? 15 : size === "lg" ? 18 : 16;
   const inner = (
     <>
-      {icon && <Icon name={icon} size={size === "sm" ? 14 : 16} className="shrink-0" />}
+      {icon && <Icon name={icon} size={iconSize} className="shrink-0" />}
       <span className="truncate">{children}</span>
-      {iconRight && <Icon name={iconRight} size={size === "sm" ? 14 : 16} className="shrink-0" />}
+      {iconRight && <Icon name={iconRight} size={iconSize} className="shrink-0" />}
     </>
   );
   if (href) {
@@ -405,11 +419,11 @@ export function Notice({
   className?: string;
 }) {
   return (
-    <div className={cn("flex min-w-0 items-start gap-2 rounded-lg border px-3 py-2.5", VARIANT[variant], className)}>
+    <div className={cn("flex min-w-0 items-start gap-2.5 rounded-lg border px-3.5 py-3", VARIANT[variant], className)}>
       {icon && (
-        <Icon name={icon} size={16} className="mt-0.5 shrink-0 text-muted" />
+        <Icon name={icon} size={16} className={cn("mt-0.5 shrink-0", CHIP_ICON[variant])} />
       )}
-      <div className="min-w-0 text-[12.5px] leading-relaxed text-muted">{children}</div>
+      <div className="min-w-0 text-[13px] leading-relaxed text-muted">{children}</div>
     </div>
   );
 }
@@ -433,21 +447,21 @@ export function Table({
 }) {
   return (
     <div className={cn("w-full overflow-x-auto overscroll-x-contain", className)}>
-      <table className={cn("w-full min-w-[720px] border-collapse text-left text-[12.5px] leading-snug text-ink md:min-w-full md:text-[13px]", tableClassName)}>{children}</table>
+      <table className={cn("w-full min-w-[720px] border-collapse text-left text-[13px] leading-normal text-ink md:min-w-full md:text-[13.5px]", tableClassName)}>{children}</table>
     </div>
   );
 }
 
 export function Th({ children, className, ...props }: { children?: ReactNode; className?: string } & ThHTMLAttributes<HTMLTableCellElement>) {
   return (
-    <th className={cn("border-b border-border px-3 py-2.5 text-[11.5px] font-semibold text-ink", className)} {...props}>
+    <th className={cn("border-b border-border bg-surface-2/60 px-3.5 py-3 text-[11.5px] font-semibold uppercase tracking-wide text-muted first:rounded-tl-lg last:rounded-tr-lg", className)} {...props}>
       {children}
     </th>
   );
 }
 
 export function Td({ children, className, ...props }: { children?: ReactNode; className?: string } & TdHTMLAttributes<HTMLTableCellElement>) {
-  return <td className={cn("border-b border-border px-3 py-3 align-middle text-ink", className)} {...props}>{children}</td>;
+  return <td className={cn("border-b border-border/80 px-3.5 py-3.5 align-middle text-ink", className)} {...props}>{children}</td>;
 }
 
 export function FinanceTableControlsScript() {

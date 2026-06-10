@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Receipt } from "@/lib/types";
 import { money } from "@/lib/format";
-import { Button, Card, ConfidenceChip, Icon } from "@/components/ui";
+import { Button, Card, ConfidenceChip, Icon, Notice } from "@/components/ui";
 import { Thumb } from "@/components/thumb";
 
 type Stage = "idle" | "scanning" | "extracted" | "confirmed";
@@ -135,7 +135,7 @@ export function CaptureBox() {
               Forward invoice
             </Button>
           </div>
-          {error && <p className="text-[12px] text-crit-fg">{error}</p>}
+          {error && <p className="text-[12.5px] text-crit-fg">{error}</p>}
         </div>
       )}
 
@@ -167,11 +167,11 @@ export function CaptureBox() {
             </div>
           </div>
 
-          <div className="mt-4 space-y-2">
+          <div className="mt-4 space-y-2.5">
             {draft.fields.map((f) => (
-              <div key={f.label} className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface-2/40 px-3 py-2">
+              <div key={f.label} className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface-2/40 px-3.5 py-2.5">
                 <div className="min-w-0">
-                  <div className="text-[11px] font-medium uppercase tracking-wide text-faint">{f.label}</div>
+                  <div className="text-[11px] font-semibold uppercase tracking-wide text-faint">{f.label}</div>
                   <div className="truncate text-[13px] text-ink">{f.value}</div>
                 </div>
                 <ConfidenceChip value={f.confidence} showWord={false} />
@@ -180,10 +180,10 @@ export function CaptureBox() {
           </div>
 
           {stage === "extracted" && needsReview && (
-            <div className="mt-3 rounded-lg border border-brand/20 bg-brand-soft px-3 py-2 text-[12.5px] text-muted">
+            <Notice variant="warn" icon="alert" className="mt-3">
               <span className="font-medium text-ink">Review required.</span> One field is below {reviewThreshold}% confidence.
               Confirming is locked until coding is reviewed.
-            </div>
+            </Notice>
           )}
 
           {stage === "extracted" ? (
@@ -194,22 +194,22 @@ export function CaptureBox() {
               <Button className="w-full sm:w-auto" variant={reviewed ? "outline" : "ghost"} disabled={busy} onClick={reviewCoding}>
                 {reviewed ? "Coding reviewed" : "Mark coding reviewed"}
               </Button>
-              <button onClick={reset} className="text-[12px] text-muted hover:underline sm:ml-auto">
+              <Button className="w-full sm:ml-auto sm:w-auto" variant="ghost" size="sm" onClick={reset}>
                 close draft
-              </button>
+              </Button>
             </div>
           ) : (
-            <div className="mt-4 flex flex-col items-start gap-2 rounded-lg border border-pos-fg/20 bg-pos-bg px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="mt-4 flex flex-col items-start gap-2 rounded-lg border border-pos-fg/20 bg-pos-bg px-3.5 py-3 sm:flex-row sm:items-center sm:justify-between">
               <span className="flex items-center gap-2 text-[13px] font-medium text-ink">
-                <Icon name="check" size={16} /> Posted to record store · queued for auto-match
+                <Icon name="check" size={16} className="shrink-0 text-pos-fg" /> Posted to record store · queued for auto-match
               </span>
-              <button onClick={reset} className="text-[12px] text-muted hover:underline">
+              <Button className="w-full sm:w-auto" variant="ghost" size="sm" onClick={reset}>
                 capture another
-              </button>
+              </Button>
             </div>
           )}
           {error && (
-            <p className="mt-3 rounded-lg border border-crit-fg/20 bg-crit-bg px-3 py-2 text-[12px] text-crit-fg">
+            <p className="mt-3 rounded-lg border border-crit-fg/20 bg-crit-bg px-3.5 py-2.5 text-[12.5px] leading-relaxed text-crit-fg">
               {error}
             </p>
           )}

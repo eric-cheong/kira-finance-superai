@@ -26,35 +26,35 @@ function VendorRow({ v, maxSpend }: { v: Vendor; maxSpend: number }) {
   const st = RISK[v.riskLevel];
   const share = maxSpend > 0 ? Math.round((v.totalSpendMinor / maxSpend) * 100) : 0;
   return (
-    <tr className="hover:bg-surface-2/40 align-top">
+    <tr className="align-top transition hover:bg-surface-2/40">
       <Td>
         <div className="font-medium text-ink">{v.name}</div>
-        <div className="text-[11.5px] text-faint">{v.category}</div>
+        <div className="mt-0.5 text-[12px] text-faint">{v.category}</div>
       </Td>
-      <Td className="whitespace-nowrap text-[12px] text-muted">{v.country}</Td>
+      <Td className="whitespace-nowrap text-[12.5px] text-muted">{v.country}</Td>
       <Td>
-        <div className="mb-1 flex items-center justify-between gap-2">
-          <span className="tnum text-[12.5px] font-semibold text-ink">{money(v.totalSpendMinor, v.currency, { compact: true })}</span>
-          <span className="tnum text-[11px] text-faint">{share}%</span>
+        <div className="mb-1.5 flex items-center justify-between gap-2">
+          <span className="tnum text-[13px] font-semibold text-ink">{money(v.totalSpendMinor, v.currency, { compact: true })}</span>
+          <span className="tnum text-[12px] text-faint">{share}%</span>
         </div>
         <Bar value={share} tone="brand" />
       </Td>
-      <Td className="whitespace-nowrap tnum text-[12px] text-muted">{v.transactionCount}</Td>
-      <Td className="whitespace-nowrap tnum text-[12px] text-muted">{fmtDate(v.lastTransactionAt)}</Td>
+      <Td className="whitespace-nowrap tnum text-right text-[12.5px] text-muted">{v.transactionCount}</Td>
+      <Td className="whitespace-nowrap tnum text-[12.5px] text-muted">{fmtDate(v.lastTransactionAt)}</Td>
       <Td>
         <Badge variant={st.variant} dot>
           {st.label}
         </Badge>
         {v.riskNotes && (
-          <p className="mt-1 text-[11.5px] text-muted">{v.riskNotes}</p>
+          <p className="mt-1.5 text-[12px] leading-relaxed text-muted">{v.riskNotes}</p>
         )}
       </Td>
       <Td>
         {v.priceIntelligence && (
-          <p className="text-[12px] text-ink-2">{v.priceIntelligence}</p>
+          <p className="text-[12.5px] leading-relaxed text-ink-2">{v.priceIntelligence}</p>
         )}
         {v.alternativeSuggestions && v.alternativeSuggestions.length > 0 && (
-          <div className="mt-1 flex flex-wrap gap-1">
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
             {v.alternativeSuggestions.map((a, i) => (
               <Badge key={i} variant="neutral">{a}</Badge>
             ))}
@@ -120,11 +120,13 @@ export default function VendorsPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="flex items-center gap-2">
-                      <Icon name="alert" size={16} className="text-warn-fg" />
-                      <span className="text-[14px] font-semibold text-ink">{v.name}</span>
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-warn-bg text-warn-fg">
+                        <Icon name="alert" size={16} />
+                      </span>
+                      <span className="text-[15px] font-semibold text-ink">{v.name}</span>
                     </div>
-                    <p className="mt-1 text-[12.5px] text-muted">{v.riskNotes}</p>
-                    <p className="mt-1 text-[12px] text-faint">
+                    <p className="mt-1.5 text-[13px] leading-relaxed text-muted">{v.riskNotes}</p>
+                    <p className="mt-1.5 text-[12px] text-faint">
                       {v.transactionCount} transactions · last {fmtDate(v.lastTransactionAt)}
                     </p>
                   </div>
@@ -133,7 +135,7 @@ export default function VendorsPage() {
                   </Badge>
                 </div>
                 {v.lastEnrichedAt && (
-                  <p className="mt-2 text-[11px] text-faint">
+                  <p className="mt-2.5 text-[12px] text-faint">
                     Enriched {fmtDate(v.lastEnrichedAt)} · source: Vendor Intelligence Agent (Exa)
                   </p>
                 )}
@@ -157,7 +159,7 @@ export default function VendorsPage() {
               <Th>Vendor</Th>
               <Th>Country</Th>
               <Th>Total spend</Th>
-              <Th>Txns</Th>
+              <Th className="text-right">Txns</Th>
               <Th>Last activity</Th>
               <Th>Risk</Th>
               <Th>Intelligence</Th>
@@ -173,12 +175,12 @@ export default function VendorsPage() {
 
       <Card>
         <CardHeader title="Enrichment source" icon="search" />
-        <p className="text-[12.5px] leading-relaxed text-muted">
+        <p className="text-[13px] leading-relaxed text-muted">
           Vendor risk signals, price intelligence, and alternative suggestions are sourced by the Vendor Intelligence Agent
           using Exa search and public web data. All enrichment is informational — the agent never switches suppliers or
           commits spend without explicit human approval.
         </p>
-        <p className="mt-2 text-[11.5px] text-faint">
+        <p className="mt-2.5 text-[12px] text-faint">
           Last enrichment run: {fmtDate(db.NOW)} · 07:31 MYT.
         </p>
       </Card>
