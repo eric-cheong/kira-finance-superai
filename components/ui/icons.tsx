@@ -41,7 +41,17 @@ export type IconName =
   | "route"
   | "timeline"
   | "hash"
-  | "database";
+  | "database"
+  | "menu"
+  | "close"
+  | "sun"
+  | "moon"
+  | "home"
+  | "bot"
+  | "mic"
+  | "volume"
+  | "send"
+  | "bookOpen";
 
 const PATHS: Record<IconName, JSX.Element> = {
   briefing: <><path d="M4 5h16M4 12h16M4 19h10" /></>,
@@ -82,6 +92,16 @@ const PATHS: Record<IconName, JSX.Element> = {
   timeline: <><path d="M5 4v16" /><path d="M8 6h11M8 12h8M8 18h11" /><circle cx="5" cy="6" r="1.5" /><circle cx="5" cy="12" r="1.5" /><circle cx="5" cy="18" r="1.5" /></>,
   hash: <><path d="M9 3L7 21M17 3l-2 18M4 8h17M3 16h17" /></>,
   database: <><ellipse cx="12" cy="5" rx="7" ry="3" /><path d="M5 5v7c0 1.7 3.1 3 7 3s7-1.3 7-3V5" /><path d="M5 12v7c0 1.7 3.1 3 7 3s7-1.3 7-3v-7" /></>,
+  menu: <><path d="M4 6h16M4 12h16M4 18h16" /></>,
+  close: <><path d="M6 6l12 12M18 6L6 18" /></>,
+  sun: <><circle cx="12" cy="12" r="4" /><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5 5l1.6 1.6M17.4 17.4L19 19M19 5l-1.6 1.6M6.6 17.4L5 19" /></>,
+  moon: <><path d="M20 13.5A8.5 8.5 0 1110.5 4a7 7 0 009.5 9.5z" /></>,
+  home: <><path d="M4 11l8-7 8 7" /><path d="M6 9.5V20h12V9.5" /><path d="M10 20v-6h4v6" /></>,
+  bot: <><rect x="5" y="8" width="14" height="11" rx="3" /><path d="M12 4v4M9 13h.01M15 13h.01M9 17h6" /><path d="M4 13H2M22 13h-2" /></>,
+  mic: <><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0014 0M12 18v3M8 21h8" /></>,
+  volume: <><path d="M4 10v4h4l5 4V6l-5 4z" /><path d="M16 9.5a4 4 0 010 5M18.5 7a7.5 7.5 0 010 10" /></>,
+  send: <><path d="M21 3L10 14" /><path d="M21 3l-7 18-4-7-7-4z" /></>,
+  bookOpen: <><path d="M4 5.5A3.5 3.5 0 017.5 2H20v18H7.5A3.5 3.5 0 004 23z" /><path d="M4 5.5V23M8 6h8M8 10h7" /></>,
 };
 
 export function Icon({

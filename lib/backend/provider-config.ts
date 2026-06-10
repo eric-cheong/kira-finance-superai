@@ -13,15 +13,28 @@ export function hasExaKey() {
 }
 
 export function providerStatus() {
+  const openaiConfigured = hasOpenAIKey();
   return {
     openai: {
-      configured: hasOpenAIKey(),
+      configured: openaiConfigured,
       model: openaiModel(),
       sdk: "openai + @openai/agents",
     },
     exa: {
       configured: hasExaKey(),
       sdk: "exa-js",
+    },
+    assistant: {
+      configured: true,
+      provider: openaiConfigured ? "openai-agents" : "local-fallback",
+      textRoute: "/api/assistant",
+      knowledgeBase: "local-kira-knowledge",
+    },
+    voice: {
+      configured: openaiConfigured,
+      mode: "browser speech + optional realtime client secret",
+      realtimeModel: process.env.OPENAI_REALTIME_MODEL?.trim() || "gpt-realtime-2",
+      sessionRoute: "/api/assistant/voice-session",
     },
     bookingBoundary: {
       canResearch: true,

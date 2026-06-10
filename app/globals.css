@@ -95,6 +95,7 @@ html {
   -webkit-text-size-adjust: 100%;
   text-rendering: optimizeLegibility;
   scroll-behavior: smooth;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
@@ -135,10 +136,25 @@ body {
   -webkit-backdrop-filter: blur(10px);
 }
 
+/* Prevent accidental horizontal scroll from wide content on small screens. */
+body {
+  overflow-x: hidden;
+}
+
 /* Subtle scrollbar to match the minimalist surface */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
+}
+
+@media (max-width: 639px) {
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  ::-webkit-scrollbar-thumb {
+    border-width: 1px;
+  }
 }
 ::-webkit-scrollbar-thumb {
   background: rgb(var(--scrollbar));

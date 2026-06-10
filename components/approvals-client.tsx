@@ -18,10 +18,13 @@ export function ApprovalQueue({ initial }: { initial: ApprovalRequest[] }) {
   const [pending, setPending] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Read through to the server-provided state for any approval that arrived
+  // after the initial render (e.g. via router.refresh()).
+  const stateOf = (a: ApprovalRequest): Decision => decisions[a.id] ?? a.state;
   const counts = {
-    open: Object.values(decisions).filter((d) => d === "open").length,
-    approved: Object.values(decisions).filter((d) => d === "approved").length,
-    rejected: Object.values(decisions).filter((d) => d === "rejected").length,
+    open: initial.filter((a) => stateOf(a) === "open").length,
+    approved: initial.filter((a) => stateOf(a) === "approved").length,
+    rejected: initial.filter((a) => stateOf(a) === "rejected").length,
   };
 
   async function decide(id: string, d: Decision, confirm = false) {
@@ -65,7 +68,7 @@ export function ApprovalQueue({ initial }: { initial: ApprovalRequest[] }) {
 
       <div className="space-y-3">
         {initial.map((a) => {
-          const d = decisions[a.id];
+          const d = stateOf(a);
           const requiresExtraConfirm = !a.reversible || a.tier >= 4;
           return (
             <Card key={a.id} className={cn("transition-colors", d !== "open" && "opacity-75")}>

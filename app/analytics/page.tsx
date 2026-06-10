@@ -69,7 +69,7 @@ export default function AnalyticsPage() {
         description="Real-time spend across categories, cost centres, cards, and currencies — normalised to base currency (MYR). Figures derive from the system-of-record entries posted overnight."
       />
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">
         <StatTile label="Total spend" value={money(total, "MYR", { compact: true })} sub="base currency · MoM" icon="analytics" />
         <StatTile label="Entries" value={db.RECORDS.length} sub="posted this period" icon="transactions" />
         <StatTile

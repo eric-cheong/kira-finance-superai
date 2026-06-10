@@ -14,7 +14,8 @@ the screens, the data model, realistic SG/MY SME seed data, and a working
 multi-agent orchestration engine. It is **offline-first** with optional live
 OpenAI + Exa provider seams: without keys it stays deterministic, and with keys
 it can run read-only OpenAI Agents / Exa consumer research for trip quotes and
-reviews.
+reviews, and an in-app Kira AI bot can understand user requests against the
+local knowledge base.
 
 ## Quick start
 
@@ -31,6 +32,7 @@ Optional live providers:
 OPENAI_API_KEY=...      # enables OpenAI Responses + Agents SDK flows
 OPENAI_MODEL=gpt-5.5   # optional override
 EXA_API_KEY=...         # enables live Exa consumer search for trips/reviews
+OPENAI_REALTIME_MODEL=gpt-realtime-2  # optional voice-session override
 ```
 
 ## What's in here
@@ -73,6 +75,15 @@ the loop **Observe → Analyze → Plan → Act → Verify → Summarize → Esc
 | `/settings` | Settings — automation thresholds, connectors, RBAC |
 | `/roadmap` | Roadmap — phase boundaries, action matrix, architecture choices, and failure handling |
 
+The floating **Kira AI bot** is available globally. It uses the OpenAI Agents
+SDK when a valid `OPENAI_API_KEY` and model are available, falls back to local
+request understanding when provider calls fail, and exposes a visible
+knowledge-base panel covering workflows, policy boundaries, data surfaces, AI
+traces, and settings. Voice mode has two layers: browser dictation/readback for
+the approval-friendly chained path, plus an OpenAI Realtime Agents SDK live
+voice session when `/api/assistant/voice-session` can mint an ephemeral client
+secret.
+
 **ERP foundation coverage** (`/erp-foundation`) is the canonical MVP boundary:
 Kira has a structured finance control plane for source documents, record
 entries, e-invoices, AP close, read-only banking, reconciliation, approvals,
@@ -96,6 +107,9 @@ KL coffee roaster with a Singapore outlet (SST-registered, MyInvois Phase 2).
   uses the OpenAI Agents SDK for read-only trip research and direct OpenAI
   Responses calls for review synthesis. `lib/backend/consumer-search.ts` uses
   Exa when `EXA_API_KEY` is present and falls back cleanly when it is not.
+  `lib/backend/ai-assistant.ts` adds the in-app request-understanding agent,
+  grounded by `lib/backend/kira-knowledge.ts`, plus guarded realtime voice
+  session creation.
   Candidate UI/chart/motion libraries from the design notes are not installed
   until a screen actually imports them.
 - **Orchestrate, never settle** — every feature is designed to stay above the
@@ -116,6 +130,9 @@ core demo. Optional OpenAI/Exa keys enable live read-only intelligence.
 
 See [docs/backend-api.md](docs/backend-api.md) for route contracts and safety
 constraints.
+
+See [docs/ai-assistant.md](docs/ai-assistant.md) for the Kira AI bot,
+knowledge-base, Agent SDK, and voice-mode architecture.
 
 See [docs/agentic-saas-design.md](docs/agentic-saas-design.md) for the durable
 UI/product guidance added from the latest design note.

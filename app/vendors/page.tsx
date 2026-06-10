@@ -87,7 +87,7 @@ export default function VendorsPage() {
         description="Spend concentration, risk flags, price intelligence, and alternative suggestions — enriched by the Vendor Intelligence agent using public data sources. No purchasing actions are taken automatically."
       />
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">
         <StatTile label="Vendors tracked" value={vendors.length} sub="active suppliers" icon="vendor" />
         <StatTile
           label="Total spend"

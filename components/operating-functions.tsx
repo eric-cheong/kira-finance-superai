@@ -294,7 +294,7 @@ export function OperatingFunctionsModulePage() {
 
   return (
     <>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">
         <StatTile label="Functions" value={OPERATING_FUNCTIONS.length} sub="operating modules" icon="module" tone="brand" />
         <StatTile label="Detected risks" value={totalRisks} sub="open across functions" icon="alert" tone="neutral" />
         <StatTile label="Running workflows" value={running} sub={`${approval} approval-gated`} icon="workflow" tone="info" />

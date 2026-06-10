@@ -110,7 +110,7 @@ export default function ForecastPage() {
 
       <DisclaimerBanner />
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">
         <StatTile
           label="90-day inflow"
           value={money(totalInflow, "MYR", { compact: true })}

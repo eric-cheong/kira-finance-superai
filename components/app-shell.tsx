@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { cn } from "./ui/cn";
 import { Icon, type IconName } from "./ui/icons";
 import { Avatar } from "./ui/primitives";
+import { AssistantClient } from "./assistant-client";
 
 interface NavItem {
   href: string;
@@ -21,37 +22,14 @@ interface ShellSession {
 }
 
 type SessionStatus = "loading" | "live" | "fallback";
-type ThemeMode = "light" | "dark";
 
-const THEME_STORAGE_KEY = "kira-theme";
-
-function getPreferredTheme(): ThemeMode {
-  if (typeof window === "undefined") return "light";
-  try {
-    const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
-    if (stored === "light" || stored === "dark") return stored;
-  } catch {
-    return "light";
-  }
-  return window.matchMedia?.("(prefers-color-scheme: dark)")?.matches ? "dark" : "light";
-}
-
-function applyTheme(theme: ThemeMode) {
+function applyLightTheme() {
   if (typeof document === "undefined") return;
-  const isDark = theme === "dark";
   const root = document.documentElement;
-  root.dataset.theme = isDark ? "kira-dark" : "kira";
-  root.classList.toggle("dark", isDark);
-  root.style.colorScheme = theme;
-  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", isDark ? "#0d1016" : "#fbfaf7");
-}
-
-function persistTheme(theme: ThemeMode) {
-  try {
-    window.localStorage.setItem(THEME_STORAGE_KEY, theme);
-  } catch {
-    // localStorage can be unavailable in private or restricted contexts.
-  }
+  root.dataset.theme = "kira";
+  root.classList.remove("dark");
+  root.style.colorScheme = "light";
+  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", "#fbfaf7");
 }
 
 const NAV: { group: string; items: NavItem[] }[] = [
@@ -169,25 +147,6 @@ function Brand() {
         <div className="text-[10.5px] font-medium uppercase tracking-wide text-faint">Finance · SuperAI</div>
       </div>
     </Link>
-  );
-}
-
-function ThemeToggle({ theme, onToggle }: { theme: ThemeMode; onToggle: () => void }) {
-  const isDark = theme === "dark";
-  return (
-    <button
-      type="button"
-      onClick={onToggle}
-      aria-pressed={isDark}
-      aria-label={`Switch to ${isDark ? "light" : "dark"} mode`}
-      className="inline-flex h-11 min-h-11 items-center justify-center gap-1.5 rounded-lg border border-transparent px-2.5 text-ink hover:bg-surface-2/70 sm:h-9 sm:min-h-9"
-      suppressHydrationWarning
-    >
-      <Icon name="spark" size={16} className={isDark ? "text-brand" : "text-muted"} />
-      <span className="hidden text-[12px] font-medium lg:inline" suppressHydrationWarning>
-        {isDark ? "Dark" : "Light"}
-      </span>
-    </button>
   );
 }
 
@@ -335,11 +294,13 @@ function SidebarBody({
   session,
   sessionStatus,
   onNavigate,
+  onClose,
 }: {
   pathname: string;
   session: ShellSession | null;
   sessionStatus: SessionStatus;
   onNavigate?: () => void;
+  onClose?: () => void;
 }) {
   const approvalBadge = session?.navigationBadges.approvals ? String(session.navigationBadges.approvals) : undefined;
   const userName = session?.user.name ?? "Amir Hafiz";
@@ -348,7 +309,19 @@ function SidebarBody({
   return (
     <div className="flex h-full flex-col">
       <div className="px-3 pb-4 pt-5">
-        <Brand />
+        <div className="flex items-center justify-between gap-2">
+          <Brand />
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close navigation"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-transparent text-muted hover:bg-surface-2/70 hover:text-ink xl:hidden"
+            >
+              <Icon name="close" size={18} />
+            </button>
+          )}
+        </div>
         <CommandSearch className="mt-4 block max-w-none sm:hidden" idBase="drawer" onNavigate={onNavigate} />
       </div>
       <nav className="flex-1 space-y-5 overflow-y-auto px-3 pb-4">
@@ -394,7 +367,6 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [isDesktop, setIsDesktop] = useState(false);
   const [session, setSession] = useState<ShellSession | null>(null);
   const [sessionStatus, setSessionStatus] = useState<SessionStatus>("loading");
-  const [theme, setTheme] = useState<ThemeMode>("light");
 
   useEffect(() => {
     const query = window.matchMedia("(min-width: 1280px)");
@@ -404,14 +376,28 @@ export function AppShell({ children }: { children: ReactNode }) {
     return () => query.removeEventListener("change", sync);
   }, []);
 
+  // Close the mobile drawer on route change so navigation always reveals the page.
   useEffect(() => {
-    applyTheme(theme);
-  }, [theme]);
+    setOpen(false);
+  }, [pathname]);
+
+  // Lock background scroll while the mobile drawer is open and allow Escape to close it.
+  useEffect(() => {
+    if (!open || isDesktop) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open, isDesktop]);
 
   useEffect(() => {
-    const preferredTheme = getPreferredTheme();
-    setTheme(preferredTheme);
-    applyTheme(preferredTheme);
+    applyLightTheme();
   }, []);
 
   useEffect(() => {
@@ -436,14 +422,6 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const navHidden = !open && !isDesktop;
   const approvalCount = session?.navigationBadges.approvals ?? 0;
-  const toggleTheme = () => {
-    setTheme((current) => {
-      const next = current === "dark" ? "light" : "dark";
-      persistTheme(next);
-      applyTheme(next);
-      return next;
-    });
-  };
 
   return (
     <div className="drawer app-wash min-h-screen xl:drawer-open">
@@ -461,11 +439,17 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="navbar-start min-w-0 flex-1 gap-3">
             <label
               htmlFor="app-shell-drawer"
-              className="-ml-1 inline-flex h-11 min-h-11 w-11 items-center justify-center rounded-lg border border-transparent text-ink hover:bg-surface-2/70 xl:hidden"
+              className="-ml-1 inline-flex h-11 min-h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-transparent text-ink hover:bg-surface-2/70 xl:hidden"
               aria-label="Open navigation"
             >
-              <Icon name="briefing" size={18} />
+              <Icon name="menu" size={19} />
             </label>
+            <Link href="/" className="flex min-w-0 items-center gap-2 sm:hidden">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-brand/15 bg-gradient-to-br from-brand-soft to-surface text-ink">
+                <Icon name="spark" size={15} />
+              </span>
+              <span className="truncate text-[15px] font-semibold text-ink">Kira</span>
+            </Link>
             <CommandSearch className="hidden sm:block" />
           </div>
           <div className="navbar-end gap-2">
@@ -473,7 +457,6 @@ export function AppShell({ children }: { children: ReactNode }) {
               <span className={cn("h-1.5 w-1.5 rounded-full", sessionStatus === "live" ? "bg-pos-fg" : "bg-faint")} />
               {sessionStatus === "live" ? "System live" : sessionStatus === "loading" ? "Syncing" : "Offline fallback"}
             </div>
-            <ThemeToggle theme={theme} onToggle={toggleTheme} />
             <Link className="relative inline-flex h-11 min-h-11 w-11 items-center justify-center rounded-lg border border-transparent text-ink hover:bg-surface-2/70 sm:h-9 sm:min-h-9 sm:w-9" aria-label="Open approvals" href="/approvals">
               <Icon name="bell" size={18} />
               {approvalCount > 0 && (
@@ -489,6 +472,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </header>
 
         <main className="mx-auto w-full max-w-content px-4 py-6 sm:px-6 lg:px-8 2xl:max-w-content">{children}</main>
+        <AssistantClient />
       </div>
 
       <div className="drawer-side z-40 xl:z-30">
@@ -496,19 +480,25 @@ export function AppShell({ children }: { children: ReactNode }) {
           htmlFor="app-shell-drawer"
           aria-label="Close navigation"
           className={cn(
-            "drawer-overlay bg-ink/15",
+            "drawer-overlay bg-ink/30 backdrop-blur-[2px]",
             navHidden && "max-xl:pointer-events-none max-xl:opacity-0",
           )}
           onClick={() => setOpen(false)}
         />
         <aside
           className={cn(
-            "h-[100dvh] max-h-[100dvh] w-[min(280px,calc(100vw-48px))] border-r border-border bg-surface/90 backdrop-blur-xl xl:w-[248px]",
+            "h-[100dvh] max-h-[100dvh] w-[min(300px,calc(100vw-48px))] border-r border-border bg-surface backdrop-blur-xl xl:w-[248px] xl:bg-surface/90",
             navHidden && "max-xl:invisible",
           )}
           aria-hidden={navHidden}
         >
-          <SidebarBody pathname={pathname} session={session} sessionStatus={sessionStatus} onNavigate={() => setOpen(false)} />
+          <SidebarBody
+            pathname={pathname}
+            session={session}
+            sessionStatus={sessionStatus}
+            onNavigate={() => setOpen(false)}
+            onClose={isDesktop ? undefined : () => setOpen(false)}
+          />
         </aside>
       </div>
     </div>

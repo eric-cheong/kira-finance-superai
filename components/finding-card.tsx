@@ -40,7 +40,7 @@ export function FindingCard({ finding: f }: { finding: Finding }) {
 
   const body = (
     <>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-2.5">
           <span className={cn("mt-0.5 shrink-0", f.escalate ? "text-warn-fg" : "text-muted")}>
             <Icon name={KIND_ICON[f.kind]} size={17} />
@@ -50,7 +50,9 @@ export function FindingCard({ finding: f }: { finding: Finding }) {
             <p className="mt-1 text-[13px] leading-relaxed text-ink-2">{f.detail}</p>
           </div>
         </div>
-        <ConfidenceChip value={f.confidence} showWord={false} />
+        <span className="shrink-0">
+          <ConfidenceChip value={f.confidence} showWord={false} />
+        </span>
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-1.5">

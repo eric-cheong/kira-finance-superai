@@ -19,10 +19,14 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
+// Applies the stored theme before first paint to avoid a light-mode flash for dark users.
+const THEME_BOOT_SCRIPT = `(function(){try{var s=localStorage.getItem("kira-theme");var d=s==="dark"||(s!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);var r=document.documentElement;r.dataset.theme=d?"kira-dark":"kira";r.classList.toggle("dark",d);r.style.colorScheme=d?"dark":"light";}catch(e){}})();`;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" data-theme="kira">
+    <html lang="en" data-theme="kira" suppressHydrationWarning>
       <body>
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
         <AppShell>{children}</AppShell>
       </body>
     </html>

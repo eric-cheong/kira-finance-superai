@@ -36,6 +36,10 @@ Current implementation:
   badges, progress, notices, and the current inline SVG icon set.
 - OpenAI Agents SDK, OpenAI, Exa, and Zod are installed only for the live
   provider seams that are already wired in `lib/backend`.
+- The Kira AI bot is a product surface, not a decorative chat box: it must show
+  what it understood, the route/policy boundary it used, the knowledge sources it
+  grounded on, and whether voice is browser-local or backed by a realtime
+  session.
 
 Deferred until a screen or component actually imports them:
 
@@ -70,6 +74,8 @@ The chat box is the easy part. The real product is trust.
 Design the autonomous system so it is legible and controllable:
 
 - Show the agent plan, tool calls, decision trace, evidence, and progress.
+- Show the local knowledge base beside the assistant so users can see what the
+  bot is allowed to know before they trust its answer.
 - Give humans control points: pause, edit, approve, reject, resume.
 - Treat loading, streaming, empty, and error states as core design, not cleanup.
 - Surface evidence and citations for every recommendation.

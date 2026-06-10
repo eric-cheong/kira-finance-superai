@@ -239,7 +239,7 @@ export default function BookingsPage() {
         }
       />
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">
         <StatTile label="Open quotes" value={openQuotes.length} sub="need your selection" icon="flight" tone="warn" />
         <StatTile label="Approved" value={confirmed.length} sub="commitments on record" icon="check" tone="pos" />
         <StatTile label="Committed" value={money(bookings.reduce((s, b) => s + b.amountMinor, 0), "MYR", { compact: true })} sub="this period" icon="transactions" />

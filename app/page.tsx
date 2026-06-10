@@ -106,7 +106,7 @@ function RunCockpit({ approvalsCount }: { approvalsCount: number }) {
 
         <div>
           <p className="mb-2 text-[11.5px] font-semibold uppercase tracking-wide text-faint">Human controls</p>
-          <div className="grid gap-2 sm:grid-cols-3 xl:grid-cols-1">
+          <div className="grid grid-cols-3 gap-2 xl:grid-cols-1">
             <Button disabled variant="outline" size="sm" icon="clock">
               Pause
             </Button>
@@ -152,11 +152,11 @@ export default function BriefingPage() {
             </span>
           </p>
         </div>
-        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-          <Button className="w-full sm:w-auto" variant="primary" icon="approvals" size="sm" href="/approvals">
+        <div className="flex w-full items-center gap-2 sm:w-auto">
+          <Button className="flex-1 sm:flex-none" variant="primary" icon="approvals" size="sm" href="/approvals">
             {run.topline.approvalsCount} approvals
           </Button>
-          <Button className="w-full sm:w-auto" variant="outline" icon="audit" size="sm" href="/audit">
+          <Button className="flex-1 sm:flex-none" variant="outline" icon="audit" size="sm" href="/audit">
             View run trace
           </Button>
         </div>
@@ -170,7 +170,7 @@ export default function BriefingPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">
         <StatTile label="Imported" value={m.total} sub="transactions overnight" icon="transactions" />
         <StatTile label="Auto-matched" value={`${m.matchedPct}%`} sub={`${m.matched} of ${m.total} lines`} icon="check" tone="pos" />
         <StatTile label="Need approval" value={run.topline.approvalsCount} sub={`${run.topline.escalationsCount} escalations`} icon="approvals" tone="warn" />

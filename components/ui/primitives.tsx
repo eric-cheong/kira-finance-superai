@@ -173,17 +173,17 @@ export function StatTile({
   tone?: Variant;
 }) {
   return (
-    <div className="min-w-0 rounded-lg border border-border bg-surface px-3.5 py-3.5 shadow-none sm:p-4">
-      <div className="flex min-w-0 items-start justify-between gap-3">
+    <div className="min-w-0 rounded-lg border border-border bg-surface px-3 py-3 shadow-none sm:p-4">
+      <div className="flex min-w-0 items-start justify-between gap-2 sm:gap-3">
         <div className="min-w-0">
           <div className="min-w-0 truncate text-[11.5px] font-medium leading-4 text-muted sm:text-[12px]">{label}</div>
-          <div className="tnum mt-1.5 min-w-0 truncate text-xl font-semibold leading-none text-ink sm:text-2xl">
+          <div className="tnum mt-1.5 min-w-0 truncate text-lg font-semibold leading-none text-ink sm:text-2xl">
             {value}
           </div>
-          {sub && <div className="mt-1 min-w-0 truncate text-[12px] leading-4 text-muted">{sub}</div>}
+          {sub && <div className="mt-1 min-w-0 truncate text-[11.5px] leading-4 text-muted sm:text-[12px]">{sub}</div>}
         </div>
         {icon && (
-          <span className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border", VARIANT[tone])}>
+          <span className={cn("hidden h-8 w-8 shrink-0 items-center justify-center rounded-lg border sm:flex", VARIANT[tone])}>
             <Icon name={icon} size={15} />
           </span>
         )}
@@ -271,7 +271,7 @@ export function PageSkeleton({ title = "Loading workspace" }: { title?: string }
         <div className="h-7 w-48 rounded-md bg-surface-2" aria-label={title} />
         <div className="mt-2 h-4 w-full max-w-xl rounded-md bg-surface-2" />
       </div>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, index) => (
           <div key={index} className="h-24 rounded-lg border border-border bg-surface">
             <div className="h-full animate-pulse rounded-lg bg-surface-2/55" />

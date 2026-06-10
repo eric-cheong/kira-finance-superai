@@ -114,7 +114,7 @@ export default function TransactionsPage() {
         description="Bank and card lines imported read-only — Kira never originates or moves this money. The matching engine pairs each line to a receipt; unmatched and ambiguous items are surfaced for close."
       />
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">
         <StatTile label="Imported" value={m.total} sub="this period" icon="transactions" />
         <StatTile label="Matched" value={m.matched} sub={`${m.matchedPct}% auto`} icon="check" tone="pos" />
         <StatTile label="In review" value={m.review} sub="FX / asset ambiguity" icon="alert" tone="warn" />

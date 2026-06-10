@@ -331,9 +331,13 @@ export function BookingsResearchWorkspace() {
               <div className="space-y-2">
                 {reviewResult.search.results.length > 0 ? reviewResult.search.results.map((item, index) => (
                   <article key={`${item.url}-${index}`} className="rounded-lg border border-border bg-surface-2/45 px-3 py-2.5">
-                    <a href={isExternalUrl(item.url) ? item.url : undefined} target="_blank" rel="noreferrer" className="text-[12.5px] font-medium text-brand hover:underline">
-                      {item.title}
-                    </a>
+                    {isExternalUrl(item.url) ? (
+                      <a href={item.url} target="_blank" rel="noreferrer" className="text-[12.5px] font-medium text-brand hover:underline">
+                        {item.title}
+                      </a>
+                    ) : (
+                      <span className="text-[12.5px] font-medium text-ink">{item.title}</span>
+                    )}
                     {item.summary && <p className="mt-1 text-[12px] leading-relaxed text-muted">{item.summary}</p>}
                     {item.highlights && item.highlights.length > 0 && <p className="mt-1 text-[11.5px] leading-relaxed text-faint">{item.highlights[0]}</p>}
                   </article>

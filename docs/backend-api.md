@@ -24,6 +24,9 @@ and file-backed for development. It persists mutable demo state to
 |---|---:|---|
 | `/api/health` | `GET` | Backend status, persistence mode, entity counts. |
 | `/api/ai/status` | `GET` | OpenAI/Exa provider configuration status and booking boundary. |
+| `/api/assistant` | `GET` | Kira AI bot knowledge base and workspace context. |
+| `/api/assistant` | `POST` | Guarded Agent SDK request understanding over the local Kira knowledge base; falls back locally without working OpenAI access. |
+| `/api/assistant/voice-session` | `POST` | Guarded ephemeral OpenAI Realtime client-secret minting for browser live voice when OpenAI credentials are valid. |
 | `/api/session` | `GET` | Current user, org, preferences, nav badges. |
 | `/api/reference` | `GET` | Accounts, tax codes, cost centres, country configs, FX rates. |
 | `/api/connectors` | `GET` | Connector catalogue and local statuses. |
@@ -98,13 +101,53 @@ and file-backed for development. It persists mutable demo state to
 ## Optional Live AI Providers
 
 - `OPENAI_API_KEY` enables the OpenAI Agents SDK trip-research flow and direct
-  Responses API review synthesis.
+  Responses API review synthesis, plus the Kira AI bot's Agent SDK request
+  understanding and realtime voice-session route. The key must be valid for the
+  selected models; otherwise assistant text falls back locally and realtime
+  session creation returns `502 REALTIME_SESSION_FAILED`.
 - `OPENAI_MODEL` overrides the model; default is `gpt-5.5`.
+- `OPENAI_REALTIME_MODEL` overrides the realtime model; default is
+  `gpt-realtime-2`.
 - `EXA_API_KEY` enables live Exa consumer search for flights, hotels, policies,
   trip sources, and reviews.
+- The assistant remains usable without OpenAI keys via local knowledge-base
+  matching. Browser voice input/readback uses SpeechRecognition and
+  speechSynthesis as a chained voice path; live speech-to-speech uses the
+  OpenAI Realtime Agents SDK in the browser after the ephemeral session route
+  returns a client secret.
+- Provider-backed routes are same-origin guarded and rate-limited by
+  `KIRA_PROVIDER_RATE_LIMIT_PER_MINUTE`, `KIRA_PROVIDER_MAX_PAYLOAD_BYTES`,
+  `KIRA_PROVIDER_MAX_STRING_LENGTH`, and
+  `KIRA_PROVIDER_MAX_COLLECTION_ITEMS`.
 - Provider-backed booking quote generation still creates only quote records.
   The only route that can create a booking record is
   `/api/bookings/:quoteId/decision`, and it still requires `{ confirm: true }`.
+
+## Assistant Request Shape
+
+`POST /api/assistant` accepts:
+
+```json
+{
+  "message": "Can Kira compare Singapore hotel reviews?",
+  "mode": "text",
+  "transcript": "optional voice transcript",
+  "route": "/bookings"
+}
+```
+
+`message` is required and capped at 1200 characters. `mode` is `text` or
+`voice`. All API responses use the shared wrapper:
+
+```json
+{ "ok": true, "data": {} }
+```
+
+or:
+
+```json
+{ "ok": false, "error": { "code": "REALTIME_SESSION_FAILED", "message": "..." } }
+```
 
 ## Dev Utility
 
