@@ -10,6 +10,16 @@ const PUBLIC_API_PATHS = new Set([
   "/api/health",
 ]);
 
+function requestOrigin(request: NextRequest) {
+  const host = request.headers.get("x-forwarded-host")
+    ?? request.headers.get("host")
+    ?? request.nextUrl.host;
+  const protocol = request.headers.get("x-forwarded-proto")
+    ?? request.nextUrl.protocol.replace(/:$/, "")
+    ?? "http";
+  return `${protocol}://${host}`;
+}
+
 export async function middleware(request: NextRequest) {
   const userId = await readSessionUserId(request.cookies.get(SESSION_COOKIE)?.value);
   const hasSession = Boolean(userId);
@@ -18,7 +28,7 @@ export async function middleware(request: NextRequest) {
 
   if (pathname === "/login") {
     if (hasSession) {
-      return NextResponse.redirect(new URL("/", request.url));
+      return NextResponse.redirect(new URL("/", requestOrigin(request)));
     }
     return NextResponse.next();
   }
@@ -37,7 +47,7 @@ export async function middleware(request: NextRequest) {
   }
 
   if (!hasSession) {
-    const loginUrl = new URL("/login", request.url);
+    const loginUrl = new URL("/login", requestOrigin(request));
     if (pathname !== "/") loginUrl.searchParams.set("from", safeRedirectPath(`${pathname}${request.nextUrl.search}`));
     const response = NextResponse.redirect(loginUrl);
     response.cookies.delete(SESSION_COOKIE);
