@@ -52,6 +52,10 @@ interface WorkflowCard {
 
 const NOW = "2026-06-09T09:12:00+08:00";
 
+// The page reads the mutable backend store; static prerender caches HTML
+// against a stale snapshot and desyncs it from the fresh RSC payload.
+export const dynamic = "force-dynamic";
+
 const tableControlClass =
   "h-11 w-full rounded-lg border border-border bg-surface-2/65 px-3 text-[13px] text-ink outline-none transition placeholder:text-faint hover:border-border-strong focus:border-brand/50 sm:h-10";
 
@@ -67,9 +71,11 @@ function activeCloseBookClient() {
   return state.closeBookClients[0];
 }
 
-const records = closeBookRecords();
-const dashboard = closeBookDashboard();
-const activeClient = activeCloseBookClient();
+// Refreshed at the top of ErpClosePage on every render — a one-time module
+// snapshot goes stale against the mutable store and desyncs render passes.
+let records = closeBookRecords();
+let dashboard = closeBookDashboard();
+let activeClient = activeCloseBookClient();
 
 const STATUS_TONE: Record<CloseBookStatus, Tone> = {
   received: "neutral",
@@ -139,8 +145,8 @@ function totalValue(recordsToSum: readonly VerifiedBillRecord[]) {
 
 function lineCount(label: string, value: number, tone: Tone = "neutral") {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-2 py-1 text-[12px] text-muted">
-      <span className={`h-1.5 w-1.5 rounded-full ${tone === "crit" ? "bg-crit-fg" : tone === "warn" ? "bg-warn-fg" : tone === "pos" ? "bg-pos-fg" : tone === "info" ? "bg-info-fg" : "bg-faint"}`} />
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-2 py-1 text-[11.5px] text-muted">
+      <span className={`h-1.5 w-1.5 rounded-full ${tone === "crit" ? "bg-crit-fg" : tone === "warn" ? "bg-warn-fg" : tone === "pos" ? "bg-pos-fg" : tone === "info" ? "bg-info-fg" : tone === "brand" ? "bg-brand" : "bg-faint"}`} />
       {label}
       <span className="tnum font-semibold text-ink">{value}</span>
     </span>
@@ -839,6 +845,9 @@ function AuditTrail() {
 }
 
 export default function ErpClosePage() {
+  records = closeBookRecords();
+  dashboard = closeBookDashboard();
+  activeClient = activeCloseBookClient();
   const readiness = dashboard.closeReadiness;
   const blockerCount = dashboard.blockedRecords.filter(({ reasons }) =>
     reasons.some((reason) => reason.code !== "already_exported"),
