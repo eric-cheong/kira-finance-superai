@@ -51,7 +51,7 @@ function Field({ label, children, hint }: { label: string; children: ReactNode; 
     <label className="block min-w-0">
       <span className="mb-1.5 block text-[12.5px] font-medium text-ink">{label}</span>
       {children}
-      {hint && <span className="mt-1 block text-[11.5px] leading-relaxed text-faint">{hint}</span>}
+      {hint && <span className="mt-1 block text-[12px] leading-relaxed text-faint">{hint}</span>}
     </label>
   );
 }
@@ -324,7 +324,7 @@ export function BookingsResearchWorkspace() {
               {reviewResult.summary?.themes && reviewResult.summary.themes.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
                   {reviewResult.summary.themes.slice(0, 6).map((theme) => (
-                    <span key={theme.theme} className="rounded border border-border bg-surface-2 px-2 py-1 text-[11.5px] text-muted">{theme.theme} · {theme.sentiment}</span>
+                    <span key={theme.theme} className="rounded border border-border bg-surface-2 px-2 py-1 text-[12px] text-muted">{theme.theme} · {theme.sentiment}</span>
                   ))}
                 </div>
               )}
@@ -339,7 +339,7 @@ export function BookingsResearchWorkspace() {
                       <span className="text-[12.5px] font-medium text-ink">{item.title}</span>
                     )}
                     {item.summary && <p className="mt-1 text-[12px] leading-relaxed text-muted">{item.summary}</p>}
-                    {item.highlights && item.highlights.length > 0 && <p className="mt-1 text-[11.5px] leading-relaxed text-faint">{item.highlights[0]}</p>}
+                    {item.highlights && item.highlights.length > 0 && <p className="mt-1 text-[12px] leading-relaxed text-faint">{item.highlights[0]}</p>}
                   </article>
                 )) : <div className="rounded-lg border border-border bg-surface-2/45 px-3 py-6 text-center text-[12.5px] text-muted">No review sources returned.</div>}
               </div>
@@ -406,7 +406,7 @@ export function BookingApproval({
           {money(opt.amountMinor, opt.currency)} · {opt.supplier}. Finance tracker has been updated with approved
           committed spend. A supplier reservation still requires a separate licensed execution path.
         </p>
-        <p className="text-[11.5px] text-faint">
+        <p className="text-[12px] text-faint">
           Internal record: {booking?.id ?? `${quoteId}-opt${selected}`} · Audit log entry created.
         </p>
       </div>
@@ -461,10 +461,10 @@ export function BookingApproval({
             onClick={() => setSelected(opt.index)}
             aria-pressed={selected === opt.index}
             className={cn(
-              "flex min-h-11 w-full transform-gpu flex-col items-start gap-1 rounded-lg border px-3 py-2.5 text-left transition active:translate-y-[1px] sm:flex-row sm:items-center sm:justify-between",
+              "btn-lift flex min-h-11 w-full transform-gpu flex-col items-start gap-1 rounded-lg border px-3 py-2.5 text-left transition sm:flex-row sm:items-center sm:justify-between",
               selected === opt.index
                 ? "border-brand bg-brand-soft shadow-card"
-                : "border-border bg-surface hover:border-border-strong",
+                : "border-border bg-surface hover:border-border-strong hover:bg-surface-2/60",
             )}
           >
             <span className="text-[13px] font-medium text-ink">{opt.label}</span>

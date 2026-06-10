@@ -115,19 +115,19 @@ function NavLink({
         onClick={onClick}
         aria-current={active ? "page" : undefined}
         className={cn(
-          "group flex min-h-11 items-center gap-2.5 rounded-lg border-l-2 px-2.5 py-2 text-[13.5px] font-medium text-ink xl:min-h-9",
+          "group flex min-h-11 items-center gap-2.5 rounded-lg border-l-2 px-3 py-2 text-[13.5px] xl:min-h-10",
           active
-            ? "border-brand/30 bg-gradient-to-r from-brand-soft to-surface text-ink"
-            : "border-transparent hover:bg-surface-2/70",
+            ? "border-brand bg-brand-soft font-semibold text-brand"
+            : "border-transparent font-medium text-ink hover:bg-surface-2/70 hover:text-ink",
         )}
       >
-        <Icon name={item.icon} size={17} className={active ? "text-ink" : "text-muted"} />
+        <Icon name={item.icon} size={17} className={active ? "text-brand" : "text-muted group-hover:text-ink"} />
         <span className="flex-1">{item.label}</span>
         {item.phase === 2 && (
-          <span className="inline-flex h-auto min-h-0 rounded-full border border-border bg-surface/70 px-1.5 py-0.5 text-[10px] font-medium text-muted">P2</span>
+          <span className="inline-flex h-auto min-h-0 rounded-full border border-border bg-surface/70 px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-muted">P2</span>
         )}
         {badge && (
-          <span className="inline-flex h-auto min-h-0 min-w-[18px] items-center justify-center rounded-full border border-brand/20 bg-brand-soft px-1.5 py-0.5 text-[10px] font-medium text-ink">
+          <span className="tnum inline-flex h-auto min-h-0 min-w-[18px] items-center justify-center rounded-full border border-brand/20 bg-brand-soft px-1.5 py-0.5 text-[11px] font-semibold text-ink">
             {badge}
           </span>
         )}
@@ -139,12 +139,12 @@ function NavLink({
 function Brand() {
   return (
     <Link href="/" className="flex items-center gap-2.5 px-1">
-      <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-brand/15 bg-gradient-to-br from-brand-soft to-surface text-ink">
+      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-soft text-brand">
         <Icon name="spark" size={18} />
       </span>
       <div className="leading-tight">
         <div className="text-[15px] font-semibold text-ink">Kira</div>
-        <div className="text-[10.5px] font-medium uppercase tracking-wide text-faint">Finance · SuperAI</div>
+        <div className="text-[11px] font-medium uppercase tracking-wide text-faint">Finance · SuperAI</div>
       </div>
     </Link>
   );
@@ -247,7 +247,7 @@ function CommandSearch({
           className="min-w-0 flex-1 bg-transparent text-[13px] text-ink outline-none placeholder:text-faint"
           placeholder="Search routes, approvals, invoices..."
         />
-        <span className="hidden shrink-0 rounded-md border border-border bg-surface-2 px-1.5 py-0.5 text-[10px] font-medium text-faint sm:inline">
+        <span className="hidden shrink-0 rounded-md border border-border bg-surface-2 px-1.5 py-0.5 text-[11px] font-medium text-faint sm:inline">
           Cmd K
         </span>
       </div>
@@ -269,13 +269,13 @@ function CommandSearch({
                     onMouseDown={(event) => event.preventDefault()}
                     onClick={() => navigateTo(item.href)}
                     className={cn(
-                      "grid min-h-11 grid-cols-[auto_1fr_auto] items-center gap-2 rounded-md px-2.5 py-2 text-left sm:min-h-9",
+                      "grid min-h-11 w-full grid-cols-[auto_1fr_auto] items-center gap-2 rounded-md px-2.5 py-2 text-left transition hover:bg-surface-2/70 sm:min-h-10",
                       activeIndex === index && "bg-surface-2",
                     )}
                   >
                     <Icon name={item.icon} size={15} className="text-muted" />
                     <span className="text-[13px] font-medium text-ink">{item.label}</span>
-                    <span className="text-[10.5px] uppercase tracking-wide text-faint">{item.group}</span>
+                    <span className="text-[11px] uppercase tracking-wide text-faint">{item.group}</span>
                   </button>
                 </li>
               ))}
@@ -316,7 +316,7 @@ function SidebarBody({
               type="button"
               onClick={onClose}
               aria-label="Close navigation"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-transparent text-muted hover:bg-surface-2/70 hover:text-ink xl:hidden"
+              className="btn-lift inline-flex h-11 min-h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-transparent text-muted transition hover:bg-surface-2/70 hover:text-ink xl:hidden"
             >
               <Icon name="close" size={18} />
             </button>
@@ -328,7 +328,7 @@ function SidebarBody({
         {NAV.map((g) => (
           <div key={g.group}>
             <ul className="w-full space-y-0.5 p-0">
-              <li className="px-2.5 pb-1 text-[10.5px] font-semibold text-faint">{g.group}</li>
+              <li className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wide text-faint">{g.group}</li>
               {g.items.map((item) => (
                 <NavLink
                   key={item.href}
@@ -347,10 +347,10 @@ function SidebarBody({
           <Avatar name={userName} />
           <div className="min-w-0 flex-1 leading-tight">
             <div className="truncate text-[13px] font-medium text-ink">{userName}</div>
-            <div className="truncate text-[11.5px] text-muted">{userTitle} · {orgName}</div>
+            <div className="truncate text-[12px] text-muted">{userTitle} · {orgName}</div>
           </div>
           <span className={cn(
-            "shrink-0 rounded-full border px-1.5 py-0.5 text-[10px] font-medium",
+            "shrink-0 rounded-full border px-1.5 py-0.5 text-[11px] font-semibold",
             sessionStatus === "live" ? "border-pos-fg/20 bg-pos-bg text-ink" : "border-border bg-surface-2 text-muted",
           )}>
             {sessionStatus === "live" ? "live" : sessionStatus === "loading" ? "sync" : "offline"}
@@ -445,7 +445,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <Icon name="menu" size={19} />
             </label>
             <Link href="/" className="flex min-w-0 items-center gap-2 sm:hidden">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-brand/15 bg-gradient-to-br from-brand-soft to-surface text-ink">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-brand">
                 <Icon name="spark" size={15} />
               </span>
               <span className="truncate text-[15px] font-semibold text-ink">Kira</span>
@@ -453,11 +453,11 @@ export function AppShell({ children }: { children: ReactNode }) {
             <CommandSearch className="hidden sm:block" />
           </div>
           <div className="navbar-end gap-2">
-            <div className="hidden items-center gap-1.5 rounded-full border border-border bg-surface px-2.5 py-1.5 text-2xs font-medium text-ink md:inline-flex">
+            <div className="hidden items-center gap-1.5 rounded-full border border-border bg-surface px-2.5 py-1.5 text-[12px] font-medium text-ink md:inline-flex">
               <span className={cn("h-1.5 w-1.5 rounded-full", sessionStatus === "live" ? "bg-pos-fg" : "bg-faint")} />
               {sessionStatus === "live" ? "System live" : sessionStatus === "loading" ? "Syncing" : "Offline fallback"}
             </div>
-            <Link className="relative inline-flex h-11 min-h-11 w-11 items-center justify-center rounded-lg border border-transparent text-ink hover:bg-surface-2/70 sm:h-9 sm:min-h-9 sm:w-9" aria-label="Open approvals" href="/approvals">
+            <Link className="btn-lift relative inline-flex h-11 min-h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-transparent text-ink transition hover:bg-surface-2/70 sm:h-10 sm:min-h-10 sm:w-10" aria-label="Open approvals" href="/approvals">
               <Icon name="bell" size={18} />
               {approvalCount > 0 && (
                 <span className="absolute right-1.5 top-1.5 inline-flex min-w-4 items-center justify-center rounded-full border border-brand/20 bg-brand-soft px-1 text-[9.5px] font-semibold text-ink">

@@ -63,10 +63,10 @@ export function ErpCloseExportActions({
   return (
     <div className="w-full space-y-2 sm:w-auto">
       <ActionBar>
-        <Button variant="outline" icon="doc" size="sm" disabled={busy} onClick={runEvidencePack}>
+        <Button variant="outline" icon="doc" disabled={busy} onClick={runEvidencePack}>
           Evidence pack
         </Button>
-        <Button variant="primary" icon="lock" size="sm" disabled={disabled || busy} onClick={runReadyExport}>
+        <Button variant="primary" icon="lock" disabled={disabled || busy} onClick={runReadyExport}>
           {busy ? state.label : "Export Ready Bills"}
         </Button>
       </ActionBar>

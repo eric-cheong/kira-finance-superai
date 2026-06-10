@@ -21,14 +21,14 @@ function BarList({ rows, tone = "brand" }: { rows: Row[]; tone?: "brand" | "info
         const share = total > 0 ? Math.round((r.amount / total) * 100) : 0;
         return (
           <div key={r.label}>
-            <div className="mb-1 flex items-baseline justify-between gap-3">
+            <div className="mb-1.5 flex items-baseline justify-between gap-3">
               <span className="truncate text-[13px] text-ink">{r.label}</span>
               <span className="shrink-0 tnum text-[12.5px] font-medium text-ink-2">
                 {money(r.amount, "MYR")} <span className="text-faint">· {share}%</span>
               </span>
             </div>
             <Bar value={(r.amount / max) * 100} tone={tone} />
-            {r.sub && <p className="mt-0.5 text-[11px] text-faint">{r.sub}</p>}
+            {r.sub && <p className="mt-1 text-[12px] text-muted">{r.sub}</p>}
           </div>
         );
       })}
@@ -107,7 +107,7 @@ export default function AnalyticsPage() {
         <Card>
           <CardHeader title="Spend by currency" subtitle="Multi-currency · FX-normalised" icon="spark" />
           <BarList rows={byCurrency} tone="brand" />
-          <p className={cn("mt-4 border-t border-border pt-3 text-[11.5px] text-faint")}>
+          <p className={cn("mt-4 border-t border-border pt-3 text-[12px] leading-relaxed text-muted")}>
             Illustrative FX to MYR: SGD {db.FX_TO_MYR.SGD.toFixed(2)} · USD {db.FX_TO_MYR.USD.toFixed(2)}. Phase 3 adds live FX revaluation and multi-book consolidation.
           </p>
         </Card>

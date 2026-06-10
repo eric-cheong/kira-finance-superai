@@ -85,7 +85,7 @@ export function AutomationControls({ prefs }: { prefs: UserPreference }) {
             className="w-full accent-[rgb(var(--brand))]"
             aria-label="Automation threshold"
           />
-          <div className="mt-1 flex justify-between text-[10.5px] text-faint">
+          <div className="mt-1 flex justify-between text-[12px] text-faint">
             <span>50% · more automation</span>
             <span>100% · human review only</span>
           </div>
@@ -111,8 +111,8 @@ export function AutomationControls({ prefs }: { prefs: UserPreference }) {
                 onClick={() => setRisk(r)}
                 aria-pressed={risk === r}
                 className={cn(
-                  "min-h-11 rounded-md px-3 py-1.5 text-[12.5px] font-medium capitalize transition-colors sm:min-h-8",
-                  risk === r ? "bg-surface text-ink shadow-card" : "text-muted hover:text-ink-2",
+                  "btn-lift min-h-11 rounded-md px-3.5 py-1.5 text-[12.5px] font-medium capitalize transition sm:min-h-10",
+                  risk === r ? "bg-brand-soft font-semibold text-brand" : "text-muted hover:bg-surface-2/70 hover:text-ink",
                 )}
               >
                 {r}
@@ -134,8 +134,8 @@ export function AutomationControls({ prefs }: { prefs: UserPreference }) {
                   onClick={() => setChannels((c) => ({ ...c, [k]: !c[k] }))}
                   aria-pressed={on}
                   className={cn(
-                    "inline-flex min-h-11 transform-gpu items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12.5px] font-medium capitalize transition active:translate-y-[1px] sm:min-h-8",
-                    on ? "border-brand/20 bg-brand-soft text-ink" : "border-border bg-surface text-muted hover:text-ink-2",
+                    "btn-lift inline-flex min-h-11 transform-gpu items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[12.5px] font-medium capitalize transition sm:min-h-10",
+                    on ? "border-brand/20 bg-brand-soft text-brand" : "border-border bg-surface text-muted hover:bg-surface-2/60 hover:text-ink",
                   )}
                 >
                   <span className={cn("h-1.5 w-1.5 rounded-full", on ? "bg-brand" : "bg-faint")} />
@@ -144,7 +144,7 @@ export function AutomationControls({ prefs }: { prefs: UserPreference }) {
               );
             })}
           </div>
-          <p className="mt-2 text-[11.5px] text-faint">
+          <p className="mt-2.5 text-[12px] leading-relaxed text-faint">
             Quiet hours {prefs.quietHours.from}–{prefs.quietHours.to}. Channel changes are a soft-approval (tier-2) action.
           </p>
         </div>

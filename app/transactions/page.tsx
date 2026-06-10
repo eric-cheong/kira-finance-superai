@@ -30,7 +30,7 @@ const STATUS_LABEL: Record<TransactionEvent["status"], string> = {
 };
 
 const tableControlClass =
-  "h-11 w-full rounded-lg border border-border bg-surface-2/65 px-3 text-[13px] text-ink outline-none transition placeholder:text-faint hover:border-border-strong focus:border-brand/50 sm:h-9";
+  "h-11 w-full rounded-lg border border-border bg-surface-2/65 px-3 text-[13px] text-ink outline-none transition placeholder:text-faint hover:border-border-strong focus:border-brand/50 sm:h-10";
 
 function duplicateIds(): Set<string> {
   const set = new Set<string>();
@@ -67,7 +67,7 @@ function TransactionMobileCard({ t, duplicate }: { t: TransactionEvent; duplicat
           </div>
           <h3 className="mt-1 truncate text-[14px] font-semibold text-ink">{t.merchant}</h3>
           <p className="mt-0.5 text-[12px] leading-snug text-muted">{t.description}</p>
-          <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11.5px] text-faint">
+          <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-faint">
             <span className="tnum">{fmtDateShort(t.occurredAt)}</span>
             <span aria-hidden>·</span>
             <span className="truncate">{t.sourceRef}</span>
@@ -76,17 +76,17 @@ function TransactionMobileCard({ t, duplicate }: { t: TransactionEvent; duplicat
         <div className="shrink-0 text-right">
           <div className="tnum text-[14px] font-semibold text-ink">{money(t.amountMinor, t.currency)}</div>
           {t.currency !== "MYR" && (
-            <div className="tnum text-[11px] text-faint">≈ {money(db.toBase(t.amountMinor, t.currency), "MYR")}</div>
+            <div className="tnum text-[12px] text-faint">≈ {money(db.toBase(t.amountMinor, t.currency), "MYR")}</div>
           )}
         </div>
       </div>
-      <div className="mt-3 rounded-lg border border-border bg-surface-2/45 px-3 py-2">
+      <div className="mt-3 rounded-lg border border-border bg-surface-2/45 px-3 py-2.5">
         {rcp ? (
           <div className="flex items-center gap-2">
             <Thumb hint={rcp.thumbHint} size={28} />
             <div className="min-w-0 flex-1">
               <div className="truncate text-[12.5px] font-medium text-ink">{rcp.supplier}</div>
-              <div className="text-[11.5px] text-muted">Receipt match</div>
+              <div className="text-[12px] text-muted">Receipt match</div>
             </div>
             <Badge variant={match!.score >= 90 ? "pos" : "warn"}>{match!.score}%</Badge>
           </div>
@@ -170,7 +170,7 @@ export default function TransactionsPage() {
             <button
               type="button"
               data-finance-reset
-              className="h-11 rounded-lg border border-border bg-surface px-3 text-[13px] font-medium text-ink transition hover:border-border-strong hover:bg-surface-2 sm:h-9"
+              className="btn-lift inline-flex h-11 min-h-11 items-center justify-center gap-2 rounded-lg border border-border bg-surface px-4 text-[13px] font-medium text-ink shadow-card transition hover:border-border-strong hover:bg-surface-2/60 disabled:pointer-events-none disabled:opacity-50 sm:h-10 sm:min-h-10"
             >
               Reset
             </button>
@@ -223,7 +223,7 @@ export default function TransactionsPage() {
                 return (
                   <tr
                     key={t.id}
-                    className="hover:bg-surface-2/40"
+                    className="transition hover:bg-surface-2/40"
                     data-finance-row
                     data-row-id={t.id}
                     data-search={search}
@@ -249,13 +249,13 @@ export default function TransactionsPage() {
                           </Badge>
                         )}
                       </div>
-                      <span className="text-[11.5px] text-faint">{t.description}</span>
+                      <span className="text-[12px] text-faint">{t.description}</span>
                     </Td>
                     <Td className="whitespace-nowrap text-[12px] text-muted">{t.sourceRef}</Td>
                     <Td className="whitespace-nowrap text-right">
                       <span className="tnum font-semibold text-ink">{money(t.amountMinor, t.currency)}</span>
                       {t.currency !== "MYR" && (
-                        <div className="tnum text-[11px] text-faint">≈ {money(db.toBase(t.amountMinor, t.currency), "MYR")}</div>
+                        <div className="tnum text-[12px] text-faint">≈ {money(db.toBase(t.amountMinor, t.currency), "MYR")}</div>
                       )}
                     </Td>
                     <Td>
@@ -289,9 +289,9 @@ export default function TransactionsPage() {
               </Badge>
             </div>
             <Bar value={cr.score} tone={cr.score >= 80 ? "pos" : cr.score >= 60 ? "warn" : "crit"} />
-            <ul className="mt-3 space-y-1.5">
+            <ul className="mt-3 space-y-2.5">
               {cr.blockers.map((b, i) => (
-                <li key={i} className="flex items-start gap-2 text-[12px] text-muted">
+                <li key={i} className="flex items-start gap-2 text-[12px] leading-relaxed text-muted">
                   <Icon name="dot" size={10} className="mt-1 shrink-0 text-faint" />
                   {b}
                 </li>
@@ -301,12 +301,12 @@ export default function TransactionsPage() {
 
           <Card>
             <CardHeader title="Matching basis" subtitle="How auto-matches are scored" icon="spark" />
-            <ul className="space-y-2 text-[12.5px] text-muted">
+            <ul className="space-y-2.5 text-[12.5px] text-muted">
               <li className="flex items-center gap-2"><Badge variant="pos">amount</Badge> exact minor-unit equality</li>
               <li className="flex items-center gap-2"><Badge variant="info">date ±1d</Badge> settlement vs document date</li>
               <li className="flex items-center gap-2"><Badge variant="neutral">merchant~</Badge> fuzzy name similarity</li>
             </ul>
-            <p className="mt-3 text-[11.5px] text-faint">Matches ≥ 90% auto-confirm; 80–90% are suggested for a human; below 80% stay unmatched.</p>
+            <p className="mt-3 text-[12px] leading-relaxed text-muted">Matches ≥ 90% auto-confirm; 80–90% are suggested for a human; below 80% stay unmatched.</p>
           </Card>
         </aside>
       </div>

@@ -97,7 +97,7 @@ export function ApprovalQueue({ initial }: { initial: ApprovalRequest[] }) {
                     <ConfidenceChip value={a.confidence} />
                   </div>
 
-                  <ul className="mt-3 space-y-1">
+                  <ul className="mt-3 space-y-1.5">
                     {a.evidence.map((e, i) => (
                       <li key={i} className="flex items-start gap-2 text-[12.5px] text-ink-2">
                         <Icon name="check" size={13} className="mt-0.5 shrink-0 text-pos-fg" />
@@ -148,7 +148,7 @@ export function ApprovalQueue({ initial }: { initial: ApprovalRequest[] }) {
                         <Button variant="danger" disabled={pending === a.id} onClick={() => decide(a.id, "rejected")} className="w-full">
                           Reject
                         </Button>
-                        <p className="text-center text-[11px] text-faint">
+                        <p className="text-center text-[12px] text-faint">
                           {requiresExtraConfirm ? "Extra confirmation required" : "Explicit sign-off required"}
                         </p>
                       </>
@@ -170,7 +170,7 @@ export function ApprovalQueue({ initial }: { initial: ApprovalRequest[] }) {
                     </div>
                   )}
                   {errors[a.id] && (
-                    <p className="rounded-lg border border-crit-fg/20 bg-crit-bg px-2 py-1.5 text-[11.5px] text-crit-fg">
+                    <p className="rounded-lg border border-crit-fg/20 bg-crit-bg px-2.5 py-2 text-[12px] leading-relaxed text-crit-fg">
                       {errors[a.id]}
                     </p>
                   )}

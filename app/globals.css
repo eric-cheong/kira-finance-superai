@@ -39,6 +39,10 @@
   /* Desaturated steel blue. Used sparingly for focus, links, and selected state. */
   --brand: 47 95 152;
   --brand-soft: 240 245 251;
+  /* Solid button surface + readable text on it. Hover step is slightly brighter. */
+  --brand-strong: 43 89 144;
+  --brand-strong-hover: 52 103 163;
+  --on-brand: 255 255 255;
 
   /* Semantic status. Red is reserved for bad / critical states only. */
   --pos-fg: 50 112 96;
@@ -76,6 +80,10 @@ html[data-theme="kira-dark"] {
 
   --brand: 128 169 222;
   --brand-soft: 31 47 67;
+  /* Dark theme solid button is the light blue brand; ink-dark text keeps AA. */
+  --brand-strong: 128 169 222;
+  --brand-strong-hover: 148 184 230;
+  --on-brand: 13 16 22;
 
   --pos-fg: 114 203 176;
   --pos-bg: 22 54 45;
@@ -180,6 +188,26 @@ textarea {
   transition-property: color, background-color, border-color, box-shadow, transform, opacity;
   transition-duration: 160ms;
   transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Hover lift + press — shared micro-interaction for buttons and clickable chips.
+   Pair with a shadow class; transform respects prefers-reduced-motion below. */
+.btn-lift:hover {
+  transform: translateY(-1px);
+}
+.btn-lift:active {
+  transform: translateY(0.5px);
+}
+.btn-lift:disabled,
+.btn-lift[aria-disabled="true"] {
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-lift:hover,
+  .btn-lift:active {
+    transform: none;
+  }
 }
 
 @keyframes fade-rise {

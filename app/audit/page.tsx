@@ -83,13 +83,13 @@ function AgentProgressPanel({ run }: { run: ReturnType<typeof runDailyBriefing> 
           const value = last ? progressForStep(last.phase) : 0;
           const tone = agent.status === "ok" ? "pos" : agent.status === "degraded" ? "warn" : "crit";
           return (
-            <div key={agent.agent} className="rounded-lg border border-border bg-surface-2/45 p-3">
-              <div className="mb-2 flex items-start justify-between gap-2">
+            <div key={agent.agent} className="rounded-lg border border-border bg-surface-2/45 p-3.5">
+              <div className="mb-2.5 flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="truncate text-[12.5px] font-semibold text-ink">{agent.agent}</p>
-                  <p className="mt-0.5 truncate text-[11.5px] text-muted">{last?.message ?? "No steps recorded."}</p>
+                  <p className="truncate text-[13px] font-semibold text-ink">{agent.agent}</p>
+                  <p className="mt-0.5 truncate text-[12px] text-muted">{last?.message ?? "No steps recorded."}</p>
                 </div>
-                <span className="tnum shrink-0 text-[11px] text-faint">{value}%</span>
+                <span className="tnum shrink-0 text-[11.5px] font-semibold text-faint">{value}%</span>
               </div>
               <Bar value={value} tone={tone} />
             </div>
@@ -109,19 +109,19 @@ function HumanControlPanel() {
         icon="shield"
       />
       <div className="grid gap-3 sm:grid-cols-3">
-        <div className="rounded-lg border border-border bg-surface-2/45 p-3">
+        <div className="rounded-lg border border-border bg-surface-2/45 p-3.5">
           <Button disabled variant="outline" size="sm" icon="clock" className="w-full">
             Pause
           </Button>
           <p className="mt-2 text-[12px] leading-relaxed text-muted">Would suspend queued tool work before any external action.</p>
         </div>
-        <div className="rounded-lg border border-border bg-surface-2/45 p-3">
+        <div className="rounded-lg border border-border bg-surface-2/45 p-3.5">
           <Button disabled variant="outline" size="sm" icon="doc" className="w-full">
             Edit plan
           </Button>
           <p className="mt-2 text-[12px] leading-relaxed text-muted">Would let a reviewer adjust scope, evidence, or approval tier.</p>
         </div>
-        <div className="rounded-lg border border-border bg-surface-2/45 p-3">
+        <div className="rounded-lg border border-border bg-surface-2/45 p-3.5">
           <Button disabled variant="outline" size="sm" icon="arrowRight" className="w-full">
             Resume
           </Button>
@@ -159,7 +159,7 @@ export default function AuditPage() {
             </thead>
             <tbody>
               {AGENT_ROSTER.map((a) => (
-                <tr key={a.name} className="hover:bg-surface-2/40">
+                <tr key={a.name} className="transition hover:bg-surface-2/40">
                   <Td className="whitespace-nowrap font-medium text-ink">{a.name}</Td>
                   <Td className="text-[12.5px]">{a.job}</Td>
                   <Td className="text-[12.5px] text-ink">{a.autonomous}</Td>
@@ -190,12 +190,12 @@ export default function AuditPage() {
           <CardHeader title="Execution plan" subtitle="Each stage is visible before any human approval decision." icon="route" />
           <ol className="grid gap-3 md:grid-cols-4">
             {RUN_PLAN.map((item, i) => (
-              <li key={item.title} className="rounded-lg border border-border bg-surface-2/45 p-3">
+              <li key={item.title} className="rounded-lg border border-border bg-surface-2/45 p-3.5">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="tnum text-[11px] font-semibold text-faint">0{i + 1}</span>
+                  <span className="tnum text-[11.5px] font-semibold text-faint">0{i + 1}</span>
                   <Badge variant={item.status === "complete" ? "pos" : "warn"}>{item.status}</Badge>
                 </div>
-                <p className="mt-2 text-[12.5px] font-semibold text-ink">{item.title}</p>
+                <p className="mt-2 text-[13px] font-semibold text-ink">{item.title}</p>
                 <p className="mt-1 text-[12px] leading-relaxed text-muted">{item.detail}</p>
               </li>
             ))}
@@ -219,9 +219,9 @@ export default function AuditPage() {
             </thead>
             <tbody>
               {TOOL_CALLS.map((call) => (
-                <tr key={`${call.agent}-${call.tool}`} className="hover:bg-surface-2/40">
+                <tr key={`${call.agent}-${call.tool}`} className="transition hover:bg-surface-2/40">
                   <Td className="whitespace-nowrap font-medium text-ink">{call.agent}</Td>
-                  <Td className="tnum whitespace-nowrap text-[11.5px] text-info-fg">{call.tool}</Td>
+                  <Td className="tnum whitespace-nowrap text-[12px] text-info-fg">{call.tool}</Td>
                   <Td className="text-[12px] text-ink-2">{call.input}</Td>
                   <Td className="text-[12px] text-ink-2">{call.result}</Td>
                   <Td><Badge variant={call.policy === "human gate" ? "warn" : "neutral"}>{call.policy}</Badge></Td>
@@ -233,9 +233,9 @@ export default function AuditPage() {
 
         <Card className="mb-4">
           <CardHeader title="Orchestrator log" icon="spark" />
-          <ol className="space-y-1.5">
+          <ol className="space-y-2.5">
             {run.orchestratorLog.map((l, i) => (
-              <li key={i} className="flex items-start gap-2 text-[12.5px] text-ink-2">
+              <li key={i} className="flex items-start gap-2 text-[12.5px] leading-relaxed text-ink-2">
                 <span className="tnum mt-0.5 text-faint">{i + 1}.</span>
                 {l}
               </li>
@@ -255,10 +255,10 @@ export default function AuditPage() {
                   </Badge>
                 }
               />
-              <ol className="space-y-2">
+              <ol className="space-y-2.5">
                 {a.steps.map((s, i) => (
                   <li key={i} className="flex items-start gap-2.5">
-                    <span className="mt-0.5 w-[68px] shrink-0 text-right text-[9.5px] font-semibold tracking-wide text-faint">
+                    <span className="mt-0.5 w-[78px] shrink-0 text-right text-[11px] font-semibold uppercase tracking-wide text-faint">
                       {PHASE_LABEL[s.phase]}
                     </span>
                     <span className="mt-0.5 h-3 w-px shrink-0 bg-border" />
@@ -293,15 +293,15 @@ export default function AuditPage() {
             </thead>
             <tbody>
               {db.AUDIT.map((e) => (
-                <tr key={e.seq} className="hover:bg-surface-2/40">
+                <tr key={e.seq} className="transition hover:bg-surface-2/40">
                   <Td className="tnum text-faint">{e.seq}</Td>
-                  <Td className="whitespace-nowrap tnum text-[11.5px] text-muted">{fmtDateTime(e.at)}</Td>
-                  <Td className="whitespace-nowrap text-[12px] font-medium text-ink">{e.actor}</Td>
-                  <Td className="whitespace-nowrap tnum text-[11.5px] text-info-fg">{e.action}</Td>
+                  <Td className="whitespace-nowrap tnum text-[12px] text-muted">{fmtDateTime(e.at)}</Td>
+                  <Td className="whitespace-nowrap text-[12.5px] font-medium text-ink">{e.actor}</Td>
+                  <Td className="whitespace-nowrap tnum text-[12px] text-info-fg">{e.action}</Td>
                   <Td className="max-w-[320px] text-[12px]">{e.detail}</Td>
                   <Td>{e.tier ? <TierBadge tier={e.tier as ApprovalTier} /> : <span className="text-faint">—</span>}</Td>
                   <Td className="whitespace-nowrap">
-                    <span className="tnum text-[11px] text-faint" title={`prev ${e.prevHash}`}>
+                    <span className="tnum text-[12px] text-faint" title={`prev ${e.prevHash}`}>
                       {shortId(e.hash, 10)}
                     </span>
                   </Td>

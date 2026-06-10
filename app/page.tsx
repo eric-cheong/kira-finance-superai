@@ -47,16 +47,16 @@ function AgentRow({ a }: { a: AgentResult }) {
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">
           <span className="truncate text-[13px] font-medium text-ink">{a.agent}</span>
-          <span className="shrink-0 tnum text-[11px] text-faint">{a.durationMs}ms</span>
+          <span className="shrink-0 tnum text-[12px] text-faint">{a.durationMs}ms</span>
         </div>
-        {last && <p className="mt-0.5 truncate text-[11.5px] text-muted">{last.message}</p>}
+        {last && <p className="mt-0.5 truncate text-[12px] text-muted">{last.message}</p>}
         <div className="mt-2 flex items-center gap-2">
           <Bar value={progress} tone={barTone} />
-          <span className="tnum shrink-0 text-[10.5px] text-faint">{progress}%</span>
+          <span className="tnum shrink-0 text-[12px] text-faint">{progress}%</span>
         </div>
       </div>
       {a.phase === 2 && (
-        <span className="mt-0.5 rounded border border-border px-1 text-[9.5px] font-semibold text-faint">P2</span>
+        <span className="mt-0.5 rounded-md border border-border px-1.5 text-[11px] font-semibold uppercase tracking-wide text-faint">P2</span>
       )}
     </div>
   );
@@ -77,7 +77,7 @@ function RunCockpit({ approvalsCount }: { approvalsCount: number }) {
           <ol className="space-y-2">
             {PLAN_STEPS.map((step, index) => (
               <li key={step} className="flex items-center gap-2 rounded-lg border border-border bg-surface-2/45 px-3 py-2">
-                <span className="tnum flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-border bg-surface text-[10px] text-faint">
+                <span className="tnum flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-border bg-surface text-[11px] font-semibold text-faint">
                   {index + 1}
                 </span>
                 <span className="min-w-0 truncate text-[12.5px] font-medium text-ink">{step}</span>
@@ -98,7 +98,7 @@ function RunCockpit({ approvalsCount }: { approvalsCount: number }) {
                   <span className="tnum truncate text-[12px] font-medium text-info-fg">{item.label}</span>
                   <Badge variant="neutral">{item.state}</Badge>
                 </div>
-                <p className="mt-0.5 truncate text-[11.5px] text-muted">{item.detail}</p>
+                <p className="mt-0.5 truncate text-[12px] text-muted">{item.detail}</p>
               </div>
             ))}
           </div>
@@ -139,7 +139,7 @@ export default function BriefingPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <div className="flex flex-wrap items-center gap-2.5">
-            <h1 className="text-[22px] font-semibold text-ink">Good morning, Amir</h1>
+            <h1 className="text-[24px] font-semibold leading-tight tracking-[-0.01em] text-ink">Good morning, Amir</h1>
             <Badge variant="neutral" dot>
               generated briefing
             </Badge>
@@ -153,10 +153,10 @@ export default function BriefingPage() {
           </p>
         </div>
         <div className="flex w-full items-center gap-2 sm:w-auto">
-          <Button className="flex-1 sm:flex-none" variant="primary" icon="approvals" size="sm" href="/approvals">
+          <Button className="flex-1 sm:flex-none" variant="primary" icon="approvals" href="/approvals">
             {run.topline.approvalsCount} approvals
           </Button>
-          <Button className="flex-1 sm:flex-none" variant="outline" icon="audit" size="sm" href="/audit">
+          <Button className="flex-1 sm:flex-none" variant="outline" icon="audit" href="/audit">
             View run trace
           </Button>
         </div>
@@ -190,11 +190,14 @@ export default function BriefingPage() {
               <h2 className="flex items-center gap-2 text-[15px] font-semibold text-ink">
                 <Icon name="approvals" size={17} className="text-brand/60" />
                 Needs your approval
-                <span className="rounded-full bg-brand-soft px-1.5 py-0.5 text-2xs font-semibold text-ink">
+                <span className="tnum rounded-full bg-brand-soft px-2 py-0.5 text-[12px] font-semibold text-ink">
                   {run.approvals.length}
                 </span>
               </h2>
-              <Link href="/approvals" className="text-[12.5px] font-medium text-brand hover:underline">
+              <Link
+                href="/approvals"
+                className="btn-lift -mx-2.5 inline-flex min-h-11 items-center rounded-lg px-2.5 text-[12.5px] font-medium text-brand transition hover:bg-surface-2/70 sm:min-h-10"
+              >
                 Open queue →
               </Link>
             </div>
@@ -210,7 +213,7 @@ export default function BriefingPage() {
             <section key={s.key}>
               <div className="mb-3">
                 <h2 className="text-[15px] font-semibold text-ink">{s.title}</h2>
-                {s.subtitle && <p className="text-[12.5px] text-muted">{s.subtitle}</p>}
+                {s.subtitle && <p className="mt-0.5 text-[13px] leading-relaxed text-muted">{s.subtitle}</p>}
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 {s.findings.map((f) => (
@@ -230,7 +233,10 @@ export default function BriefingPage() {
                 <AgentRow key={a.agent} a={a} />
               ))}
             </div>
-            <Link href="/audit" className="mt-3 inline-flex items-center gap-1 text-[12.5px] font-medium text-brand hover:underline">
+            <Link
+              href="/audit"
+              className="btn-lift -mx-2.5 mt-3 inline-flex min-h-11 items-center gap-1 rounded-lg px-2.5 text-[12.5px] font-medium text-brand transition hover:bg-surface-2/70 sm:min-h-10"
+            >
               Full trace & audit chain
               <Icon name="arrowRight" size={13} />
             </Link>
@@ -243,7 +249,7 @@ export default function BriefingPage() {
               <span className="text-[12px] text-muted">month-end</span>
             </div>
             <Bar value={cr.score} tone={cr.score >= 80 ? "pos" : cr.score >= 60 ? "warn" : "crit"} />
-            <ul className="mt-3 space-y-1.5">
+            <ul className="mt-3 space-y-2">
               {cr.blockers.map((b, i) => (
                 <li key={i} className="flex items-start gap-2 text-[12px] text-muted">
                   <Icon name="dot" size={10} className="mt-1 shrink-0 text-faint" />
@@ -255,7 +261,7 @@ export default function BriefingPage() {
 
           <Card>
             <CardHeader title="Delivery" icon="bell" />
-            <p className="text-[12.5px] leading-relaxed text-muted">{run.notificationNote}</p>
+            <p className="text-[13px] leading-relaxed text-muted">{run.notificationNote}</p>
           </Card>
         </aside>
       </div>

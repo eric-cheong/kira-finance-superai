@@ -19,16 +19,16 @@ const ICON: Record<string, IconName> = {
 };
 
 const TONE: Record<string, string> = {
-  beans: "bg-white text-ink",
-  bolt: "bg-brand-soft text-ink",
-  car: "bg-brand-soft text-ink",
-  box: "bg-white text-ink",
-  design: "bg-brand-soft text-ink",
-  grinder: "bg-surface-2 text-ink",
-  cup: "bg-brand-soft text-ink",
-  building: "bg-white text-ink",
-  ads: "bg-brand-soft text-ink",
-  doc: "bg-surface-2 text-ink",
+  beans: "bg-surface text-muted",
+  bolt: "bg-brand-soft text-brand",
+  car: "bg-brand-soft text-brand",
+  box: "bg-surface text-muted",
+  design: "bg-brand-soft text-brand",
+  grinder: "bg-surface-2 text-muted",
+  cup: "bg-brand-soft text-brand",
+  building: "bg-surface text-muted",
+  ads: "bg-brand-soft text-brand",
+  doc: "bg-surface-2 text-muted",
 };
 
 export function Thumb({ hint, size = 40 }: { hint: string; size?: number }) {
@@ -36,7 +36,7 @@ export function Thumb({ hint, size = 40 }: { hint: string; size?: number }) {
     <span
       className={cn(
         "inline-flex shrink-0 items-center justify-center rounded-lg border border-border",
-        TONE[hint] ?? "bg-surface-2 text-ink",
+        TONE[hint] ?? "bg-surface-2 text-muted",
       )}
       style={{ width: size, height: size }}
       aria-hidden="true"

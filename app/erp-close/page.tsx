@@ -53,7 +53,7 @@ interface WorkflowCard {
 const NOW = "2026-06-09T09:12:00+08:00";
 
 const tableControlClass =
-  "h-11 w-full rounded-lg border border-border bg-surface-2/65 px-3 text-[13px] text-ink outline-none transition placeholder:text-faint hover:border-border-strong focus:border-brand/50 sm:h-9";
+  "h-11 w-full rounded-lg border border-border bg-surface-2/65 px-3 text-[13px] text-ink outline-none transition placeholder:text-faint hover:border-border-strong focus:border-brand/50 sm:h-10";
 
 function closeBookRecords() {
   return state.closeBookRecords;
@@ -139,7 +139,7 @@ function totalValue(recordsToSum: readonly VerifiedBillRecord[]) {
 
 function lineCount(label: string, value: number, tone: Tone = "neutral") {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-2 py-1 text-[11.5px] text-muted">
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-2 py-1 text-[12px] text-muted">
       <span className={`h-1.5 w-1.5 rounded-full ${tone === "crit" ? "bg-crit-fg" : tone === "warn" ? "bg-warn-fg" : tone === "pos" ? "bg-pos-fg" : tone === "info" ? "bg-info-fg" : "bg-faint"}`} />
       {label}
       <span className="tnum font-semibold text-ink">{value}</span>
@@ -246,7 +246,7 @@ function WorkflowHub() {
                     <Icon name={workflow.icon} size={15} className="text-faint" />
                     <span className="text-[13px] font-semibold text-ink">{workflow.label}</span>
                   </div>
-                  <div className="mt-0.5 text-[11.5px] text-muted">{workflow.owner}</div>
+                  <div className="mt-0.5 text-[12px] text-muted">{workflow.owner}</div>
                 </div>
                 <StatusBadge status={workflow.status} />
               </div>
@@ -287,8 +287,8 @@ function ExceptionQueue() {
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge variant={tone}>Export blocked</Badge>
                     <StatusBadge status={record.status} />
-                    <span className="tnum text-[11.5px] text-faint">Bill Record {record.id}</span>
-                    {record.invoiceNumber && <span className="tnum text-[11.5px] text-faint">{record.invoiceNumber}</span>}
+                    <span className="tnum text-[12px] text-faint">Bill Record {record.id}</span>
+                    {record.invoiceNumber && <span className="tnum text-[12px] text-faint">{record.invoiceNumber}</span>}
                   </div>
                   <h3 className="mt-2 text-[14px] font-semibold text-ink">{record.supplierName ?? "Unknown supplier"}</h3>
                   <p className="mt-1 max-w-3xl text-[12.5px] leading-relaxed text-ink-2">
@@ -417,7 +417,7 @@ function BillRegister() {
         <button
           type="button"
           data-finance-reset
-          className="h-11 rounded-lg border border-border bg-surface-2/65 px-3 text-[13px] font-medium text-ink transition hover:border-border-strong hover:bg-surface sm:h-9"
+          className="btn-lift inline-flex h-11 min-h-11 items-center justify-center gap-2 rounded-lg border border-border bg-surface px-4 text-[13px] font-medium text-ink shadow-card transition hover:border-border-strong hover:bg-surface-2/60 disabled:pointer-events-none disabled:opacity-50 sm:h-10 sm:min-h-10"
         >
           Reset
         </button>
@@ -535,7 +535,7 @@ function BillRegister() {
               return (
                 <tr
                   key={record.id}
-                  className="hover:bg-surface-2/40"
+                  className="transition hover:bg-surface-2/40"
                   data-finance-row
                   data-row-id={record.id}
                   data-search={search}
@@ -552,20 +552,20 @@ function BillRegister() {
                   </Td>
                   <Td>
                     <div className="tnum font-semibold text-ink">{record.id}</div>
-                    <div className="tnum text-[11px] text-faint">{record.invoiceNumber ?? "missing invoice no."}</div>
+                    <div className="tnum text-[12px] text-faint">{record.invoiceNumber ?? "missing invoice no."}</div>
                   </Td>
                   <Td>
                     <div className="max-w-[220px] truncate font-medium text-ink">{record.supplierName ?? "Unknown supplier"}</div>
-                    <div className="text-[11.5px] text-muted">{client?.tradingName ?? "Client"} · {recordOwner(record)}</div>
+                    <div className="text-[12px] text-muted">{client?.tradingName ?? "Client"} · {recordOwner(record)}</div>
                   </Td>
                   <Td>
                     <Badge variant={record.intake.channel === "whatsapp" ? "brand" : record.intake.channel === "email" ? "info" : "neutral"}>
                       {CHANNEL_LABEL[record.intake.channel]}
                     </Badge>
-                    <div className="mt-1 whitespace-nowrap text-[11px] text-faint">{fmtDate(record.intake.receivedAt)}</div>
+                    <div className="mt-1 whitespace-nowrap text-[12px] text-faint">{fmtDate(record.intake.receivedAt)}</div>
                   </Td>
                   <Td>
-                    <div className="space-y-0.5 text-[11.5px] text-muted">
+                    <div className="space-y-0.5 text-[12px] text-muted">
                       <div>{record.erpMapping?.taxCode ?? "tax code missing"}</div>
                       <div>TIN {record.supplierTin ?? supplier?.tin ?? "missing"}</div>
                       <div>MSIC {supplier?.msic ?? client?.msic ?? "missing"}</div>
@@ -573,7 +573,7 @@ function BillRegister() {
                   </Td>
                   <Td>
                     <ConfidenceChip value={criticalConfidence(record)} showWord={false} />
-                    <div className="mt-1 text-[11px] text-faint">bank {record.bankMatch?.score ?? 0}%</div>
+                    <div className="mt-1 text-[12px] text-faint">bank {record.bankMatch?.score ?? 0}%</div>
                   </Td>
                   <Td>
                     {blockers.length === 0 ? (
@@ -581,7 +581,7 @@ function BillRegister() {
                     ) : (
                       <Badge variant="crit" dot>{blockers.length} blockers</Badge>
                     )}
-                    <div className="mt-1 max-w-[220px] truncate text-[11px] text-muted">
+                    <div className="mt-1 max-w-[220px] truncate text-[12px] text-muted">
                       {blockers[0]?.message ?? `${record.erpMapping?.destination ?? client?.erp} ready`}
                     </div>
                   </Td>
@@ -647,10 +647,10 @@ function SupplierReconciliation() {
               const match = record.supplierStatementMatch!;
               const blockers = describeExportBlockers(record).filter((message) => !message.includes("already"));
               return (
-                <tr key={`${record.id}-${match.statementId}`} className="hover:bg-surface-2/40">
+                <tr key={`${record.id}-${match.statementId}`} className="transition hover:bg-surface-2/40">
                   <Td>
                     <div className="font-medium text-ink">{record.supplierName ?? "Unknown supplier"}</div>
-                    <div className="tnum text-[11.5px] text-muted">{match.statementId}</div>
+                    <div className="tnum text-[12px] text-muted">{match.statementId}</div>
                   </Td>
                   <Td className="whitespace-nowrap tnum text-[12px] text-muted">{fmtDate(match.statementDate)}</Td>
                   <Td>
@@ -688,7 +688,7 @@ function ChaseIntelligence() {
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <div className="truncate text-[13px] font-semibold text-ink">{record.supplierName ?? "Unknown supplier"}</div>
-                  <div className="mt-0.5 text-[11.5px] text-muted">
+                  <div className="mt-0.5 text-[12px] text-muted">
                     {CHANNEL_LABEL[record.intake.channel]} · {relativeTo(record.intake.receivedAt, NOW)} · {recordOwner(record)}
                   </div>
                 </div>
@@ -795,7 +795,7 @@ function AuditTrail() {
             <span className="absolute left-1 top-4 h-2 w-2 rounded-full bg-brand/55" />
             {index < entries.length - 1 && <span className="absolute bottom-0 left-[7px] top-6 w-px bg-border" />}
             <Card className="mb-3 space-y-2">
-              <div className="flex flex-wrap items-center gap-2 text-[11.5px] text-muted">
+              <div className="flex flex-wrap items-center gap-2 text-[12px] text-muted">
                 <span className="tnum">{fmtDateTime(entry.at)}</span>
                 <span aria-hidden>·</span>
                 <span>{entry.actor}</span>
@@ -803,7 +803,7 @@ function AuditTrail() {
               </div>
               <h3 className="text-[13px] font-semibold text-ink">{entry.action}</h3>
               <p className="text-[12px] leading-relaxed text-muted">{entry.detail}</p>
-              <div className="tnum text-[11px] text-faint">{shortId(entry.id, 12)}</div>
+              <div className="tnum text-[12px] text-faint">{shortId(entry.id, 12)}</div>
             </Card>
           </div>
         ))}
@@ -822,13 +822,13 @@ function AuditTrail() {
           </thead>
           <tbody>
             {entries.map(({ record, entry }) => (
-              <tr key={entry.id} className="hover:bg-surface-2/40">
-                <Td className="whitespace-nowrap tnum text-[11.5px] text-muted">{fmtDateTime(entry.at)}</Td>
+              <tr key={entry.id} className="transition hover:bg-surface-2/40">
+                <Td className="whitespace-nowrap tnum text-[12px] text-muted">{fmtDateTime(entry.at)}</Td>
                 <Td className="whitespace-nowrap text-[12px] font-medium text-ink">{entry.actor}</Td>
                 <Td className="whitespace-nowrap tnum text-[12px] text-ink">{record.id}</Td>
                 <Td className="whitespace-nowrap text-[12px] text-info-fg">{entry.action}</Td>
                 <Td className="max-w-[420px] text-[12px] text-muted">{entry.detail}</Td>
-                <Td className="whitespace-nowrap tnum text-[11px] text-faint">{shortId(entry.id, 12)}</Td>
+                <Td className="whitespace-nowrap tnum text-[12px] text-faint">{shortId(entry.id, 12)}</Td>
               </tr>
             ))}
           </tbody>
@@ -887,11 +887,11 @@ export default function ErpClosePage() {
       <Card>
         <div className="grid gap-3 md:grid-cols-4 md:items-center">
           <div>
-            <div className="text-[10.5px] font-semibold uppercase tracking-wide text-faint">ERP batch</div>
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-faint">ERP batch</div>
             <div className="tnum mt-0.5 text-[14px] font-semibold text-ink">AP-{activeClient.closePeriod}</div>
           </div>
           <div>
-            <div className="text-[10.5px] font-semibold uppercase tracking-wide text-faint">LHDN package</div>
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-faint">LHDN package</div>
             <div className="mt-1">
               <Badge variant={blockerCount > 0 ? "warn" : "pos"}>{blockerCount > 0 ? "held" : "ready"}</Badge>
             </div>

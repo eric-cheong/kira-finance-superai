@@ -26,7 +26,7 @@ const KIND_STYLE: Record<ForecastItemKind, { icon: "arrowUpRight" | "arrowRight"
 function ForecastItemRow({ item }: { item: ForecastItem }) {
   const k = KIND_STYLE[item.kind];
   return (
-    <div className="flex items-start gap-3 border-b border-border py-2.5 last:border-0">
+    <div className="flex items-start gap-3 border-b border-border/80 py-3 last:border-0">
       <Icon name={k.icon} size={14} className={cn("mt-0.5 shrink-0", k.cls)} />
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-2">
@@ -35,7 +35,7 @@ function ForecastItemRow({ item }: { item: ForecastItem }) {
             {item.kind === "income" ? "+" : "−"}{money(item.amountMinor, item.currency)}
           </span>
         </div>
-        <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[11.5px] text-muted">
+        <div className="mt-1 flex flex-wrap items-center gap-2 text-[12px] text-muted">
           <span>Due {fmtDate(item.dueDate)}</span>
           <span className="text-faint">·</span>
           <span>{item.source}</span>
@@ -63,15 +63,15 @@ function BucketCard({ bucket }: { bucket: ForecastBucket }) {
       />
 
       <div className="mb-4 grid grid-cols-2 gap-3">
-        <div className="rounded-lg border border-border px-3 py-2.5">
-          <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-faint">Inflow</div>
+        <div className="rounded-lg border border-border px-3.5 py-3">
+          <div className="mb-1 text-[11.5px] font-semibold uppercase tracking-wide text-faint">Inflow</div>
           <div className="tnum text-[17px] font-semibold text-ink">{money(bucket.inflow, "MYR", { compact: true })}</div>
           <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-surface-2">
             <div className="h-full rounded-full bg-brand/55" style={{ width: `${(bucket.inflow / maxFlow) * 100}%` }} />
           </div>
         </div>
-        <div className="rounded-lg border border-border px-3 py-2.5">
-          <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-faint">Outflow</div>
+        <div className="rounded-lg border border-border px-3.5 py-3">
+          <div className="mb-1 text-[11.5px] font-semibold uppercase tracking-wide text-faint">Outflow</div>
           <div className="tnum text-[17px] font-semibold text-ink">{money(bucket.outflow, "MYR", { compact: true })}</div>
           <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-surface-2">
             <div className="h-full rounded-full bg-faint/70" style={{ width: `${(bucket.outflow / maxFlow) * 100}%` }} />
@@ -146,7 +146,7 @@ export default function ForecastPage() {
           <CardHeader title="Pending approval items affect the forecast" icon="alert" />
           <div className="space-y-2">
             {pendingItems.map((p) => (
-              <div key={p.id} className="flex flex-col items-start gap-2 rounded-lg border border-info-fg/20 bg-info-bg px-3 py-2.5 sm:flex-row sm:justify-between">
+              <div key={p.id} className="flex flex-col items-start gap-2 rounded-lg border border-info-fg/20 bg-info-bg px-3.5 py-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
                   <div className="text-[13px] font-medium text-ink">{p.label}</div>
                   <div className="mt-0.5 text-[12px] text-muted">Due {fmtDate(p.dueDate)} · {p.source}</div>
@@ -158,7 +158,7 @@ export default function ForecastPage() {
               </div>
             ))}
           </div>
-          <p className="mt-3 text-[12px] text-muted">
+          <p className="mt-3 text-[12.5px] leading-relaxed text-muted">
             These items are in the forecast but not yet committed. Approve or reject them in{" "}
             <a href="/bookings" className="font-medium text-brand hover:underline">Bookings</a> or{" "}
             <a href="/approvals" className="font-medium text-brand hover:underline">Approvals</a>.
@@ -182,18 +182,18 @@ export default function ForecastPage() {
                 </div>
                 <div className="space-y-1.5">
                   <div className="flex items-center gap-2">
-                    <span className="w-14 shrink-0 text-right text-[11px] text-faint">in</span>
+                    <span className="w-14 shrink-0 text-right text-[11.5px] font-semibold uppercase tracking-wide text-faint">in</span>
                     <div className="flex-1 overflow-hidden rounded-full bg-surface-2" style={{ height: 8 }}>
                       <div className="h-full rounded-full bg-brand/55" style={{ width: `${(b.inflow / maxFlow) * 100}%` }} />
                     </div>
-                    <span className="tnum w-20 shrink-0 text-right text-[11.5px] text-ink">{money(b.inflow, "MYR", { compact: true })}</span>
+                    <span className="tnum w-20 shrink-0 text-right text-[12px] text-ink">{money(b.inflow, "MYR", { compact: true })}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="w-14 shrink-0 text-right text-[11px] text-faint">out</span>
+                    <span className="w-14 shrink-0 text-right text-[11.5px] font-semibold uppercase tracking-wide text-faint">out</span>
                     <div className="flex-1 overflow-hidden rounded-full bg-surface-2" style={{ height: 8 }}>
                       <div className="h-full rounded-full bg-faint/70" style={{ width: `${(b.outflow / maxFlow) * 100}%` }} />
                     </div>
-                    <span className="tnum w-20 shrink-0 text-right text-[11.5px] text-ink">{money(b.outflow, "MYR", { compact: true })}</span>
+                    <span className="tnum w-20 shrink-0 text-right text-[12px] text-ink">{money(b.outflow, "MYR", { compact: true })}</span>
                   </div>
                 </div>
               </div>
@@ -218,13 +218,13 @@ export default function ForecastPage() {
             { title: "Income estimates", body: "Wholesale pipeline and retail revenue estimated from trailing 3-month averages. Lower confidence." },
             { title: "Pending items", body: "Booking quotes and unapproved expenses are included but flagged separately so their impact is visible before you decide." },
           ].map((s) => (
-            <div key={s.title} className="rounded-lg border border-border px-4 py-3">
-              <div className="mb-1 font-semibold text-ink">{s.title}</div>
+            <div key={s.title} className="rounded-lg border border-border px-4 py-3.5">
+              <div className="mb-1 text-[13px] font-semibold text-ink">{s.title}</div>
               <p>{s.body}</p>
             </div>
           ))}
         </div>
-        <p className="mt-3 border-t border-border pt-3 text-[11.5px] italic text-faint">
+        <p className="mt-4 border-t border-border pt-3 text-[12px] italic leading-relaxed text-faint">
           This forecast is informational only. Kira never initiates, schedules, or executes any payment, disbursement, or
           money movement based on forecast data.
         </p>

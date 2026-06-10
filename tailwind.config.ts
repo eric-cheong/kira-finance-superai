@@ -39,6 +39,9 @@ const config = {
         faint: "rgb(var(--faint) / <alpha-value>)",
         brand: "rgb(var(--brand) / <alpha-value>)",
         "brand-soft": "rgb(var(--brand-soft) / <alpha-value>)",
+        "brand-strong": "rgb(var(--brand-strong) / <alpha-value>)",
+        "brand-strong-hover": "rgb(var(--brand-strong-hover) / <alpha-value>)",
+        "on-brand": "rgb(var(--on-brand) / <alpha-value>)",
         "pos-fg": "rgb(var(--pos-fg) / <alpha-value>)",
         "pos-bg": "rgb(var(--pos-bg) / <alpha-value>)",
         "warn-fg": "rgb(var(--warn-fg) / <alpha-value>)",
@@ -53,15 +56,17 @@ const config = {
         mono: ["var(--font-mono)"],
       },
       borderRadius: {
-        xl: "12px",
-        lg: "8px",
+        xl: "14px",
+        lg: "10px",
       },
       fontSize: {
-        "2xs": ["0.6875rem", { lineHeight: "0.875rem" }],
+        "2xs": ["0.6875rem", { lineHeight: "1rem" }],
       },
       boxShadow: {
-        card: "0 1px 1px rgb(15 23 42 / 0.03), 0 16px 28px -26px rgb(15 23 42 / 0.18)",
-        pop: "0 20px 46px -30px rgb(15 23 42 / 0.26)",
+        card: "0 1px 1px rgb(var(--shadow-rgb) / 0.04), 0 16px 28px -26px rgb(var(--shadow-rgb) / 0.2)",
+        pop: "0 20px 46px -30px rgb(var(--shadow-rgb) / 0.28)",
+        btn: "0 1px 2px rgb(var(--shadow-rgb) / 0.1), 0 8px 16px -12px rgb(var(--brand-strong) / 0.45)",
+        "btn-hover": "0 2px 4px rgb(var(--shadow-rgb) / 0.12), 0 12px 22px -12px rgb(var(--brand-strong) / 0.55)",
       },
       maxWidth: {
         content: "1180px",

@@ -261,7 +261,7 @@ export default function RoadmapPage() {
 
       <section>
         <h2 className="mb-3 text-[15px] font-semibold text-ink">Phase plan</h2>
-        <div className="grid gap-4 lg:grid-cols-3">
+        <div className="grid gap-3 sm:gap-4 lg:grid-cols-3">
           {PHASES.map((p) => (
             <Card key={p.phase} className="flex flex-col">
               <CardHeader
@@ -296,7 +296,7 @@ export default function RoadmapPage() {
             </thead>
             <tbody>
               {FEATURES.map(([feature, phase, note]) => (
-                <tr key={feature} className="hover:bg-surface-2/40">
+                <tr key={feature} className="transition hover:bg-surface-2/40">
                   <Td className="font-medium text-ink">{feature}</Td>
                   <Td><PhaseBadge phase={phase} /></Td>
                   <Td className="text-[12.5px]">{note}</Td>
@@ -318,7 +318,7 @@ export default function RoadmapPage() {
           </p>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
           {PHASE3_SCOPE.map((item) => (
             <Card key={item.title}>
               <CardHeader title={item.title} icon="doc" />
@@ -374,7 +374,7 @@ export default function RoadmapPage() {
               </thead>
               <tbody>
                 {PHASE3_SPECIALISTS.map(([specialist, capability]) => (
-                  <tr key={specialist} className="hover:bg-surface-2/40">
+                  <tr key={specialist} className="transition hover:bg-surface-2/40">
                     <Td className="font-medium text-ink">{specialist}</Td>
                     <Td className="text-[12.5px]">{capability}</Td>
                   </tr>
@@ -421,7 +421,7 @@ export default function RoadmapPage() {
               </thead>
               <tbody>
                 {PHASE3_TECH.map(([layer, note]) => (
-                  <tr key={layer} className="hover:bg-surface-2/40">
+                  <tr key={layer} className="transition hover:bg-surface-2/40">
                     <Td className="font-medium text-ink">{layer}</Td>
                     <Td className="text-[12.5px]">{note}</Td>
                   </tr>
@@ -454,7 +454,7 @@ export default function RoadmapPage() {
               </thead>
               <tbody>
                 {PHASE3_ORG.map(([workstream, owners]) => (
-                  <tr key={workstream} className="hover:bg-surface-2/40">
+                  <tr key={workstream} className="transition hover:bg-surface-2/40">
                     <Td className="font-medium text-ink">{workstream}</Td>
                     <Td className="text-[12.5px]">{owners}</Td>
                   </tr>
@@ -465,7 +465,7 @@ export default function RoadmapPage() {
 
           <Card>
             <CardHeader title="Definition of done" subtitle="Success metrics for enterprise readiness" icon="check" />
-            <ul className="space-y-2">
+            <ul className="space-y-2.5">
               {PHASE3_SUCCESS.map((metric) => (
                 <li key={metric} className="flex gap-2 text-[12.5px] leading-relaxed text-ink-2">
                   <Icon name="check" size={14} className="mt-0.5 shrink-0 text-pos-fg" />
@@ -491,7 +491,7 @@ export default function RoadmapPage() {
               </thead>
               <tbody>
                 {PHASE3_WAVES.map((wave) => (
-                  <tr key={wave.wave} className="hover:bg-surface-2/40">
+                  <tr key={wave.wave} className="transition hover:bg-surface-2/40">
                     <Td>
                       <div className="space-y-1">
                         <Badge variant="brand">Phase {wave.wave}</Badge>
@@ -508,7 +508,7 @@ export default function RoadmapPage() {
 
           <Card>
             <CardHeader title="Key risks" subtitle="Mitigations baked into the build order" icon="alert" />
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               {PHASE3_RISKS.map(([risk, mitigation]) => (
                 <div key={risk} className="rounded-lg border border-border px-3 py-2.5">
                   <div className="text-[13px] font-medium text-ink">{risk}</div>
@@ -536,7 +536,7 @@ export default function RoadmapPage() {
             </thead>
             <tbody>
               {ACTIONS.map((a) => (
-                <tr key={a.action} className="hover:bg-surface-2/40">
+                <tr key={a.action} className="transition hover:bg-surface-2/40">
                   <Td className="font-medium text-ink">{a.action}</Td>
                   <Td><ActionBadge value={a.cls} /></Td>
                   <Td><TierBadge tier={a.tier} /></Td>
@@ -549,10 +549,10 @@ export default function RoadmapPage() {
 
         <Card>
           <CardHeader title="Agent loop" icon="spark" />
-          <ol className="space-y-2">
+          <ol className="space-y-2.5">
             {["Observe", "Analyze", "Plan", "Act", "Verify", "Summarize", "Escalate if needed"].map((step, i) => (
               <li key={step} className="flex items-center gap-2 text-[12.5px] text-ink-2">
-                <span className="tnum flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-border bg-surface-2 text-[11px] text-faint">
+                <span className="tnum flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-border bg-surface-2 text-[11.5px] font-semibold text-faint">
                   {i + 1}
                 </span>
                 {step}
@@ -580,7 +580,7 @@ export default function RoadmapPage() {
             </thead>
             <tbody>
               {ARCH.map((a) => (
-                <tr key={a.option} className="hover:bg-surface-2/40">
+                <tr key={a.option} className="transition hover:bg-surface-2/40">
                   <Td className="whitespace-nowrap font-medium text-ink">{a.option}</Td>
                   <Td><Badge variant={a.fit.includes("Best") ? "pos" : a.fit.includes("Add") ? "info" : "neutral"}>{a.fit}</Badge></Td>
                   <Td className="text-[12.5px]">{a.why}</Td>
@@ -592,7 +592,7 @@ export default function RoadmapPage() {
 
         <Card>
           <CardHeader title="Failure handling" subtitle="Safe default: no action" icon="alert" />
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             {FAILURES.map(([failure, response]) => (
               <div key={failure} className="rounded-lg border border-border px-3 py-2.5">
                 <div className="flex items-center gap-2 text-[13px] font-medium text-ink">
@@ -617,17 +617,17 @@ export default function RoadmapPage() {
 
         <Card>
           <CardHeader title="Current source links" subtitle="Official references to verify before capital commitment" icon="doc" />
-          <ul className="space-y-2">
+          <ul className="space-y-1">
             {SOURCES.map((s) => (
               <li key={s.href}>
                 <a
                   href={s.href}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-start gap-2 text-[12.5px] font-medium text-brand hover:underline"
+                  className="-mx-3 flex min-h-11 items-center gap-2 rounded-lg px-3 py-2 text-[12.5px] font-medium text-brand transition hover:bg-surface-2/70 hover:underline sm:min-h-10"
                 >
-                  <Icon name="arrowUpRight" size={13} className="mt-0.5 shrink-0" />
-                  {s.label}
+                  <Icon name="arrowUpRight" size={14} className="shrink-0" />
+                  <span className="min-w-0">{s.label}</span>
                 </a>
               </li>
             ))}

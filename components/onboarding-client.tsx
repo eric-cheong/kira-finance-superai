@@ -24,14 +24,14 @@ const STEPS: Step[] = [
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-[12px] font-medium text-ink-2">{label}</span>
+      <span className="mb-1.5 block text-[12.5px] font-medium text-ink-2">{label}</span>
       {children}
     </label>
   );
 }
 
 const inputCls =
-  "w-full rounded-lg border border-border bg-surface px-3 py-2 text-[13px] text-ink outline-none focus:border-brand focus:shadow-card";
+  "min-h-11 w-full rounded-lg border border-border bg-surface px-3.5 py-2 text-[13.5px] text-ink outline-none focus:border-brand focus:shadow-card sm:min-h-10";
 
 function Choice({
   label,
@@ -50,15 +50,17 @@ function Choice({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        "flex min-h-11 transform-gpu items-center justify-between rounded-lg border px-3 py-2.5 text-left transition active:translate-y-[1px]",
-        active ? "border-brand bg-brand-soft shadow-card" : "border-border bg-surface hover:border-border-strong",
+        "btn-lift flex min-h-11 transform-gpu items-center justify-between gap-2 rounded-lg border px-3.5 py-2.5 text-left transition sm:min-h-10",
+        active
+          ? "border-brand bg-brand-soft shadow-card"
+          : "border-border bg-surface hover:border-border-strong hover:bg-surface-2/60",
       )}
     >
       <span className="min-w-0">
-        <span className="block text-[13px] font-medium text-ink">{label}</span>
-        {sub && <span className="block text-[11.5px] text-muted">{sub}</span>}
+        <span className={cn("block text-[13px] font-medium", active ? "text-brand" : "text-ink")}>{label}</span>
+        {sub && <span className="block text-[12px] text-muted">{sub}</span>}
       </span>
-      {active && <Icon name="check" size={16} className="shrink-0 text-ink" />}
+      {active && <Icon name="check" size={16} className="shrink-0 text-brand" />}
     </button>
   );
 }
@@ -114,7 +116,7 @@ export function OnboardingWizard() {
             <Icon name="check" size={28} />
           </span>
           <h2 className="text-[18px] font-semibold text-ink">You&apos;re live</h2>
-          <p className="max-w-sm text-[13px] text-muted">
+          <p className="max-w-sm text-[13px] leading-relaxed text-muted">
             Kira imported your settings, applied a {country === "MY" ? "SST + MyInvois" : "GST + InvoiceNow"} tax profile,
             and connected {accounting}. The agents will run your first daily briefing tonight.
           </p>
@@ -143,7 +145,7 @@ export function OnboardingWizard() {
                 className={cn(
                   "mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-[12px] font-semibold",
                   state === "done" && "border-pos-fg/30 bg-pos-bg text-pos-fg",
-                  state === "active" && "border-brand/25 bg-brand-soft text-ink",
+                  state === "active" && "border-brand/25 bg-brand-soft text-brand",
                   state === "todo" && "border-border bg-surface text-faint",
                 )}
               >
@@ -151,7 +153,7 @@ export function OnboardingWizard() {
               </span>
               <span>
                 <span className={cn("block text-[13px] font-medium", state === "todo" ? "text-faint" : "text-ink")}>{s.title}</span>
-                <span className="block text-[11.5px] text-muted">{s.blurb}</span>
+                <span className="block text-[12px] leading-relaxed text-muted">{s.blurb}</span>
               </span>
             </li>
           );
@@ -162,8 +164,8 @@ export function OnboardingWizard() {
       <Card>
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-surface-2 text-ink-2">
-              <Icon name={step.icon} size={18} />
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-soft text-brand">
+              <Icon name={step.icon} size={17} />
             </span>
             <div>
               <h2 className="text-[15px] font-semibold text-ink">{step.title}</h2>
@@ -210,8 +212,8 @@ export function OnboardingWizard() {
               <Field label="Base currency">
                 <input className={inputCls} readOnly value={country === "MY" ? "MYR" : "SGD"} />
               </Field>
-              <p className="flex items-start gap-1.5 rounded-lg bg-surface-2/60 px-3 py-2 text-[11.5px] text-muted">
-                <Icon name="shield" size={13} className="mt-0.5 shrink-0" />
+              <p className="flex items-start gap-2 rounded-lg bg-surface-2/60 px-3.5 py-2.5 text-[12px] leading-relaxed text-muted">
+                <Icon name="shield" size={14} className="mt-0.5 shrink-0" />
                 Kira is software, not a tax agent. Codes and e-invoices are suggestions you confirm; validation responses are retained.
               </p>
             </>
@@ -239,7 +241,7 @@ export function OnboardingWizard() {
                 <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-border-strong bg-surface-2/40 px-4 py-7 text-center">
                   <Icon name="transactions" size={22} className="text-muted" />
                   <p className="text-[13px] font-medium text-ink">Drop a CSV from Maybank, CIMB, DBS…</p>
-                  <p className="text-[11.5px] text-muted">Open-banking feeds connect in Phase 2 · we never store full card numbers</p>
+                  <p className="text-[12px] leading-relaxed text-muted">Open-banking feeds connect in Phase 2 · we never store full card numbers</p>
                 </div>
               </Field>
               <div className="flex flex-wrap gap-2">
@@ -252,8 +254,8 @@ export function OnboardingWizard() {
 
           {step.key === "policy" && (
             <>
-              <p className="text-[13px] text-muted">Sensible defaults applied — adjust anytime in Settings.</p>
-              <div className="space-y-2">
+              <p className="text-[13px] leading-relaxed text-muted">Sensible defaults applied — adjust anytime in Settings.</p>
+              <div className="space-y-2.5">
                 {[
                   { k: "Chart of accounts", v: "10 accounts · F&B template" },
                   { k: "Tax codes", v: country === "MY" ? "SST-S8, SST-IMP, OUT…" : "GST-SR9, GST-ZR…" },
@@ -261,7 +263,7 @@ export function OnboardingWizard() {
                   { k: "Approval policy", v: "> RM2,000 → finance · e-invoices → explicit" },
                   { k: "Automation threshold", v: "Auto-pass ≥ 85% confidence" },
                 ].map((r) => (
-                  <div key={r.k} className="flex flex-col items-start gap-1 rounded-lg border border-border px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between">
+                  <div key={r.k} className="flex min-h-11 flex-col items-start gap-1 rounded-lg border border-border px-3.5 py-2.5 sm:min-h-10 sm:flex-row sm:items-center sm:justify-between">
                     <span className="text-[13px] text-ink">{r.k}</span>
                     <span className="text-[12px] text-muted sm:text-right">{r.v}</span>
                   </div>
@@ -272,15 +274,15 @@ export function OnboardingWizard() {
 
           {step.key === "team" && (
             <>
-              <p className="text-[13px] text-muted">Invite your team with role-based access.</p>
-              <div className="space-y-2">
+              <p className="text-[13px] leading-relaxed text-muted">Invite your team with role-based access.</p>
+              <div className="space-y-2.5">
                 {[
                   { n: "Amir Hafiz", r: "finance_admin" },
                   { n: "Lim Mei Ling", r: "approver" },
                   { n: "Wei Jian", r: "employee" },
                   { n: "Devi Menon", r: "auditor" },
                 ].map((m) => (
-                  <div key={m.n} className="flex flex-col items-start gap-1 rounded-lg border border-border px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between">
+                  <div key={m.n} className="flex min-h-11 flex-col items-start gap-1 rounded-lg border border-border px-3.5 py-2.5 sm:min-h-10 sm:flex-row sm:items-center sm:justify-between">
                     <span className="text-[13px] text-ink">{m.n}</span>
                     <Badge variant="info">{m.r.replace("_", " ")}</Badge>
                   </div>
