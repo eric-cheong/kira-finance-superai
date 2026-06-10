@@ -536,8 +536,11 @@ export function FinanceTableControlsScript() {
   }
 
   function initRoot(root) {
-    if (root.dataset.financeTableReady === "1") return;
-    root.dataset.financeTableReady = "1";
+    // Guard against double-init without mutating the DOM: writing a data
+    // attribute here races React hydration and triggers mismatch warnings.
+    const seen = (window.__kiraFinanceTableInit ||= new WeakSet());
+    if (seen.has(root)) return;
+    seen.add(root);
 
     const storageKey = "kira:" + (root.dataset.storageKey || "finance-table");
     const filterControls = Array.from(root.querySelectorAll("[data-finance-filter]"));
