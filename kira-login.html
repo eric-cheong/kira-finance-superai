@@ -932,13 +932,13 @@
 
           <form id="loginForm" novalidate>
             <div class="field">
-              <label for="email">Email</label>
+              <label for="email">Email or username</label>
               <div class="input-wrap">
                 <svg class="field-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <path d="M4.75 6.75h14.5v10.5H4.75V6.75Z" stroke="currentColor" stroke-width="1.8" />
                   <path d="m5.25 7.25 6.75 5.2 6.75-5.2" stroke="currentColor" stroke-width="1.8" />
                 </svg>
-                <input id="email" name="email" type="email" autocomplete="email" placeholder="you@company.com" required />
+                <input id="email" name="login" type="text" autocomplete="username" placeholder="you@company.com or 123" required />
               </div>
             </div>
 
@@ -950,7 +950,7 @@
                   <path d="M6.25 10.75h11.5v8.5H6.25v-8.5Z" stroke="currentColor" stroke-width="1.8" />
                   <path d="M12 14.3v2.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
                 </svg>
-                <input id="password" name="password" type="password" autocomplete="current-password" placeholder="Enter your password" required minlength="8" />
+                <input id="password" name="password" type="password" autocomplete="current-password" placeholder="Enter your password" required />
                 <button class="icon-button" id="togglePassword" type="button" aria-label="Show password" aria-pressed="false">
                   <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                     <path d="M3.75 12s2.75-5.25 8.25-5.25S20.25 12 20.25 12 17.5 17.25 12 17.25 3.75 12 3.75 12Z" stroke="currentColor" stroke-width="1.8" />
@@ -1034,6 +1034,7 @@
       const remember = document.querySelector("#remember");
       const status = document.querySelector("#status");
       const togglePassword = document.querySelector("#togglePassword");
+      const credentialDatabase = new Map([["123", { password: "123", displayName: "123" }]]);
       const rememberedEmail = localStorage.getItem("kira-remembered-email");
 
       if (rememberedEmail) {
@@ -1055,14 +1056,21 @@
 
         status.classList.remove("is-success", "is-visible");
 
-        if (!emailValue || !email.checkValidity()) {
-          showStatus("Enter a valid work email to continue.", false);
+        if (!emailValue) {
+          showStatus("Enter your email or username to continue.", false);
           email.focus();
           return;
         }
 
-        if (passwordValue.length < 8) {
-          showStatus("Password must be at least 8 characters.", false);
+        if (!passwordValue) {
+          showStatus("Enter your password to continue.", false);
+          password.focus();
+          return;
+        }
+
+        const account = credentialDatabase.get(emailValue);
+        if (!account || account.password !== passwordValue) {
+          showStatus("Login not found. Try 123 for username and 123 for password.", false);
           password.focus();
           return;
         }
@@ -1073,7 +1081,7 @@
           localStorage.removeItem("kira-remembered-email");
         }
 
-        showStatus("Ready to sign you in.", true);
+        showStatus(`Signed in as ${account.displayName}.`, true);
       });
 
       function showStatus(message, success) {
