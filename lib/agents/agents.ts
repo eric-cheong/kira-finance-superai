@@ -397,48 +397,6 @@ export function notificationAgent(ctx: RunContext, approvalsCount: number): { re
   };
 }
 
-// ── Booking Agent ───────────────────────────────────────────────────────────
-
-export function bookingAgent(_ctx: RunContext): AgentResult {
-  const findings: Finding[] = [];
-  const steps: LoopStep[] = [];
-  steps.push({ phase: "observe", message: `Read ${db.BOOKING_QUOTES.length} open quotes, ${db.BOOKINGS.length} bookings.` });
-
-  const openQuotes = db.BOOKING_QUOTES.filter((q) => q.status === "open");
-  if (openQuotes.length) {
-    for (const q of openQuotes) {
-      const cheapest = [...q.options].sort((a, b) => a.amountMinor - b.amountMinor)[0];
-      findings.push(mk({
-        id: `bk-quote-${q.id}`, agent: "Booking", kind: "approval",
-        title: `Quote ready — ${q.description}`,
-        detail: `${q.options.length} options found. Cheapest: ${cheapest.label} at ${money(cheapest.amountMinor, cheapest.currency)}. Research sources: ${q.researchSources.slice(0, 2).join("; ")}. Awaiting selection and approval before committed spend is recorded.`,
-        confidence: 85, sources: q.researchSources.slice(0, 2),
-        rationale: "Quote presented; committed spend requires explicit user approval. Supplier execution stays outside Kira.",
-        actionClass: "human-approved", tier: 3, moneyTouching: true, escalate: true,
-        relatedId: q.id, relatedHref: "/bookings",
-      }));
-    }
-  }
-
-  // Committed booking/spend in the past — check it is linked to a transaction.
-  const unlinked = db.BOOKINGS.filter((b) => (b.status === "booked" || b.status === "approved") && !b.linkedTransactionId);
-  if (unlinked.length) {
-    findings.push(mk({
-      id: "bk-unlinked", agent: "Booking", kind: "insight",
-      title: `${unlinked.length} commitment(s) awaiting transaction match`,
-      detail: `${unlinked.map((b) => b.description).join("; ")} — approved or booked spend has no matched card transaction yet. Import the bank feed to close the loop.`,
-      confidence: 78, sources: ["Booking records", "Transaction feed"],
-      rationale: "Committed spend is recorded; transaction match will complete reconciliation.",
-      actionClass: "suggestion", tier: 2, relatedHref: "/bookings",
-    }));
-  }
-
-  steps.push({ phase: "analyze", message: `${openQuotes.length} open quotes; ${unlinked.length} unlinked bookings.` });
-  steps.push({ phase: "act", message: "Raised quote approvals; no supplier execution happened autonomously." });
-  steps.push({ phase: "summarize", message: "Booking agent complete. All actions require human approval." });
-  return { agent: "Booking", phase: 1, status: "ok", findings, steps, durationMs: 310 };
-}
-
 // ── Vendor Intelligence Agent ────────────────────────────────────────────────
 
 export function vendorIntelligenceAgent(_ctx: RunContext): AgentResult {
@@ -488,26 +446,14 @@ export function cashflowForecastAgent(_ctx: RunContext): AgentResult {
   const junBucket = buckets[0];
 
   if (junBucket) {
-    const pendingItems = junBucket.items.filter((i) => i.kind === "pending");
     findings.push(mk({
       id: "cf-jun", agent: "Cashflow Forecast", kind: "insight",
       title: `Jun cashflow: net +${money(junBucket.net, "MYR")} projected`,
-      detail: `Inflow ${money(junBucket.inflow, "MYR")} · outflow ${money(junBucket.outflow, "MYR")}. Payroll (RM12,400) is the largest single outflow due 28 Jun. ${pendingItems.length} pending item(s) not yet committed: ${pendingItems.map((p) => p.label).join("; ")}.`,
+      detail: `Inflow ${money(junBucket.inflow, "MYR")} · outflow ${money(junBucket.outflow, "MYR")}. Payroll (RM12,400) is the largest single outflow due 28 Jun.`,
       confidence: 78, sources: ["Open e-invoices", "HR payroll schedule", "Recurring spend patterns"],
-      rationale: "Projection from confirmed commitments + recurring patterns; excludes unbooked items.",
+      rationale: "Projection from confirmed commitments + recurring patterns.",
       actionClass: "read-only", tier: 1, informational: true, relatedHref: "/forecast",
     }));
-
-    if (pendingItems.length) {
-      findings.push(mk({
-        id: "cf-pending", agent: "Cashflow Forecast", kind: "approval",
-        title: "Pending booking affects Jun forecast",
-        detail: `${pendingItems[0].label} — ${money(pendingItems[0].amountMinor, pendingItems[0].currency)} is pending approval and not yet committed. If approved, Jun net reduces to ${money(junBucket.net - pendingItems[0].amountMinor, "MYR")}.`,
-        confidence: 65, sources: ["Booking quote bq_01 + bq_02", "Forecast model"],
-        rationale: "Pending approval item impacts forecast; surface for awareness before approval decision.",
-        actionClass: "suggestion", tier: 2, relatedHref: "/bookings",
-      }));
-    }
   }
 
   steps.push({ phase: "analyze", message: "3-month rolling forecast built." });

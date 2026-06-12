@@ -87,7 +87,7 @@ export interface ErpFoundation {
   auditCoverage: FoundationMetric[];
 }
 
-const MONEY_ACTIONS = new Set(["approval.approved", "close_book.export", "einvoice.submit.request", "booking.approved"]);
+const MONEY_ACTIONS = new Set(["approval.approved", "close_book.export", "einvoice.submit.request"]);
 
 function pct(done: number, total: number) {
   return total > 0 ? Math.round((done / total) * 100) : 0;

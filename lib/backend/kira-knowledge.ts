@@ -15,7 +15,7 @@ export type KnowledgeEntry = {
 
 export type AssistantNextItem = {
   id: string;
-  kind: "approval" | "receipt_review" | "booking_quote";
+  kind: "approval" | "receipt_review";
   label: string;
   href: string;
   priority: number;
@@ -39,19 +39,6 @@ export const KIRA_KNOWLEDGE_BASE: KnowledgeEntry[] = [
       "Findings expose sources, confidence, rationale, and escalation state.",
     ],
     keywords: ["briefing", "today", "summary", "agent", "run", "trace", "approval"],
-  },
-  {
-    id: "bookings",
-    title: "Bookings Research",
-    route: "/bookings",
-    category: "workflow",
-    summary: "Researches trip/procurement options with OpenAI Agents and Exa, then creates quote records for explicit approval.",
-    facts: [
-      "Kira can research options and create quote records.",
-      "Kira cannot reserve inventory, charge a card, contact a supplier, cancel, or place a booking by itself.",
-      "Approval happens through /api/bookings/:quoteId/decision with confirm=true.",
-    ],
-    keywords: ["flight", "hotel", "trip", "booking", "quote", "reviews", "exa", "travel"],
   },
   {
     id: "transactions",
@@ -116,7 +103,7 @@ export const KIRA_KNOWLEDGE_BASE: KnowledgeEntry[] = [
       "Risk notes require human review before policy changes.",
       "Consumer review search can use Exa when configured.",
     ],
-    keywords: ["vendor", "supplier", "risk", "reviews", "enrichment"],
+    keywords: ["vendor", "supplier", "risk", "enrichment"],
   },
   {
     id: "policy-boundary",
@@ -197,12 +184,7 @@ export function assistantKnowledge(query = "", limit = 5) {
   return scored.length > 0 ? scored : KIRA_KNOWLEDGE_BASE.slice(0, limit);
 }
 
-function hasLiveBookingOption(options: { expiresAt?: string }[], nowMs: number) {
-  return options.some((option) => !option.expiresAt || Date.parse(option.expiresAt) > nowMs);
-}
-
 export function assistantNextItems(limit = 5): AssistantNextItem[] {
-  const nowMs = Date.now();
   const approvals = state.approvals
     .filter((item) => item.state === "open")
     .map((item): AssistantNextItem => ({
@@ -233,34 +215,13 @@ export function assistantNextItems(limit = 5): AssistantNextItem[] {
       amount: money(item.totalMinor, item.currency),
     }));
 
-  const quotes = state.bookingQuotes
-    .filter((item) => item.status === "open")
-    .filter((item) => hasLiveBookingOption(item.options, nowMs))
-    .map((item): AssistantNextItem => {
-      const liveOptions = item.options.filter((option) => !option.expiresAt || Date.parse(option.expiresAt) > nowMs);
-      const cheapest = [...liveOptions].sort((a, b) => a.amountMinor - b.amountMinor)[0];
-      return {
-        id: item.id,
-        kind: "booking_quote",
-        label: item.description,
-        href: `/bookings?item=${encodeURIComponent(item.id)}#${encodeURIComponent(item.id)}`,
-        priority: 200 + item.options.length,
-        actionClass: "human-approved",
-        approvalTier: 3,
-        reason: "It is an open booking quote with researched options, and no supplier reservation can happen until you inspect and approve one.",
-        detail: cheapest ? `Cheapest live option: ${cheapest.label} from ${cheapest.supplier}` : `${item.options.length} researched options`,
-        amount: cheapest ? money(cheapest.amountMinor, cheapest.currency) : undefined,
-      };
-    });
-
-  return [...approvals, ...receipts, ...quotes]
+  return [...approvals, ...receipts]
     .sort((a, b) => b.priority - a.priority || a.label.localeCompare(b.label))
     .slice(0, limit);
 }
 
 export function assistantWorkspaceContext() {
   const providers = providerStatus();
-  const nowMs = Date.now();
   const nextItems = assistantNextItems(6);
   return {
     org: {
@@ -273,7 +234,6 @@ export function assistantWorkspaceContext() {
       openApprovals: state.approvals.filter((item) => item.state === "open").length,
       transactions: state.transactions.length,
       receiptsInReview: state.receipts.filter((item) => item.status === "needs_review").length,
-      openBookingQuotes: state.bookingQuotes.filter((item) => item.status === "open" && hasLiveBookingOption(item.options, nowMs)).length,
       vendors: state.vendors.length,
       auditEntries: state.audit.length,
     },

@@ -11,10 +11,6 @@ import { money } from "@/lib/format";
 import type {
   ApprovalRequest,
   ApprovalTier,
-  Booking,
-  BookingQuote,
-  BookingQuoteOption,
-  BookingType,
   CurrencyCode,
   EInvoiceState,
   ForecastBucket,
@@ -28,14 +24,6 @@ import type {
 } from "@/lib/types";
 import { chainHash } from "@/lib/hash";
 import { ApiError } from "./http";
-import { searchConsumerSources } from "./consumer-search";
-import {
-  researchTripWithOpenAIAgents,
-  summarizeReviewsWithOpenAI,
-  tripResearchInputSchema,
-  type TripResearchInput,
-} from "./openai-consumer-agents";
-import { researchTripWithVercelAI } from "./vercel-ai-consumer-agents";
 import { providerStatus } from "./provider-config";
 import {
   appendAudit,
@@ -51,7 +39,6 @@ import {
 } from "./state";
 
 type ApprovalDecision = "approved" | "rejected" | "open";
-type BookingDecision = "approve" | "reject";
 type CaptureSource = "mobile" | "email" | "upload";
 
 const SUPPORTED_ACCOUNTING = new Set(["AutoCount", "SQL Account", "Xero"]);
@@ -472,342 +459,14 @@ export function postCapture(id: string) {
   return { receipt, record };
 }
 
-export function listBookings() {
-  return {
-    quotes: state.bookingQuotes,
-    bookings: state.bookings,
-  };
-}
-
-export function decideBooking(
-  quoteId: string,
-  input: { decision: BookingDecision; selectedIndex?: number; confirm?: boolean },
-) {
-  if (!input || !["approve", "reject"].includes(input.decision)) {
-    throw new ApiError(400, "INVALID_DECISION", "Booking decision must be approve or reject.");
-  }
-  const quote = state.bookingQuotes.find((item) => item.id === quoteId);
-  if (!quote) throw new ApiError(404, "QUOTE_NOT_FOUND", `Quote ${quoteId} was not found.`);
-  if (quote.status !== "open") throw new ApiError(409, "QUOTE_CLOSED", `Quote ${quoteId} is already ${quote.status}.`);
-
-  if (input.decision === "reject") {
-    quote.status = "expired";
-    appendAudit({
-      actor: state.currentUserId,
-      action: "booking.quote.reject",
-      target: quote.id,
-      detail: "Quote declined. No supplier action, card charge, or reservation was placed.",
-      tier: 3,
-    });
-    return { quote, booking: null };
-  }
-
-  if (!input.confirm) {
-    throw new ApiError(409, "CONFIRMATION_REQUIRED", "Booking approval requires explicit confirmation.");
-  }
-  const option = quote.options.find((item) => item.index === input.selectedIndex);
-  if (!option) throw new ApiError(400, "INVALID_OPTION", "Selected booking option does not exist on this quote.");
-  ensureOptionNotExpired(option);
-
-  quote.status = "selected";
-  quote.selectedIndex = option.index;
-  const booking: Booking = {
-    id: nextId("bk", state.bookings),
-    quoteId: quote.id,
-    type: quote.type,
-    supplier: option.supplier,
-    description: quote.description,
-    startDate: "2026-06-12",
-    endDate: "2026-06-14",
-    amountMinor: option.amountMinor,
-    currency: option.currency,
-    status: "approved",
-    travellerId: quote.requestedBy,
-    departmentBudgetCode: "CC-HQ",
-  };
-  state.bookings.unshift(booking);
-  appendAudit({
-    actor: state.currentUserId,
-    action: "booking.approved",
-    target: booking.id,
-    detail: `${option.label} approved from ${quote.id}. Internal committed-spend record created; no supplier reservation, card charge, payment, or confirmation reference was created by Kira.`,
-    tier: 3,
-  });
-  return { quote, booking };
-}
-
-export async function createBookingQuote(input: unknown) {
-  const request = parseTripResearchRequest(input);
-  try {
-    const research = await researchTripWithVercelAI(request);
-    return createBookingQuoteFromResearch(request, research);
-  } catch (error) {
-    const vercelReason = providerFailureCode(error);
-    try {
-      const research = await researchTripWithOpenAIAgents(request);
-      return createBookingQuoteFromResearch(request, research);
-    } catch (fallbackError) {
-      const openaiReason = providerFailureCode(fallbackError);
-      return createOfflineBookingQuote(request, `${vercelReason}; ${openaiReason}`);
-    }
-  }
-}
-
-export async function researchConsumerTrip(input: unknown) {
-  const request = parseTripResearchRequest(input);
-  try {
-    const research = await researchTripWithVercelAI(request);
-    return {
-      request,
-      providers: providerStatus(),
-      ...research,
-    };
-  } catch (error) {
-    const vercelReason = providerFailureCode(error);
-    try {
-      const research = await researchTripWithOpenAIAgents(request);
-      return {
-        request,
-        providers: providerStatus(),
-        ...research,
-      };
-    } catch (fallbackError) {
-      const openaiReason = providerFailureCode(fallbackError);
-      const reason = `${vercelReason}; ${openaiReason}`;
-      return {
-        request,
-        providers: providerStatus(),
-        provider: "local-fallback" as const,
-        model: null,
-        output: offlineTripResearchOutput(request, reason),
-        interruptions: 0,
-        error: reason,
-      };
-    }
-  }
-}
-
-export async function searchConsumerReviews(input: unknown) {
-  if (!isRecord(input)) throw new ApiError(400, "INVALID_BODY", "Review search payload must be an object.");
-  const subject = stringField(input.subject ?? input.query ?? input.supplier, "subject");
-  const userLocation = typeof input.userLocation === "string" ? input.userLocation : state.org.country;
-  const query = typeof input.query === "string" && input.query.trim().length > 0
-    ? input.query.trim()
-    : `${subject} consumer reviews hidden fees refund baggage change cancellation complaints`;
-  const search = await searchConsumerSources({
-    query,
-    kind: "review",
-    userLocation,
-    numResults: typeof input.numResults === "number" ? Math.min(Math.max(Math.round(input.numResults), 1), 10) : 8,
-  });
-  const summary = await summarizeReviewsWithOpenAI(subject, search).catch((error) => ({
-    subject,
-    summary: "Review synthesis is unavailable; inspect the returned sources directly.",
-    sentiment: "unknown" as const,
-    themes: [],
-    caveats: [providerFailureCode(error)],
-    sources: search.results.map((item) => item.url).filter(Boolean).slice(0, 12),
-  }));
-  return { providers: providerStatus(), search, summary };
-}
-
 export function aiProviderStatus() {
   return providerStatus();
-}
-
-function providerFailureCode(error: unknown) {
-  const message = error instanceof Error ? error.message : "";
-  if (/AI_GATEWAY_API_KEY|VERCEL_AI_GATEWAY_API_KEY/i.test(message)) return "missing_ai_gateway_key";
-  if (/OPENAI_API_KEY/i.test(message)) return "missing_openai_key";
-  if (/EXA_API_KEY/i.test(message)) return "missing_exa_key";
-  if (/AI Gateway|ai gateway|gateway|401|authentication|unauthorized/i.test(message)) return "ai_gateway_unavailable";
-  if (/timeout|timed out/i.test(message)) return "provider_timeout";
-  return "provider_unavailable";
-}
-
-function createOfflineBookingQuote(request: TripResearchInput, reason: string) {
-  const type = request.type;
-  const description = request.description;
-  const budgetMinor = request.budgetMinor;
-  const now = new Date();
-  const expiresAt = new Date(now.getTime() + 8 * 60 * 60 * 1000).toISOString();
-  const quote: BookingQuote = {
-    id: nextId("bq", state.bookingQuotes),
-    requestedBy: request.requestedBy ?? state.currentUserId,
-    type,
-    description,
-    createdAt: now.toISOString(),
-    options: [
-      {
-        index: 0,
-        label: `${description} · standard`,
-        supplier: type === "hotel" ? "Citadines" : type === "product" ? "Preferred vendor" : "AirAsia",
-        amountMinor: budgetMinor,
-        currency: request.currency,
-        breakdown: [{ item: "Offline researched estimate", amountMinor: budgetMinor }],
-        notes: ["Generated by local quote engine", "Supplier action requires explicit approval"],
-        expiresAt,
-      },
-      {
-        index: 1,
-        label: `${description} · flexible`,
-        supplier: type === "hotel" ? "Hotel Clover" : type === "product" ? "Alternate vendor" : "Malaysia Airlines",
-        amountMinor: Math.round(budgetMinor * 1.18),
-        currency: request.currency,
-        breakdown: [{ item: "Flexible offline estimate", amountMinor: Math.round(budgetMinor * 1.18) }],
-        notes: ["More flexible terms", "No card charge or reservation placed by Kira"],
-        expiresAt,
-      },
-    ],
-    researchSources: ["Local offline quote generator", "Policy: explicit approval before booking", reason],
-    status: "open",
-  };
-  state.bookingQuotes.unshift(quote);
-  appendAudit({
-    actor: "Booking Agent",
-    action: "booking.quote.create",
-    target: quote.id,
-    detail: `Created ${type} quote options for approval. No supplier action was taken.`,
-    tier: 1,
-  });
-  return { quote, research: { provider: "local-fallback", model: null, summary: reason, riskNotes: ["Live provider unavailable."], reviewThemes: [] } };
-}
-
-function createBookingQuoteFromResearch(
-  request: TripResearchInput,
-  research: Awaited<ReturnType<typeof researchTripWithOpenAIAgents>> | Awaited<ReturnType<typeof researchTripWithVercelAI>>,
-) {
-  const now = new Date();
-  const expiresAt = new Date(now.getTime() + 8 * 60 * 60 * 1000).toISOString();
-  const options = research.output.options.map((option, index): BookingQuoteOption => {
-    const amountMinor = Math.max(1000, Math.round(option.amountMinor));
-    return {
-      index,
-      label: option.label,
-      supplier: option.supplier,
-      amountMinor,
-      currency: option.currency,
-      breakdown: option.breakdown.length > 0 ? option.breakdown.map((item) => ({
-        item: item.item,
-        amountMinor: Math.max(0, Math.round(item.amountMinor)),
-      })) : [{ item: "AI researched estimate", amountMinor }],
-      notes: uniqueStrings([
-        ...option.notes,
-        `Confidence ${Math.round(option.confidence)}%`,
-        "Explicit approval required before booking.",
-        "No supplier action has been taken.",
-      ]).slice(0, 8),
-      expiresAt,
-    };
-  }).slice(0, 4);
-
-  if (options.length === 0) {
-    return createOfflineBookingQuote(request, "OpenAI returned no quote options.");
-  }
-
-  const quote: BookingQuote = {
-    id: nextId("bq", state.bookingQuotes),
-    requestedBy: request.requestedBy ?? state.currentUserId,
-    type: request.type,
-    description: request.description,
-    createdAt: now.toISOString(),
-    options,
-    researchSources: uniqueStrings([
-      `${research.provider}:${research.model}`,
-      ...research.output.researchSources,
-      ...research.output.options.flatMap((option) => option.sourceUrls),
-      "Policy: explicit approval before booking",
-    ]).slice(0, 18),
-    status: "open",
-  };
-  state.bookingQuotes.unshift(quote);
-  appendAudit({
-    actor: "Booking Agent",
-    action: "booking.quote.create",
-    target: quote.id,
-    detail: `Created ${request.type} quote options using ${research.provider} research. Approval required; no supplier action was taken.`,
-    tier: 1,
-  });
-  return {
-    quote,
-    research: {
-      provider: research.provider,
-      model: research.model,
-      summary: research.output.summary,
-      riskNotes: research.output.riskNotes,
-      reviewThemes: research.output.reviewThemes,
-      interruptions: research.interruptions,
-    },
-  };
-}
-
-function parseTripResearchRequest(input: unknown): TripResearchInput {
-  if (!isRecord(input)) throw new ApiError(400, "INVALID_BODY", "Trip research payload must be an object.");
-  const type = bookingTypeField(input.type ?? "flight");
-  const description = stringField(input.description, "description");
-  const budgetMinor = typeof input.budgetMinor === "number" ? Math.max(1000, Math.round(input.budgetMinor)) : 52000;
-  const currency = input.currency == null ? "MYR" : currencyField(input.currency, "currency");
-  const travellers = typeof input.travellers === "number" ? Math.min(Math.max(Math.round(input.travellers), 1), 9) : 1;
-  const parsed = tripResearchInputSchema.safeParse({
-    type,
-    description,
-    budgetMinor,
-    currency,
-    requestedBy: typeof input.requestedBy === "string" ? input.requestedBy : state.currentUserId,
-    origin: optionalString(input.origin),
-    destination: optionalString(input.destination),
-    departDate: optionalString(input.departDate),
-    returnDate: optionalString(input.returnDate),
-    travellers,
-    userLocation: optionalString(input.userLocation) ?? state.org.country,
-  });
-  if (!parsed.success) {
-    throw new ApiError(400, "INVALID_TRIP_RESEARCH", "Trip research payload failed validation.", parsed.error.flatten());
-  }
-  return parsed.data;
-}
-
-function offlineTripResearchOutput(request: TripResearchInput, reason: string) {
-  const flexibleAmount = Math.round(request.budgetMinor * 1.18);
-  return {
-    summary: `Offline fallback generated because live research is unavailable: ${reason}`,
-    options: [
-      {
-        label: `${request.description} · standard`,
-        supplier: request.type === "hotel" ? "Citadines" : request.type === "product" ? "Preferred vendor" : "AirAsia",
-        amountMinor: request.budgetMinor,
-        currency: request.currency,
-        breakdown: [{ item: "Offline researched estimate", amountMinor: request.budgetMinor }],
-        notes: ["Generated by local quote engine", "Supplier action requires explicit approval"],
-        sourceUrls: ["kira://offline/consumer-search"],
-        confidence: 55,
-      },
-      {
-        label: `${request.description} · flexible`,
-        supplier: request.type === "hotel" ? "Hotel Clover" : request.type === "product" ? "Alternate vendor" : "Malaysia Airlines",
-        amountMinor: flexibleAmount,
-        currency: request.currency,
-        breakdown: [{ item: "Flexible offline estimate", amountMinor: flexibleAmount }],
-        notes: ["More flexible terms", "No card charge or reservation placed by Kira"],
-        sourceUrls: ["kira://offline/consumer-search"],
-        confidence: 52,
-      },
-    ],
-    reviewThemes: [],
-    researchSources: ["Local offline quote generator", "Policy: explicit approval before booking", reason],
-    riskNotes: ["Live OpenAI/Exa research unavailable; verify prices manually before approving."],
-    approvalRequired: true,
-    noSupplierActionTaken: true,
-  };
 }
 
 function optionalString(value: unknown) {
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
 }
 
-function uniqueStrings(values: readonly string[]) {
-  return [...new Set(values.map((value) => value.trim()).filter(Boolean))];
-}
 
 export function getPreferences() {
   return state.preferences;
@@ -1740,12 +1399,6 @@ function ensureCostCentre(code?: string) {
   if (!code || !costCentre(code)) throw new ApiError(400, "INVALID_COST_CENTRE", "Suggested cost centre does not exist.");
 }
 
-function ensureOptionNotExpired(option: BookingQuoteOption) {
-  if (option.expiresAt && new Date(option.expiresAt).getTime() < Date.now()) {
-    throw new ApiError(409, "QUOTE_EXPIRED", "This booking option is expired; request fresh quotes before approving.");
-  }
-}
-
 function numberField(value: unknown, field: string) {
   if (typeof value !== "number" || !Number.isFinite(value)) {
     throw new ApiError(400, "INVALID_NUMBER", `${field} must be a finite number.`);
@@ -1756,11 +1409,6 @@ function numberField(value: unknown, field: string) {
 function currencyField(value: unknown, field: string): CurrencyCode {
   if (value === "MYR" || value === "SGD" || value === "USD") return value;
   throw new ApiError(400, "INVALID_CURRENCY", `${field} must be MYR, SGD, or USD.`);
-}
-
-function bookingTypeField(value: unknown): BookingType {
-  if (value === "flight" || value === "hotel" || value === "rail" || value === "car" || value === "product") return value;
-  throw new ApiError(400, "INVALID_BOOKING_TYPE", "Booking type must be flight, hotel, rail, car, or product.");
 }
 
 function parseExportDestination(value: unknown): ExportDestination {

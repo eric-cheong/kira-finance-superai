@@ -104,7 +104,7 @@ export default function ForecastPage() {
     <div className="animate-in space-y-6">
       <PageHeader
         title="Cashflow forecast"
-        description="A 90-day projection built from confirmed commitments, recurring patterns, open invoices, and pending bookings. Figures are informational — the agent never initiates or executes payments."
+        description="A 90-day projection built from confirmed commitments, recurring patterns, and open invoices. Figures are informational — the agent never initiates or executes payments."
         badge={<Badge variant="neutral">informational · not financial advice</Badge>}
       />
 
@@ -160,7 +160,6 @@ export default function ForecastPage() {
           </div>
           <p className="mt-3 text-[12.5px] leading-relaxed text-muted">
             These items are in the forecast but not yet committed. Approve or reject them in{" "}
-            <a href="/bookings" className="font-medium text-brand hover:underline">Bookings</a> or{" "}
             <a href="/approvals" className="font-medium text-brand hover:underline">Approvals</a>.
           </p>
         </Card>
@@ -213,10 +212,10 @@ export default function ForecastPage() {
         <CardHeader title="Forecast methodology" icon="doc" />
         <div className="grid gap-3 text-[12.5px] leading-relaxed text-ink-2 sm:grid-cols-2">
           {[
-            { title: "Committed items", body: "Bookings, signed leases, and open e-invoices with high confidence (>85%)." },
+            { title: "Committed items", body: "Signed leases and open e-invoices with high confidence (>85%)." },
             { title: "Recurring patterns", body: "Payroll schedules, supplier reorder cycles, and subscription fees inferred from transaction history." },
             { title: "Income estimates", body: "Wholesale pipeline and retail revenue estimated from trailing 3-month averages. Lower confidence." },
-            { title: "Pending items", body: "Booking quotes and unapproved expenses are included but flagged separately so their impact is visible before you decide." },
+            { title: "Pending items", body: "Unapproved expenses are included but flagged separately so their impact is visible before you decide." },
           ].map((s) => (
             <div key={s.title} className="rounded-lg border border-border px-4 py-3.5">
               <div className="mb-1 text-[13px] font-semibold text-ink">{s.title}</div>

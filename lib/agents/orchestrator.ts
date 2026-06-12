@@ -7,7 +7,6 @@
 import * as db from "../data/store";
 import type { ProductPhase, RunMemory } from "../types";
 import {
-  bookingAgent,
   budgetSpendAgent,
   cashflowForecastAgent,
   complianceGate,
@@ -72,17 +71,16 @@ export function runDailyBriefing({ maxPhase = 1 }: { maxPhase?: Phase } = {}): B
   orchestratorLog.push(`Product phase ${ctx.productPhase}: ${ctx.productPhase === 1 ? "license-free MVP; partnered rails and investment actions remain unavailable" : "expanded intelligence enabled"}.`);
   orchestratorLog.push(
     maxPhase >= 2
-      ? "Plan: Preference → parallel(Budget, Booking, Forecast, Risk, News, Market, Portfolio, Vendors) → Compliance gate → merge → Notification."
-      : "Plan: Preference → parallel(Budget, Booking, Forecast) → Compliance gate → merge → Notification. Phase-2 intelligence agents are disabled for the MVP run.",
+      ? "Plan: Preference → parallel(Budget, Forecast, Risk, News, Market, Portfolio, Vendors) → Compliance gate → merge → Notification."
+      : "Plan: Preference → parallel(Budget, Forecast) → Compliance gate → merge → Notification. Phase-2 intelligence agents are disabled for the MVP run.",
   );
 
   // 1) Preference resolves the shared context.
   const pref = userPreferenceAgent(ctx);
 
-  // 2) Independent analysts. Phase 1 includes Budget/Spend, Booking, and
-  // Cashflow Forecast. Phase 2 adds market intelligence agents.
+  // 2) Independent analysts. Phase 1 includes Budget/Spend and Cashflow Forecast.
+  // Phase 2 adds market intelligence agents.
   const budget = budgetSpendAgent(ctx);
-  const booking = bookingAgent(ctx);
   const forecast = cashflowForecastAgent(ctx);
   const phaseTwoResults: AgentResult[] =
     maxPhase >= 2
@@ -96,13 +94,12 @@ export function runDailyBriefing({ maxPhase = 1 }: { maxPhase?: Phase } = {}): B
       : [];
   orchestratorLog.push(
     maxPhase >= 2
-      ? `Collected findings: Budget ${budget.findings.length}, Booking ${booking.findings.length}, Forecast ${forecast.findings.length}, ${phaseTwoResults.map((a) => `${a.agent} ${a.findings.length}`).join(", ")}.`
-      : `Collected findings: Budget ${budget.findings.length}, Booking ${booking.findings.length}, Forecast ${forecast.findings.length}. Phase-2 agents skipped.`,
+      ? `Collected findings: Budget ${budget.findings.length}, Forecast ${forecast.findings.length}, ${phaseTwoResults.map((a) => `${a.agent} ${a.findings.length}`).join(", ")}.`
+      : `Collected findings: Budget ${budget.findings.length}, Forecast ${forecast.findings.length}. Phase-2 agents skipped.`,
   );
 
   const incoming: Finding[] = [
     ...budget.findings,
-    ...booking.findings,
     ...forecast.findings,
     ...phaseTwoResults.flatMap((a) => a.findings),
   ];
@@ -156,7 +153,7 @@ export function runDailyBriefing({ maxPhase = 1 }: { maxPhase?: Phase } = {}): B
   const headline = `${m.total} transactions imported · ${m.matched} auto-matched (${m.matchedPct}%) · ${approvals.length} need approval · close-readiness ${cr.score}%.`;
 
   const agentResults: AgentResult[] = [
-    orchestrator, pref, budget, booking, forecast, ...phaseTwoResults, gate.result, notif.result,
+    orchestrator, pref, budget, forecast, ...phaseTwoResults, gate.result, notif.result,
   ];
 
   return {

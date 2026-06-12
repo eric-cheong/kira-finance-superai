@@ -44,7 +44,6 @@ const NAV: { group: string; items: NavItem[] }[] = [
       { href: "/transactions", label: "Transactions", icon: "transactions" },
       { href: "/erp-close", label: "AP Close", icon: "closeBooks" },
       { href: "/operating-functions", label: "Operating Functions", icon: "workflow" },
-      { href: "/bookings", label: "Bookings", icon: "flight" },
     ],
   },
   {
@@ -77,7 +76,6 @@ const SEARCH_ALIASES: Record<string, string[]> = {
   "/approvals": ["approval", "approve", "reject", "tier", "human gate", "pending", "queue"],
   "/capture": ["invoice", "receipt", "ocr", "document", "upload", "snap", "email"],
   "/transactions": ["bank", "feed", "match", "reconcile", "merchant", "line item"],
-  "/bookings": ["flight", "hotel", "trip", "travel", "quote", "reviews", "exa", "supplier"],
   "/erp-close": ["close", "bills", "export", "blocker", "month end", "evidence pack"],
   "/forecast": ["cash", "runway", "forecast", "outflow", "inflow"],
   "/analytics": ["spend", "category", "vendor", "chart", "breakdown"],

@@ -31,8 +31,6 @@ item when available:
 
 - Open approvals from `state.approvals`.
 - Receipts or invoices with `status: "needs_review"`.
-- Open booking quotes from `state.bookingQuotes` with at least one unexpired
-  option.
 
 The response includes `output.nextItem`, a deep link to the exact card or row,
 and the reason Kira picked it. If the queue is empty, Kira returns
@@ -86,7 +84,7 @@ The workspace context returned by `GET /api/assistant` and included during
 ```ts
 {
   id: string;
-  kind: "approval" | "receipt_review" | "booking_quote";
+  kind: "approval" | "receipt_review";
   label: string;
   href: string;
   actionClass: "read-only" | "suggestion" | "notification" | "human-approved" | "prohibited";

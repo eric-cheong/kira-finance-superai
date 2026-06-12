@@ -24,7 +24,6 @@ export type AgentName =
   | "Compliance/Safety"
   | "Notification"
   | "Human Approval"
-  | "Booking"
   | "Vendor Intelligence"
   | "Cashflow Forecast";
 

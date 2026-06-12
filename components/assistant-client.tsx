@@ -20,7 +20,7 @@ type AssistantOutput = {
   answer: string;
   nextItem: {
     id: string;
-    kind: "approval" | "receipt_review" | "booking_quote";
+    kind: "approval" | "receipt_review";
     label: string;
     href: string;
     actionClass: string;
@@ -85,7 +85,6 @@ const PROMPTS = [
   "What should I do next?",
   "What should I do about open approvals?",
   "Find where transaction matching lives",
-  "Can Kira book my Singapore trip?",
   "Explain the e-invoice approval boundary",
 ];
 
@@ -107,14 +106,12 @@ function speak(text: string) {
 
 function nextItemKindLabel(kind: NonNullable<AssistantOutput["nextItem"]>["kind"]) {
   if (kind === "approval") return "Open approval";
-  if (kind === "receipt_review") return "Receipt review";
-  return "Booking quote";
+  return "Receipt review";
 }
 
 function nextItemIcon(kind: NonNullable<AssistantOutput["nextItem"]>["kind"]) {
   if (kind === "approval") return "approvals";
-  if (kind === "receipt_review") return "capture";
-  return "flight";
+  return "capture";
 }
 
 export function AssistantClient() {

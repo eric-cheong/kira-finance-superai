@@ -24,7 +24,6 @@ export const AGENT_ROSTER: AgentSpec[] = [
   { name: "News Relevance", phase: 2, job: "Pull + rank relevant news", autonomous: "Fetch, filter, summarise with sources", neverWithoutHuman: "Present unverified claims as fact" },
   { name: "Market Research", phase: 2, job: "Overnight market & watchlist moves", autonomous: "Fetch + summarise prices", neverWithoutHuman: "Recommend a trade as advice" },
   { name: "Portfolio Analysis", phase: 2, job: "Holdings, performance, concentration", autonomous: "Read positions, draft rebalance suggestion", neverWithoutHuman: "Place or rebalance trades" },
-  { name: "Booking", phase: 1, job: "Quote comparison, approval routing, booking records", autonomous: "Research options, present quotes, track unlinked bookings", neverWithoutHuman: "Execute booking, charge card, cancel reservation" },
   { name: "Vendor Intelligence", phase: 2, job: "Supplier risk, price benchmarking, alternatives", autonomous: "Enrich vendor data, flag risks, surface price signals", neverWithoutHuman: "Change vendor, cancel contract, move spend" },
-  { name: "Cashflow Forecast", phase: 1, job: "30/60/90-day projection, committed vs pending", autonomous: "Build forecast from feed + bookings + recurring patterns", neverWithoutHuman: "Execute any disbursement or payment" },
+  { name: "Cashflow Forecast", phase: 1, job: "30/60/90-day projection, committed vs pending", autonomous: "Build forecast from feed + recurring patterns", neverWithoutHuman: "Execute any disbursement or payment" },
 ];

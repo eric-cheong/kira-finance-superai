@@ -2,7 +2,6 @@ import OpenAI from "openai";
 import { OpenAIProvider, setDefaultModelProvider } from "@openai/agents";
 
 export const DEFAULT_OPENAI_MODEL = "gpt-5.5";
-export const DEFAULT_VERCEL_AI_MODEL = "alibaba/qwen3.7-plus";
 export const DEFAULT_OPENAI_REALTIME_MODEL = "gpt-realtime-2";
 export const DEFAULT_OPENAI_BASE_URL = "https://api.openai.com/v1";
 export const DEFAULT_OPENAI_REALTIME_URL = `${DEFAULT_OPENAI_BASE_URL}/realtime/calls`;
@@ -17,27 +16,8 @@ export function openaiRealtimeModel() {
   return process.env.OPENAI_REALTIME_MODEL?.trim() || DEFAULT_OPENAI_REALTIME_MODEL;
 }
 
-export function vercelAiModel() {
-  return process.env.VERCEL_AI_MODEL?.trim() || DEFAULT_VERCEL_AI_MODEL;
-}
-
 export function hasOpenAIKey() {
   return Boolean(process.env.OPENAI_API_KEY?.trim());
-}
-
-export function aiGatewayApiKey() {
-  return process.env.AI_GATEWAY_API_KEY?.trim() || process.env.VERCEL_AI_GATEWAY_API_KEY?.trim() || "";
-}
-
-export function hasVercelAIKey() {
-  return Boolean(aiGatewayApiKey());
-}
-
-export function ensureAIGatewayEnv() {
-  const key = aiGatewayApiKey();
-  if (!key) return false;
-  process.env.AI_GATEWAY_API_KEY ||= key;
-  return true;
 }
 
 function configuredOpenAIBaseURL() {
@@ -122,7 +102,6 @@ export function hasExaKey() {
 
 export function providerStatus() {
   const openai = openaiProviderReadiness();
-  const vercelAiConfigured = hasVercelAIKey();
   const exaConfigured = hasExaKey();
   return {
     openai: {
@@ -134,12 +113,6 @@ export function providerStatus() {
       baseURLValid: openai.baseURLValid,
       fallbackReason: openai.fallbackReason,
       sdk: "openai + @openai/agents",
-    },
-    vercelAi: {
-      configured: vercelAiConfigured,
-      model: vercelAiModel(),
-      fallbackReason: vercelAiConfigured ? null : "missing_ai_gateway_key",
-      sdk: "ai + Vercel AI Gateway",
     },
     exa: {
       configured: exaConfigured,
@@ -160,12 +133,6 @@ export function providerStatus() {
       realtimeModel: openaiRealtimeModel(),
       realtimeURL: openaiRealtimeConnectionURL() ?? DEFAULT_OPENAI_REALTIME_URL,
       sessionRoute: "/api/assistant/voice-session",
-    },
-    bookingBoundary: {
-      canResearch: true,
-      canCreateQuoteRecords: true,
-      canPlaceBooking: false,
-      approvalRoute: "/api/bookings/:quoteId/decision",
     },
   };
 }

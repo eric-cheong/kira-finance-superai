@@ -23,7 +23,7 @@ and file-backed for development. It persists mutable demo state to
 | Route | Method | Purpose |
 |---|---:|---|
 | `/api/health` | `GET` | Backend status, persistence mode, entity counts. |
-| `/api/ai/status` | `GET` | OpenAI/Exa provider configuration status and booking boundary. |
+| `/api/ai/status` | `GET` | OpenAI/Exa provider configuration status. |
 | `/api/assistant` | `GET` | Kira AI bot knowledge base and workspace context, including counts, providers, `nextItems`, and `recommendedNextItem`. |
 | `/api/assistant` | `POST` | Guarded Agent SDK request understanding over the local Kira knowledge base; falls back locally without working OpenAI access. "What next?" requests are post-processed against live workspace state. |
 | `/api/assistant/voice-session` | `POST` | Guarded ephemeral OpenAI Realtime client-secret minting for browser live voice when OpenAI credentials are valid. |
@@ -49,11 +49,6 @@ and file-backed for development. It persists mutable demo state to
 | `/api/capture` | `POST` | Create a deterministic OCR extraction. |
 | `/api/capture/:id/review` | `POST` | Review/update coding before posting. |
 | `/api/capture/:id/post` | `POST` | Post reviewed receipt to record store. |
-| `/api/bookings` | `GET` | Quotes and booking history. |
-| `/api/booking-quotes` | `POST` | Generate quote options for approval. Uses OpenAI Agents + Exa when configured; otherwise deterministic fallback. |
-| `/api/bookings/:quoteId/decision` | `POST` | `{ decision, selectedIndex?, confirm? }`; approve or reject a quote. |
-| `/api/consumer/trip-search` | `POST` | Read-only OpenAI Agents + Exa trip research without creating a quote or booking. |
-| `/api/consumer/reviews/search` | `POST` | Read-only Exa review search plus direct OpenAI review synthesis. |
 | `/api/transactions/import` | `POST` | Import masked read-only transaction rows. Rejects unmasked PAN-like refs. |
 | `/api/matches/:id/confirm` | `POST` | Confirm a suggested transaction/receipt match. |
 | `/api/einvoices/:id` | `PATCH` | Correct draft/queued/rejected e-invoice metadata. |
@@ -93,31 +88,23 @@ and file-backed for development. It persists mutable demo state to
   `{ ok: false, error }`.
 - Unsafe state transitions return `409`; malformed payloads return `400`;
   unknown IDs return `404`.
-- Backend actions simulate orchestration only. Booking approval, close-book bill
-  approval, ERP/LHDN export, e-invoice submission, and operating workflows create
-  records, approvals, audit evidence, or local export refs. They do not charge,
-  settle, pay, submit to a live regulator, or touch external systems.
+- Backend actions simulate orchestration only. Close-book bill approval, ERP/LHDN
+  export, e-invoice submission, and operating workflows create records, approvals,
+  audit evidence, or local export refs. They do not charge, settle, pay, submit to
+  a live regulator, or touch external systems.
 
 ## Optional Live AI Providers
 
-- `AI_GATEWAY_API_KEY` enables Vercel AI SDK / AI Gateway booking research.
-  `VERCEL_AI_GATEWAY_API_KEY` is also accepted as a local alias; the app maps it
-  to the AI SDK's default `AI_GATEWAY_API_KEY` environment variable at runtime.
-- `VERCEL_AI_MODEL` overrides the Vercel AI Gateway model; default is
-  `alibaba/qwen3.7-plus`.
-- `OPENAI_API_KEY` enables the OpenAI Agents SDK trip-research flow and direct
-  Responses API review synthesis, plus the Kira AI bot's Agent SDK request
-  understanding and realtime voice-session route. For booking research, OpenAI
-  Agents are used as a fallback when AI Gateway is unavailable. The key must be
-  valid for the selected models; otherwise assistant text falls back locally and
-  realtime session creation returns `502 REALTIME_SESSION_FAILED`.
+- `OPENAI_API_KEY` enables the Kira AI bot's Agent SDK request understanding and
+  realtime voice-session route. The key must be valid for the selected models;
+  otherwise assistant text falls back locally and realtime session creation returns
+  `502 REALTIME_SESSION_FAILED`.
 - `OPENAI_MODEL` overrides the model; default is `gpt-5.5`.
 - OpenAI clients use the shared hard-coded base URL
   `https://api.openai.com/v1` for SDK, Agents SDK, and realtime flows.
 - `OPENAI_REALTIME_MODEL` overrides the realtime model; default is
   `gpt-realtime-2`.
-- `EXA_API_KEY` enables live Exa consumer search for flights, hotels, policies,
-  trip sources, and reviews.
+- `EXA_API_KEY` enables live Exa search for vendor enrichment and reviews.
 - The assistant remains usable without OpenAI keys via local knowledge-base
   matching. Its concrete next-item recommendation is always local/state-derived
   and works whether the OpenAI agent succeeds or falls back. Browser voice
@@ -128,27 +115,22 @@ and file-backed for development. It persists mutable demo state to
   `KIRA_PROVIDER_RATE_LIMIT_PER_MINUTE`, `KIRA_PROVIDER_MAX_PAYLOAD_BYTES`,
   `KIRA_PROVIDER_MAX_STRING_LENGTH`, and
   `KIRA_PROVIDER_MAX_COLLECTION_ITEMS`.
-- Provider-backed booking quote generation still creates only quote records.
-  The only route that can create a booking record is
-  `/api/bookings/:quoteId/decision`, and it still requires `{ confirm: true }`.
-
 ## Assistant Request Shape
 
 `POST /api/assistant` accepts:
 
 ```json
 {
-  "message": "Can Kira compare Singapore hotel reviews?",
+  "message": "What should I do next?",
   "mode": "text",
   "transcript": "optional voice transcript",
-  "route": "/bookings"
+  "route": "/approvals"
 }
 ```
 
 `message` is required and capped at 1200 characters. `mode` is `text` or
 `voice`. For "what should I do next?"-style prompts, `output.nextItem` is a
-hard-coded selection from open approvals, receipts needing review, or open
-booking quotes with at least one unexpired option:
+hard-coded selection from open approvals or receipts needing review:
 
 ```json
 {

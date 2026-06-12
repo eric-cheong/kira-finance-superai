@@ -12,8 +12,6 @@
 import type {
   AccountingSyncRef,
   ApprovalRequest,
-  Booking,
-  BookingQuote,
   ChartOfAccount,
   CostCentre,
   CountryConfig,
@@ -239,99 +237,6 @@ export const COUNTRY_CONFIGS: CountryConfig[] = [
   { country: "SG", taxModel: "SG_GST", eInvoiceChannel: "Peppol-InvoiceNow", eInvoiceSchema: "PINT-SG (Peppol BIS)", regulator: "IRAS / MAS", paymentMethods: ["PayNow", "GIRO", "Card"], languagePack: ["en", "zh"] },
 ];
 
-// ── Booking quotes ──────────────────────────────────────────────────────────
-
-export const BOOKING_QUOTES: BookingQuote[] = [
-  {
-    id: "bq_01",
-    requestedBy: "u_wei",
-    type: "flight",
-    description: "KL → Singapore return · Café Manager site visit · 12–14 Jun",
-    createdAt: "2026-06-09T08:10:00+08:00",
-    options: [
-      {
-        index: 0, label: "AirAsia AK713 + AK718", supplier: "AirAsia",
-        amountMinor: 42800, currency: "MYR",
-        breakdown: [{ item: "Base fare (2 pax)", amountMinor: 35000 }, { item: "Baggage 20kg", amountMinor: 5200 }, { item: "Service fee", amountMinor: 2600 }],
-        notes: ["Non-refundable", "15kg cabin bag included", "Departs 07:25 KLIA2 · arrives 08:30 Changi T4"],
-        expiresAt: "2026-06-09T09:00:00+08:00",
-      },
-      {
-        index: 1, label: "Malaysia Airlines MH601 + MH604", supplier: "Malaysia Airlines",
-        amountMinor: 68400, currency: "MYR",
-        breakdown: [{ item: "Base fare (2 pax)", amountMinor: 56000 }, { item: "30kg baggage included", amountMinor: 0 }, { item: "Taxes & fees", amountMinor: 12400 }],
-        notes: ["Fully refundable within 24h", "Lounge access at KLIA", "Departs 09:10 KLIA · arrives 10:15 Changi T1"],
-        expiresAt: "2026-06-09T09:00:00+08:00",
-      },
-      {
-        index: 2, label: "Scoot TR717 + TR710", supplier: "Scoot",
-        amountMinor: 38600, currency: "MYR",
-        breakdown: [{ item: "Base fare (2 pax)", amountMinor: 30000 }, { item: "Baggage 20kg", amountMinor: 4800 }, { item: "Seat selection", amountMinor: 3800 }],
-        notes: ["No changes or refunds", "Budget terminal, allow extra transfer time"],
-        expiresAt: "2026-06-09T09:00:00+08:00",
-      },
-    ],
-    selectedIndex: undefined,
-    researchSources: [
-      "AirAsia.com (checked 09 Jun 07:45 MYT)",
-      "MalaysiaAirlines.com (checked 09 Jun 07:47 MYT)",
-      "Scoot.com (checked 09 Jun 07:49 MYT)",
-      "KLIA2 to Changi T4 transfer notes — Exa research",
-    ],
-    status: "open",
-  },
-  {
-    id: "bq_02",
-    requestedBy: "u_amir",
-    type: "hotel",
-    description: "Singapore accommodation · Tanjong Pagar · 2 nights · 12–14 Jun",
-    createdAt: "2026-06-09T08:12:00+08:00",
-    options: [
-      {
-        index: 0, label: "Hotel Clover 769 North Bridge", supplier: "Hotel Clover",
-        amountMinor: 28000, currency: "SGD",
-        breakdown: [{ item: "Superior room × 2 nights", amountMinor: 25688 }, { item: "GST 9%", amountMinor: 2312 }],
-        notes: ["Free cancellation until 11 Jun", "CBD location — 10 min walk to Telok Ayer outlet"],
-        expiresAt: "2026-06-09T12:00:00+08:00",
-      },
-      {
-        index: 1, label: "Citadines Connect City Centre", supplier: "Citadines",
-        amountMinor: 35000, currency: "SGD",
-        breakdown: [{ item: "Deluxe room × 2 nights", amountMinor: 32110 }, { item: "GST 9%", amountMinor: 2890 }],
-        notes: ["Free cancellation until 10 Jun", "Breakfast included"],
-        expiresAt: "2026-06-09T12:00:00+08:00",
-      },
-    ],
-    researchSources: [
-      "Booking.com SG results (09 Jun 07:50 MYT)",
-      "Tanjong Pagar area transport map — Exa research",
-    ],
-    status: "open",
-  },
-];
-
-// ── Bookings ─────────────────────────────────────────────────────────────────
-
-export const BOOKINGS: Booking[] = [
-  {
-    id: "bk_01",
-    quoteId: "bq_prev_01",
-    type: "flight",
-    supplier: "AirAsia",
-    description: "KL → Bangkok (Don Mueang) return · Supplier visit · 02–05 Jun 2026",
-    startDate: "2026-06-02",
-    endDate: "2026-06-05",
-    amountMinor: 52600,
-    currency: "MYR",
-    status: "booked",
-    confirmationRef: "AZJK93",
-    bookedAt: "2026-05-27T14:30:00+08:00",
-    travellerId: "u_amir",
-    departmentBudgetCode: "CC-HQ",
-    linkedTransactionId: undefined,
-  },
-];
-
 // ── Vendors ──────────────────────────────────────────────────────────────────
 
 export const VENDORS: Vendor[] = [
@@ -431,8 +336,7 @@ export const FORECAST_BUCKETS: ForecastBucket[] = [
       { id: "fc_02", label: "Singapore outlet revenue (est)", kind: "income", amountMinor: 1540000, currency: "MYR", dueDate: "2026-06-30", confidence: 72, source: "Last 3 months avg" },
       { id: "fc_03", label: "Yning Coffee Supply — next order", kind: "expense", amountMinor: 480000, currency: "MYR", dueDate: "2026-06-22", confidence: 80, source: "Recurring pattern" },
       { id: "fc_04", label: "Payroll (Jun)", kind: "expense", amountMinor: 1240000, currency: "MYR", dueDate: "2026-06-28", confidence: 99, source: "HR schedule" },
-      { id: "fc_05", label: "Telok Ayer rent (committed)", kind: "committed", amountMinor: 320000, currency: "SGD", dueDate: "2026-07-01", confidence: 100, source: "bk_01 / Lease" },
-      { id: "fc_06", label: "Pending booking — KL→SG trip", kind: "pending", amountMinor: 71400, currency: "MYR", dueDate: "2026-06-12", confidence: 65, source: "bq_01 + bq_02 (pending approval)" },
+      { id: "fc_05", label: "Telok Ayer rent (committed)", kind: "committed", amountMinor: 320000, currency: "SGD", dueDate: "2026-07-01", confidence: 100, source: "Lease" },
     ],
   },
   {

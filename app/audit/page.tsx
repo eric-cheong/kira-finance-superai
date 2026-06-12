@@ -39,7 +39,7 @@ const RUN_PLAN = [
   },
   {
     title: "Fan out analysts",
-    detail: "Budget, booking, and forecast agents inspect their own bounded data sets.",
+    detail: "Budget and forecast agents inspect their own bounded data sets.",
     status: "complete",
   },
   {
@@ -57,7 +57,6 @@ const RUN_PLAN = [
 const TOOL_CALLS = [
   { agent: "User Preference", tool: "settings.read", input: "profile, locale, thresholds", result: "context locked", policy: "read-only" },
   { agent: "Budget/Spend", tool: "ledger.scan", input: "transactions + receipts", result: "4 findings emitted", policy: "suggest only" },
-  { agent: "Booking", tool: "booking.options.search", input: "partner inventory snapshot", result: "approval candidate", policy: "no booking" },
   { agent: "Cashflow Forecast", tool: "forecast.project", input: "bank, AR, AP schedule", result: "cash range", policy: "read-only" },
   { agent: "Compliance/Safety", tool: "policy.evaluate", input: "ranked findings", result: "approval gates attached", policy: "human gate" },
   { agent: "Notification", tool: "notification.compose", input: "briefing + approvals count", result: "draft only", policy: "queued" },

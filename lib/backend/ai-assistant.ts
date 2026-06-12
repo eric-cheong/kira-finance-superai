@@ -37,7 +37,7 @@ const assistantOutputSchema = z.object({
   answer: z.string(),
   nextItem: z.object({
     id: z.string(),
-    kind: z.enum(["approval", "receipt_review", "booking_quote"]),
+    kind: z.enum(["approval", "receipt_review"]),
     label: z.string(),
     href: z.string(),
     actionClass: z.enum(["read-only", "suggestion", "notification", "human-approved", "prohibited"]),
@@ -95,9 +95,9 @@ function assistantAgent() {
     instructions: [
       "You are Kira's in-app AI assistant for an APAC SME finance workspace.",
       "First infer what the user is asking for. Ground every answer in the Kira knowledge base or current workspace context.",
-      "When the user asks what to do next, pick exactly one item from workspace.recommendedNextItem or workspace.nextItems; name the concrete approval, receipt, or booking quote; include why it was picked; and deep-link to that exact item.",
+      "When the user asks what to do next, pick exactly one item from workspace.recommendedNextItem or workspace.nextItems; name the concrete approval or receipt review; include why it was picked; and deep-link to that exact item.",
       "Recommend the most relevant route when useful.",
-      "Never claim Kira moved money, paid, submitted to a regulator, booked travel, contacted a supplier, issued cards, stored PAN, executed FX, or placed trades.",
+      "Never claim Kira moved money, paid, submitted to a regulator, contacted a supplier, issued cards, stored PAN, executed FX, or placed trades.",
       "If the request is consequential, classify it as human-approved or prohibited and explain the approval boundary.",
       "Return concise structured output only.",
     ].join(" "),
@@ -120,9 +120,6 @@ function classifyLocal(message: string): Pick<AssistantOutput, "intent" | "actio
   if (/(setting|connector|team|role|threshold|automation)/.test(clean)) {
     return { intent: "settings", actionClass: "notification", approvalTier: 2 };
   }
-  if (/(flight|hotel|booking|trip|review|vendor|supplier|search)/.test(clean)) {
-    return { intent: "research", actionClass: "suggestion", approvalTier: 2 };
-  }
   if (/(where|open|go to|navigate|page|screen)/.test(clean)) {
     return { intent: "navigate", actionClass: "read-only", approvalTier: 1 };
   }
@@ -135,8 +132,7 @@ function isNextItemRequest(message: string) {
 
 function nextItemSource(nextItem: AssistantNextItem) {
   if (nextItem.kind === "approval") return { title: "Approvals", route: "/approvals" };
-  if (nextItem.kind === "receipt_review") return { title: "Capture Inbox", route: "/capture" };
-  return { title: "Bookings Research", route: "/bookings" };
+  return { title: "Capture Inbox", route: "/capture" };
 }
 
 function nextItemAnswer(nextItem: AssistantNextItem) {
@@ -150,7 +146,7 @@ function applyNextItemRecommendation(output: AssistantOutput, request: Assistant
   if (!nextItem) {
     return {
       ...output,
-      answer: "There is no open approval, receipt review, or booking quote waiting right now. The workspace queue is clear.",
+      answer: "There is no open approval or receipt review waiting right now. The workspace queue is clear.",
       nextItem: null,
       routeSuggestion: {
         label: "Daily Briefing",
@@ -167,7 +163,7 @@ function applyNextItemRecommendation(output: AssistantOutput, request: Assistant
   return {
     ...output,
     understoodRequest: request.transcript || request.message,
-    intent: nextItem.kind === "approval" ? "approval" : nextItem.kind === "receipt_review" ? "reconcile" : "research",
+    intent: nextItem.kind === "approval" ? "approval" : "reconcile",
     answer: nextItemAnswer(nextItem),
     nextItem: {
       id: nextItem.id,

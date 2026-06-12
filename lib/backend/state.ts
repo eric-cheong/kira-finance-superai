@@ -14,8 +14,6 @@ import type {
   AccountingSyncRef,
   ApprovalRequest,
   AuditLogEntry,
-  Booking,
-  BookingQuote,
   ChartOfAccount,
   CostCentre,
   CountryConfig,
@@ -115,8 +113,6 @@ export interface BackendState {
   news: NewsItem[];
   preferences: UserPreference;
   countryConfigs: CountryConfig[];
-  bookingQuotes: BookingQuote[];
-  bookings: Booking[];
   vendors: Vendor[];
   forecastBuckets: ForecastBucket[];
   forecastRuns: ForecastRun[];
@@ -193,8 +189,6 @@ function initialState(): RuntimeState {
     news: clone(seed.NEWS),
     preferences: clone(seed.PREFERENCES),
     countryConfigs: clone(seed.COUNTRY_CONFIGS),
-    bookingQuotes: clone(seed.BOOKING_QUOTES),
-    bookings: clone(seed.BOOKINGS),
     vendors: clone(seed.VENDORS),
     forecastBuckets: clone(seed.FORECAST_BUCKETS),
     forecastRuns: [],
@@ -236,8 +230,6 @@ function readSnapshot(): RuntimeState | null {
       news: parsed.news ?? fallback.news,
       preferences: parsed.preferences ?? fallback.preferences,
       countryConfigs: parsed.countryConfigs ?? fallback.countryConfigs,
-      bookingQuotes: parsed.bookingQuotes ?? fallback.bookingQuotes,
-      bookings: parsed.bookings ?? fallback.bookings,
       vendors: parsed.vendors ?? fallback.vendors,
       forecastBuckets: parsed.forecastBuckets ?? fallback.forecastBuckets,
       forecastRuns: parsed.forecastRuns ?? fallback.forecastRuns,
@@ -286,8 +278,6 @@ export function resetState() {
   replaceArray(state.news, next.news);
   Object.assign(state.preferences, next.preferences);
   replaceArray(state.countryConfigs, next.countryConfigs);
-  replaceArray(state.bookingQuotes, next.bookingQuotes);
-  replaceArray(state.bookings, next.bookings);
   replaceArray(state.vendors, next.vendors);
   replaceArray(state.forecastBuckets, next.forecastBuckets);
   replaceArray(state.forecastRuns, next.forecastRuns);
