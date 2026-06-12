@@ -1,6 +1,6 @@
-# Kira · AI Operating Intelligence
+# Kira · Agentic Accounting
 
-An **AI operating intelligence platform** for Malaysia + Singapore SMEs. Kira
+An **agentic accounting platform** for Malaysia + Singapore SMEs. Kira
 benchmarks the workflows that decide cash, margin, growth, and customer
 experience, then runs approval-gated workflows across existing systems. For
 finance workflows, Kira **orchestrates and records — it never settles.** It sits

@@ -864,7 +864,7 @@ export default function ErpClosePage() {
         badge={<Badge variant={blockerCount > 0 ? "warn" : "pos"} dot>{blockerCount} blockers</Badge>}
         actions={
           <ErpCloseExportActions
-            disabled={blockerCount > 0}
+            disabled={readyRecordIds.length === 0}
             destination={activeClient.erp}
             readyRecordIds={readyRecordIds}
           />
