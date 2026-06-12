@@ -100,9 +100,33 @@ export function hasExaKey() {
   return Boolean(process.env.EXA_API_KEY?.trim());
 }
 
+export function hasMem0Key() {
+  return Boolean(process.env.MEM0_API_KEY?.trim());
+}
+
+export function mem0OrgId() {
+  return process.env.MEM0_ORG_ID?.trim() || undefined;
+}
+
+export function mem0ProjectId() {
+  return process.env.MEM0_PROJECT_ID?.trim() || undefined;
+}
+
+export function memoryProviderReadiness() {
+  const configured = hasMem0Key();
+  return {
+    configured,
+    mode: configured ? "mem0-platform" : "local-store",
+    orgId: mem0OrgId(),
+    projectId: mem0ProjectId(),
+    fallbackReason: configured ? null : "missing_mem0_key",
+  };
+}
+
 export function providerStatus() {
   const openai = openaiProviderReadiness();
   const exaConfigured = hasExaKey();
+  const memory = memoryProviderReadiness();
   return {
     openai: {
       configured: openai.configured,
@@ -118,6 +142,14 @@ export function providerStatus() {
       configured: exaConfigured,
       fallbackReason: exaConfigured ? null : "missing_exa_key",
       sdk: "exa-js",
+    },
+    memory: {
+      configured: memory.configured,
+      provider: memory.mode,
+      orgId: memory.orgId,
+      projectId: memory.projectId,
+      fallbackReason: memory.fallbackReason,
+      sdk: "mem0ai",
     },
     assistant: {
       configured: true,

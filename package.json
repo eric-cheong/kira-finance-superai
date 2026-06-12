@@ -8,16 +8,19 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "seed:mem0": "node --conditions react-server --import tsx scripts/seed-mem0.ts"
   },
   "dependencies": {
     "@openai/agents": "^0.11.6",
     "ai": "^6.0.199",
     "exa-js": "^2.13.0",
+    "mem0ai": "^2.4.6",
     "next": "14.2.35",
     "openai": "^6.42.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
+    "server-only": "^0.0.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -30,6 +33,7 @@
     "eslint-config-next": "^14.2.35",
     "postcss": "8.4.47",
     "tailwindcss": "3.4.14",
+    "tsx": "^4.22.4",
     "typescript": "5.6.3"
   }
 }

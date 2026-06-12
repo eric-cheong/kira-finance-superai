@@ -74,11 +74,15 @@ The dev server is running and state is primed: bill `bill_1003` is pre-approved 
    - **Bank reconciliation** cards — match scores + basis.
    - **Supplier statement tie-out** — Meta ads variance RM0.
    - **Submission gate** — ERP batch `AP-2026-05`, LHDN package status, "2 ready".
-3. Click **Evidence pack** → returns a file ref (the LHDN support bundle).
-4. Click **Export Ready Bills** → **"Exported 2; blocked 0."**
-5. (Optional) Back to **`/audit`** → see `close_book.evidence_pack` and `export.completed` entries.
+3. In **Close Memory**, select **Beras Murni Trading · bill_1001** and click **Recall context**.
+4. Point out **Powered by Mem0** when `MEM0_API_KEY` is set, or **Local memory** when running offline. The recalled memory shows the prior coding: expense `5010`, tax `SST-EX`, cost centre `LG-KL`.
+5. Click **Apply suggested coding** to show Kira can reuse last-close context without asking the user to re-key repetitive ERP mapping.
+6. Click **Evidence pack** → returns a file ref (the LHDN support bundle).
+7. Click **Export Ready Bills** → **"Exported 2; blocked 0."**
+8. Click **Recall context** again after approval/export to show the new close decision has been written back for the next month.
+9. (Optional) Back to **`/audit`** → see `close_book.evidence_pack` and `export.completed` entries.
 
-*Line: "Clean bills export to the ERP — AutoCount here — and the LHDN package is prepared. Blocked bills physically cannot leave until their exceptions are resolved. That's the compliance guarantee."*
+*Line: "Month one teaches Kira. Month two closes faster because Kira remembers the supplier coding, exception resolution, and approval history."*
 
 ---
 

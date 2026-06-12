@@ -18,8 +18,10 @@ import {
 } from "@/components/ui";
 import type { IconName } from "@/components/ui/icons";
 import type { ReactNode } from "react";
+import { CloseMemoryPanel } from "@/components/close-memory-panel";
 import { ErpCloseExportActions } from "@/components/erp-close-actions";
 import { state } from "@/lib/backend/state";
+import { memoryProviderReadiness } from "@/lib/backend/provider-config";
 import { fmtDate, fmtDateTime, money, relativeTo, shortId } from "@/lib/format";
 import {
   criticalConfidence,
@@ -855,6 +857,20 @@ export default function ErpClosePage() {
   const totalRegisterValue = totalValue(records);
   const readyValue = totalValue(dashboard.readyForExport);
   const readyRecordIds = dashboard.readyForExport.map((record) => record.id);
+  const closeMemoryBills = records
+    .filter((record) => record.clientId === activeClient.id)
+    .map((record) => {
+      const supplier = supplierFor(record);
+      const client = clientFor(record);
+      const supplierName = record.supplierName ?? supplier?.legalName ?? "Unknown supplier";
+      return {
+        id: record.id,
+        supplierId: record.supplierId,
+        supplierName,
+        query: `${supplierName} ${record.erpMapping?.taxCode ?? ""} ${record.erpMapping?.expenseAccountCode ?? ""} ${record.erpMapping?.costCentre ?? ""} ${client?.closePeriod ?? ""}`,
+      };
+    });
+  const memoryReadiness = memoryProviderReadiness();
 
   return (
     <div className="animate-in space-y-6">
@@ -939,6 +955,11 @@ export default function ErpClosePage() {
         </div>
         <aside className="min-w-0 space-y-4 xl:sticky xl:top-20 xl:self-start">
           <ChaseIntelligence />
+          <CloseMemoryPanel
+            clientId={activeClient.id}
+            initialBills={closeMemoryBills}
+            memoryConfigured={memoryReadiness.configured}
+          />
           <SubmissionGate />
           <Card>
             <CardHeader title="Close blockers" subtitle="Current command summary" icon="alert" />

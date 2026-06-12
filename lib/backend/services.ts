@@ -8,6 +8,7 @@ import {
   type VerifiedBillRecord,
 } from "@/lib/erp-close";
 import { money } from "@/lib/format";
+import { rememberCloseDecision, type CloseDecisionInput } from "./memory";
 import type {
   ApprovalRequest,
   ApprovalTier,
@@ -947,6 +948,10 @@ export function resolveCloseBookException(id: string, input: unknown) {
     detail: `${type} resolved.`,
     tier: 2,
   });
+  recordCloseMemory(record, "exception_resolution", {
+    exceptionsResolved: [type],
+    note: typeof input.note === "string" ? input.note : exception.message,
+  });
   return getCloseBookBill(id);
 }
 
@@ -984,6 +989,9 @@ export function approveCloseBookBill(id: string, input: unknown = {}) {
     target: record.id,
     detail: "Bill approved for ERP/LHDN export. No payment or settlement occurred.",
     tier: 3,
+  });
+  recordCloseMemory(record, "approval", {
+    note: typeof input.note === "string" ? input.note : record.approval.note,
   });
   return getCloseBookBill(id);
 }
@@ -1048,6 +1056,9 @@ export function exportReadyBills(input: unknown) {
         detail: `Exported offline package to ${destination}. No settlement or payment occurred.`,
       });
       exportedRecords.push(record.id);
+      recordCloseMemory(record, "export", {
+        note: `Exported offline package to ${destination}.`,
+      });
     } else {
       blockedRecords.push(record.id);
       record.auditTrail.push({
@@ -1076,6 +1087,28 @@ export function exportReadyBills(input: unknown) {
     tier: 3,
   });
   return { batchId: batch.id, exportedRecords, blockedRecords };
+}
+
+function recordCloseMemory(
+  record: VerifiedBillRecord,
+  kind: CloseDecisionInput["kind"],
+  extras: Partial<Pick<CloseDecisionInput, "exceptionsResolved" | "note">> = {},
+) {
+  const client = state.closeBookClients.find((item) => item.id === record.clientId);
+  const supplier = state.closeBookSuppliers.find((item) => item.id === record.supplierId);
+  void rememberCloseDecision({
+    clientId: record.clientId,
+    supplierId: record.supplierId,
+    supplierName: record.supplierName ?? supplier?.legalName,
+    closePeriod: client?.closePeriod,
+    kind,
+    billId: record.id,
+    erpMapping: record.erpMapping,
+    taxTreatment: record.taxTreatment,
+    approver: record.approval.approver ?? state.currentUserId,
+    exceptionsResolved: extras.exceptionsResolved,
+    note: extras.note,
+  }).catch(() => {});
 }
 
 export function operatingFunctions(id?: string) {
