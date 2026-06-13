@@ -69,7 +69,6 @@ and file-backed for development. It persists mutable demo state to
 | `/api/sponsors/bright-data/vendor-intel` | `POST` | Run Bright Data supplier web intelligence with fallback evidence. |
 | `/api/sponsors/kimi/close-reasoning` | `POST` | Run Kimi close-book blocker reasoning with local fallback. |
 | `/api/sponsors/tokenrouter/route-model` | `POST` | Run TokenRouter model-routing proof with local fallback. |
-| `/api/sponsors/sensenova/analyze-close-pack` | `POST` | Run SenseNova U1 close-pack analysis with local fallback. |
 | `/api/sponsors/videodb/search-evidence` | `POST` | Run VideoDB receiving/approval video evidence search with local fallback. |
 | `/api/sponsors/daytona/validate-export` | `POST` | Run Daytona sandbox-style ERP export validation with local fallback. |
 | `/api/sponsors/nosana/anomaly-scan` | `POST` | Run Nosana duplicate/anomaly scan proof with local fallback. |
@@ -115,7 +114,7 @@ and file-backed for development. It persists mutable demo state to
 - `EXA_API_KEY` enables live Exa search for vendor enrichment and reviews.
 - Sponsor hackathon integrations are surfaced in `/erp-close` Close Intelligence
   and configured by `BRIGHT_DATA_API_KEY`, `KIMI_API_KEY`,
-  `TOKENROUTER_API_KEY`, `SENSENOVA_API_KEY`, `VIDEODB_API_KEY`,
+  `TOKENROUTER_API_KEY`, `VIDEODB_API_KEY`,
   `DAYTONA_API_KEY`, `NOSANA_API_KEY`, and `TERMINAL3_API_KEY`.
   Optional `*_BASE_URL` / endpoint variables can override provider defaults.
 - The assistant remains usable without OpenAI keys via local knowledge-base

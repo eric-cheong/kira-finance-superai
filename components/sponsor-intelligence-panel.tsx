@@ -54,12 +54,6 @@ const ACTIONS: SponsorAction[] = [
     detail: "Route model work with cache-aware provider selection",
   },
   {
-    provider: "sensenova",
-    action: "analyze-close-pack",
-    label: "SenseNova U1",
-    detail: "Analyze close pack and tax treatment",
-  },
-  {
     provider: "videodb",
     action: "search-evidence",
     label: "VideoDB",

@@ -116,7 +116,6 @@ For the **Sponsored Product Usage** version, add any sponsor keys you have to `.
    - Bright Data gathers supplier web evidence.
    - Kimi AI reasons over close blockers.
    - TokenRouter routes model work.
-   - SenseNova U1 analyzes close-pack documents.
    - VideoDB searches receiving or approval video evidence.
    - Daytona validates the ERP export in a sandbox.
    - Nosana runs duplicate/anomaly scan workloads.

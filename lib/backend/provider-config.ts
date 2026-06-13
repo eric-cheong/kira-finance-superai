@@ -142,12 +142,6 @@ const SPONSOR_ENV = {
     fallbackEndpoint: "https://api.tokenrouter.ai/v1",
     sdk: "TokenRouter OpenAI-compatible API",
   },
-  senseNova: {
-    key: "SENSENOVA_API_KEY",
-    endpoint: "SENSENOVA_BASE_URL",
-    fallbackEndpoint: "https://api.sensenova.cn/v1",
-    sdk: "SenseNova U1 API",
-  },
   videoDb: {
     key: "VIDEODB_API_KEY",
     endpoint: "VIDEODB_BASE_URL",

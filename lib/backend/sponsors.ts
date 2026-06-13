@@ -57,12 +57,6 @@ const SPONSOR_ACTIONS: Record<string, SponsorDefinition> = {
     action: "route-model",
     title: "Model route selected with cache-aware routing",
   },
-  "sensenova/analyze-close-pack": {
-    provider: "senseNova",
-    providerName: "SenseNova U1",
-    action: "analyze-close-pack",
-    title: "Close pack analyzed",
-  },
   "videodb/search-evidence": {
     provider: "videoDb",
     providerName: "VideoDB",
@@ -94,7 +88,6 @@ function sponsorApiKey(provider: SponsorProviderId) {
     brightData: "BRIGHT_DATA_API_KEY",
     kimi: "KIMI_API_KEY",
     tokenRouter: "TOKENROUTER_API_KEY",
-    senseNova: "SENSENOVA_API_KEY",
     videoDb: "VIDEODB_API_KEY",
     daytona: "DAYTONA_API_KEY",
     nosana: "NOSANA_API_KEY",

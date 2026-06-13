@@ -9,7 +9,6 @@ Kira's hackathon sponsor story is a single workflow: the ERP close screen uses s
 | Bright Data | Live supplier web evidence and regulatory/vendor research. |
 | Kimi AI | Long-context reasoning over close blockers and audit history. |
 | TokenRouter | Routed model calls and cache-aware model selection. |
-| SenseNova U1 | Multimodal close-pack and spreadsheet/document analysis. |
 | VideoDB | Searchable receiving, walkthrough, and approval video evidence. |
 | Daytona | Isolated sandbox validation for ERP export packages. |
 | Nosana | GPU-style duplicate, anomaly, and extraction workload scans. |
@@ -31,9 +30,6 @@ KIMI_MODEL=kimi-k2.6
 TOKENROUTER_API_KEY=
 TOKENROUTER_BASE_URL=https://api.tokenrouter.ai/v1
 TOKENROUTER_MODEL=auto
-
-SENSENOVA_API_KEY=
-SENSENOVA_BASE_URL=https://api.sensenova.cn/v1
 
 VIDEODB_API_KEY=
 VIDEODB_BASE_URL=https://api.videodb.io
@@ -58,7 +54,6 @@ If a sponsor gives a different endpoint in their dashboard, use that value. Do n
    - Run Bright Data for vendor web evidence.
    - Run Kimi AI for blocker explanation.
    - Run TokenRouter for model routing.
-   - Run SenseNova U1 for close-pack analysis.
    - Run VideoDB for receiving evidence.
    - Run Daytona for ERP export validation.
    - Run Nosana for anomaly scanning.
