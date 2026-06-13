@@ -158,6 +158,7 @@ async function openAiCompatibleCall(
   const model = definition.provider === "kimi"
     ? process.env.KIMI_MODEL?.trim() || "kimi-k2.6"
     : process.env.TOKENROUTER_MODEL?.trim() || "auto";
+  const temperature = definition.provider === "kimi" ? 1 : 0.2;
   const response = await fetch(`${base}/chat/completions`, {
     method: "POST",
     headers: {
@@ -166,7 +167,7 @@ async function openAiCompatibleCall(
     },
     body: JSON.stringify({
       model,
-      temperature: 0.2,
+      temperature,
       messages: [
         {
           role: "system",

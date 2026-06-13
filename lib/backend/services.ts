@@ -63,9 +63,14 @@ export interface CaptureDraft {
 
 export function health() {
   const providers = providerStatus();
+  const sponsorConfigured = Object.values(providers.sponsors).some((provider) => provider.configured);
+  const liveProviderConfigured = providers.openai.configured
+    || providers.exa.configured
+    || providers.memory.configured
+    || sponsorConfigured;
   return {
     status: "ok",
-    mode: providers.openai.configured || providers.exa.configured ? "hybrid-live-ready" : "local-offline",
+    mode: liveProviderConfigured ? "hybrid-live-ready" : "local-offline",
     persistence: "json-file",
     snapshotPath,
     providers,
