@@ -123,10 +123,88 @@ export function memoryProviderReadiness() {
   };
 }
 
+const SPONSOR_ENV = {
+  brightData: {
+    key: "BRIGHT_DATA_API_KEY",
+    endpoint: "BRIGHT_DATA_ENDPOINT",
+    fallbackEndpoint: "https://api.brightdata.com/request",
+    sdk: "Bright Data Web Unlocker API",
+  },
+  kimi: {
+    key: "KIMI_API_KEY",
+    endpoint: "KIMI_BASE_URL",
+    fallbackEndpoint: "https://api.moonshot.ai/v1",
+    sdk: "Kimi OpenAI-compatible API",
+  },
+  tokenRouter: {
+    key: "TOKENROUTER_API_KEY",
+    endpoint: "TOKENROUTER_BASE_URL",
+    fallbackEndpoint: "https://api.tokenrouter.ai/v1",
+    sdk: "TokenRouter OpenAI-compatible API",
+  },
+  senseNova: {
+    key: "SENSENOVA_API_KEY",
+    endpoint: "SENSENOVA_BASE_URL",
+    fallbackEndpoint: "https://api.sensenova.cn/v1",
+    sdk: "SenseNova U1 API",
+  },
+  videoDb: {
+    key: "VIDEODB_API_KEY",
+    endpoint: "VIDEODB_BASE_URL",
+    fallbackEndpoint: "https://api.videodb.io",
+    sdk: "VideoDB API",
+  },
+  daytona: {
+    key: "DAYTONA_API_KEY",
+    endpoint: "DAYTONA_BASE_URL",
+    fallbackEndpoint: "https://app.daytona.io/api",
+    sdk: "Daytona sandbox API",
+  },
+  nosana: {
+    key: "NOSANA_API_KEY",
+    endpoint: "NOSANA_BASE_URL",
+    fallbackEndpoint: "https://api.nosana.io",
+    sdk: "Nosana job API",
+  },
+  terminal3: {
+    key: "TERMINAL3_API_KEY",
+    endpoint: "TERMINAL3_BASE_URL",
+    fallbackEndpoint: "https://api.terminal3.io",
+    sdk: "Terminal 3 Agent Dev Kit",
+  },
+} as const;
+
+export type SponsorProviderId = keyof typeof SPONSOR_ENV;
+
+export function sponsorProviderReadiness() {
+  return Object.fromEntries(
+    Object.entries(SPONSOR_ENV).map(([id, config]) => {
+      const apiKeyConfigured = Boolean(process.env[config.key]?.trim());
+      const endpoint = process.env[config.endpoint]?.trim() || config.fallbackEndpoint;
+      return [id, {
+        configured: apiKeyConfigured,
+        apiKeyConfigured,
+        endpoint,
+        endpointConfigured: Boolean(process.env[config.endpoint]?.trim()),
+        fallbackReason: apiKeyConfigured ? null : `missing_${config.key.toLowerCase()}`,
+        sdk: config.sdk,
+      }];
+    }),
+  ) as Record<SponsorProviderId, {
+    configured: boolean;
+    apiKeyConfigured: boolean;
+    endpoint: string;
+    endpointConfigured: boolean;
+    fallbackReason: string | null;
+    sdk: string;
+  }>;
+}
+
 export function providerStatus() {
   const openai = openaiProviderReadiness();
   const exaConfigured = hasExaKey();
   const memory = memoryProviderReadiness();
+  const sponsors = sponsorProviderReadiness();
   return {
     openai: {
       configured: openai.configured,
@@ -151,6 +229,7 @@ export function providerStatus() {
       fallbackReason: memory.fallbackReason,
       sdk: "mem0ai",
     },
+    sponsors,
     assistant: {
       configured: true,
       provider: openai.configured ? "openai-agents" : "local-fallback",
