@@ -20,6 +20,7 @@ import type { IconName } from "@/components/ui/icons";
 import type { ReactNode } from "react";
 import { CloseMemoryPanel } from "@/components/close-memory-panel";
 import { ErpCloseExportActions } from "@/components/erp-close-actions";
+import { SponsorIntelligencePanel } from "@/components/sponsor-intelligence-panel";
 import { state } from "@/lib/backend/state";
 import { memoryProviderReadiness } from "@/lib/backend/provider-config";
 import { fmtDate, fmtDateTime, money, relativeTo, shortId } from "@/lib/format";
@@ -960,6 +961,7 @@ export default function ErpClosePage() {
             initialBills={closeMemoryBills}
             memoryConfigured={memoryReadiness.configured}
           />
+          <SponsorIntelligencePanel clientId={activeClient.id} closePeriod={activeClient.closePeriod} />
           <SubmissionGate />
           <Card>
             <CardHeader title="Close blockers" subtitle="Current command summary" icon="alert" />

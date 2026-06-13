@@ -38,6 +38,8 @@ Expected hosted output:
 
 If the output says `"source": "local"`, the live app still works, but do not pitch it as the Mem0-hosted path.
 
+For the **Sponsored Product Usage** version, add any sponsor keys you have to `.env.local`. See `docs/sponsor-integration-plan.md` for the full list. The demo still runs without them, but sponsor cards will show **Fallback** instead of **Live**.
+
 ---
 
 ## Act 1 — Sign in
@@ -109,10 +111,20 @@ If the output says `"source": "local"`, the live app still works, but do not pit
    - Confidence score
 6. Click **Apply suggested coding** and explain what changed: Kira PATCHes the Bill Record with the remembered ERP mapping, so the accountant does not re-key vendor, AP, expense, tax, cost centre, or LHDN classification fields.
 7. Say the product line: **"Kira is not just extracting this invoice. It remembers how this client closes this supplier month after month."**
-8. Click **Evidence pack** → returns a file ref (the LHDN support bundle).
-9. Click **Export Ready Bills** → **"Exported 2; blocked 0."**
-10. For write-back proof, approve or export a ready bill, then recall that same supplier again and point out the new approval/export memory. If running short on time, say this is the second half of the loop and keep the live demo focused on recall + apply.
-11. (Optional) Back to **`/audit`** → see `close_book.evidence_pack` and `export.completed` entries.
+8. In **Close Intelligence**, run each sponsor card. Call out **Live** when a sponsor key is configured; **Fallback** means Kira kept the workflow demo-safe.
+9. Sponsor narration:
+   - Bright Data gathers supplier web evidence.
+   - Kimi AI reasons over close blockers.
+   - TokenRouter routes model work.
+   - SenseNova U1 analyzes close-pack documents.
+   - VideoDB searches receiving or approval video evidence.
+   - Daytona validates the ERP export in a sandbox.
+   - Nosana runs duplicate/anomaly scan workloads.
+   - Terminal 3 verifies agent identity before close actions.
+10. Click **Evidence pack** → returns a file ref (the LHDN support bundle).
+11. Click **Export Ready Bills** → **"Exported 2; blocked 0."**
+12. For write-back proof, approve or export a ready bill, then recall that same supplier again and point out the new approval/export memory. If running short on time, say this is the second half of the loop and keep the live demo focused on recall + apply.
+13. (Optional) Back to **`/audit`** → see `close_book.evidence_pack` and `export.completed` entries.
 
 *Line: "Month one teaches Kira. Month two closes faster because Kira remembers the supplier coding, exception resolution, and approval history."*
 
@@ -149,4 +161,4 @@ If Next starts on another port, replace `localhost:3000` in the curl commands wi
 | 4 Reconcile | `/transactions` | (read) |
 | 5 E-invoice | `/compliance` | (read) |
 | 6 LHDN submit | `/approvals` | Approve apr_01 |
-| 7 ERP + Mem0 finale | `/erp-close` | Recall context → Apply suggested coding → Evidence pack → Export Ready Bills |
+| 7 ERP + sponsor finale | `/erp-close` | Recall context → Apply suggested coding → Run Close Intelligence → Evidence pack → Export Ready Bills |
