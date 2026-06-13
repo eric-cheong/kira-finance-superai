@@ -2,7 +2,7 @@
 
 **One invoice captured live → its trail across workflows → bank-statement reconciliation → prepared submission to ERP + LHDN.**
 
-Runs fully offline on seeded mock data. No API keys needed.
+Runs fully offline on seeded mock data. For the Mem0 prize moment, set `MEM0_API_KEY` so Close Memory shows real hosted Mem0 recall; without it, the same flow runs on the local fallback.
 
 - **URL:** http://localhost:3000
 - **Login:** username `123` / password `123`
@@ -14,6 +14,29 @@ Runs fully offline on seeded mock data. No API keys needed.
 
 ## Before you start (already done, but to re-prime — see "Reset" at bottom)
 The dev server is running and state is primed: bill `bill_1003` is pre-approved so two bills are export-ready. The one-shot live actions below (capture, the apr_01 approval) are fresh.
+
+For the **Mem0 Prize** version, also make sure `.env.local` has:
+
+```bash
+MEM0_API_KEY=your_mem0_platform_api_key
+```
+
+Then seed close memory:
+
+```bash
+npm run seed:mem0
+```
+
+Expected hosted output:
+
+```json
+{
+  "written": 7,
+  "source": "mem0"
+}
+```
+
+If the output says `"source": "local"`, the live app still works, but do not pitch it as the Mem0-hosted path.
 
 ---
 
@@ -67,7 +90,7 @@ The dev server is running and state is primed: bill `bill_1003` is pre-approved 
 
 *Line: "Money-touching and regulator submissions require an explicit human tier-3 approval. That approval is captured in the audit chain."*
 
-## Act 7 — ERP close & prepared submission (FINALE)
+## Act 7 — ERP close, Close Memory & prepared submission (FINALE)
 1. Go to **`/erp-close`** (this is for the accounting-firm close-book view; active client **Laman Grocer**, period **2026-05**).
 2. Tour the workflow:
    - **Exception-first queue** — blocked bills with exact blockers: FreshCrate (new supplier + missing tax ID), CoolTech (duplicate risk), Unknown Supplier (unreadable scan). These are the **never-export guard**.
@@ -75,12 +98,21 @@ The dev server is running and state is primed: bill `bill_1003` is pre-approved 
    - **Supplier statement tie-out** — Meta ads variance RM0.
    - **Submission gate** — ERP batch `AP-2026-05`, LHDN package status, "2 ready".
 3. In **Close Memory**, select **Beras Murni Trading · bill_1001** and click **Recall context**.
-4. Point out **Powered by Mem0** when `MEM0_API_KEY` is set, or **Local memory** when running offline. The recalled memory shows the prior coding: expense `5010`, tax `SST-EX`, cost centre `LG-KL`.
-5. Click **Apply suggested coding** to show Kira can reuse last-close context without asking the user to re-key repetitive ERP mapping.
-6. Click **Evidence pack** → returns a file ref (the LHDN support bundle).
-7. Click **Export Ready Bills** → **"Exported 2; blocked 0."**
-8. Click **Recall context** again after approval/export to show the new close decision has been written back for the next month.
-9. (Optional) Back to **`/audit`** → see `close_book.evidence_pack` and `export.completed` entries.
+4. Point out the source badge:
+   - **Powered by Mem0** = hosted Mem0 is being used.
+   - **Local memory** = fallback mode; useful for safety, not the prize proof.
+5. Point out the recalled close decision:
+   - Expense account `5010`
+   - Tax code `SST-EX`
+   - Cost centre `LG-KL`
+   - Approver history
+   - Confidence score
+6. Click **Apply suggested coding** and explain what changed: Kira PATCHes the Bill Record with the remembered ERP mapping, so the accountant does not re-key vendor, AP, expense, tax, cost centre, or LHDN classification fields.
+7. Say the product line: **"Kira is not just extracting this invoice. It remembers how this client closes this supplier month after month."**
+8. Click **Evidence pack** → returns a file ref (the LHDN support bundle).
+9. Click **Export Ready Bills** → **"Exported 2; blocked 0."**
+10. For write-back proof, approve or export a ready bill, then recall that same supplier again and point out the new approval/export memory. If running short on time, say this is the second half of the loop and keep the live demo focused on recall + apply.
+11. (Optional) Back to **`/audit`** → see `close_book.evidence_pack` and `export.completed` entries.
 
 *Line: "Month one teaches Kira. Month two closes faster because Kira remembers the supplier coding, exception resolution, and approval history."*
 
@@ -92,8 +124,11 @@ The live actions (Act 2 capture, Act 6 approval) are one-shot per state. To get 
 ```bash
 # from repo root
 rm -f .kira-data/state.json
+rm -f .kira-data/close-memory.json
 # restart the dev server (Ctrl-C the running one, then:)
 npm run dev
+# seed Close Memory; source should be "mem0" when MEM0_API_KEY is configured
+npm run seed:mem0
 # wait for http://localhost:3000/api/health to return 200, then re-prime:
 curl -s -c /tmp/kira.txt -X POST localhost:3000/api/auth/login \
   -H 'Content-Type: application/json' -d '{"login":"123","password":"123"}'
@@ -102,6 +137,8 @@ curl -s -b /tmp/kira.txt -X POST localhost:3000/api/erp-close/bills/bill_1003/ap
 ```
 
 That re-approves `bill_1003` so Act 7 shows two export-ready bills again. (`bill_1002` is approved in the seed; `bill_1003` needs this one approval.)
+
+If Next starts on another port, replace `localhost:3000` in the curl commands with the port printed by `npm run dev`.
 
 ## Cheat sheet
 | Act | URL | You click |
@@ -112,4 +149,4 @@ That re-approves `bill_1003` so Act 7 shows two export-ready bills again. (`bill
 | 4 Reconcile | `/transactions` | (read) |
 | 5 E-invoice | `/compliance` | (read) |
 | 6 LHDN submit | `/approvals` | Approve apr_01 |
-| 7 ERP finale | `/erp-close` | Evidence pack → Export Ready Bills |
+| 7 ERP + Mem0 finale | `/erp-close` | Recall context → Apply suggested coding → Evidence pack → Export Ready Bills |
