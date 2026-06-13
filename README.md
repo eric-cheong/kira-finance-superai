@@ -1,21 +1,48 @@
-# Kira · Agentic Accounting
+# Kira · AI Close-Book Operator
 
-An **agentic accounting platform** for Malaysia + Singapore SMEs. Kira
-benchmarks the workflows that decide cash, margin, growth, and customer
-experience, then runs approval-gated workflows across existing systems. For
-finance workflows, Kira **orchestrates and records — it never settles.** It sits
-entirely above the regulated financial perimeter: no holding, moving, or storing
-customer money, no e-money or card issuing, no placing trades. The license-free
-wedge is native **GST/SST automation + e-invoicing compliance** (LHDN MyInvois +
-Peppol/InvoiceNow) with an embedded **multi-agent intelligence layer**.
+Kira is an **agentic accounting platform for Malaysia + Singapore SMEs**. It
+helps accountants close the books by capturing invoices, enforcing human review
+on risky fields, reconciling bank evidence, preparing LHDN MyInvois / Peppol
+submissions, exporting ERP-ready records, and preserving an audit trail.
 
-This repository is a runnable Next.js reference implementation of that product:
-the screens, the data model, realistic SG/MY SME seed data, and a working
-multi-agent orchestration engine. It is **offline-first** with optional live
-OpenAI + Exa provider seams: without keys it stays deterministic, and with keys
-it can run read-only OpenAI Agents / Exa consumer research for trip quotes and
-reviews, and an in-app Kira AI bot can understand user requests against the
-local knowledge base.
+For finance workflows, Kira **orchestrates and records — it never settles.** It
+stays above the regulated financial perimeter: no holding, moving, or storing
+customer money, no e-money or card issuing, and no placing trades.
+
+This repository is a runnable Next.js MVP with realistic SG/MY SME seed data,
+offline-first state in `.kira-data/`, a working multi-agent orchestration
+engine, Mem0-powered close memory, and sponsored infrastructure integrations for
+the hackathon demo.
+
+## Hackathon build
+
+This build focuses on one judge-friendly workflow: **month-end ERP close**.
+Kira shows why memory and agent infrastructure matter in a real accounting pain:
+the same suppliers, exceptions, coding choices, and approvers repeat every
+month.
+
+**Close Memory, powered by Mem0:** Kira remembers how each client closes each
+supplier: expense account, tax code, cost centre, LHDN classification, resolved
+exceptions, and approval history. On the next close, the accountant clicks
+**Recall context**, sees the remembered decisions with confidence scores, and
+applies the suggested ERP mapping instead of re-keying the same fields.
+
+**Close Intelligence, powered by sponsors:** Kira uses sponsored provider seams
+to gather supplier evidence, reason over blockers, validate export safety,
+search operational video context, run heavy anomaly scans, and verify agent
+authority before close actions. Every sponsor integration has a deterministic
+fallback so the MVP is complete and demoable even when a key is missing.
+
+| Sponsor | Kira use in this build |
+|---|---|
+| Mem0 | Month-over-month close memory for supplier coding, exception resolution, and approver history. |
+| Bright Data | Live supplier and regulatory web evidence for vendor checks. |
+| Kimi AI | Long-context reasoning over close blockers and audit history. |
+| TokenRouter | Routed model calls and cache-aware model selection for cost/performance. |
+| VideoDB | Searchable receiving, walkthrough, or approval video evidence. |
+| Daytona | Isolated sandbox validation for ERP export packages. |
+| Nosana | Heavy duplicate, anomaly, and extraction workload scans. |
+| Terminal 3 | Verifiable agent identity before approval-gated close actions. |
 
 ## Quick start
 
@@ -26,7 +53,20 @@ npm run dev      # http://localhost:3000
 
 Other scripts: `npm run build`, `npm start`, `npm run typecheck`.
 
-Optional live providers:
+Seed Mem0 close memories before the Mem0 demo:
+
+```bash
+npm run seed:mem0
+```
+
+Core demo login:
+
+```text
+username: 123
+password: 123
+```
+
+Optional live providers in `.env.local`:
 
 ```bash
 AI_GATEWAY_API_KEY=...        # enables Vercel AI SDK / AI Gateway booking research
@@ -35,7 +75,57 @@ OPENAI_API_KEY=...      # enables OpenAI Responses + Agents SDK flows
 OPENAI_MODEL=gpt-5.5   # optional override
 EXA_API_KEY=...         # enables live Exa consumer search for trips/reviews
 OPENAI_REALTIME_MODEL=gpt-realtime-2  # optional voice-session override
+
+MEM0_API_KEY=...        # enables hosted Mem0 Close Memory
+MEM0_ORG_ID=...         # optional Mem0 org scope
+MEM0_PROJECT_ID=...     # optional Mem0 project scope
+
+BRIGHT_DATA_API_KEY=...
+BRIGHT_DATA_ENDPOINT=https://api.brightdata.com/request
+BRIGHT_DATA_TARGET_URL=https://www.hasil.gov.my/en/e-invoice/
+
+KIMI_API_KEY=...
+KIMI_BASE_URL=https://api.moonshot.ai/v1
+KIMI_MODEL=kimi-k2.6
+
+TOKENROUTER_API_KEY=...
+TOKENROUTER_BASE_URL=https://api.tokenrouter.ai/v1
+TOKENROUTER_MODEL=auto
+
+VIDEODB_API_KEY=...
+VIDEODB_BASE_URL=https://api.videodb.io
+
+DAYTONA_API_KEY=...
+DAYTONA_BASE_URL=https://app.daytona.io/api
+
+NOSANA_API_KEY=...
+NOSANA_BASE_URL=https://api.nosana.io
+
+TERMINAL3_API_KEY=...
+TERMINAL3_BASE_URL=https://api.terminal3.io
 ```
+
+Do not commit `.env.local`. If a provider key is missing, Kira uses a local
+fallback and labels the result as fallback in the UI.
+
+## Two-minute demo path
+
+1. Sign in at `/login` with `123` / `123`.
+2. Go to `/capture`, forward an invoice, review the low-confidence coding field,
+   and post it.
+3. Go to `/audit` and show the hash-chained trail for extraction, review, and
+   posting.
+4. Go to `/transactions` and show read-only bank reconciliation evidence.
+5. Go to `/compliance` and show the LHDN MyInvois queue plus approval-gated
+   submission.
+6. Go to `/erp-close`, select a supplier in **Close Memory**, click **Recall
+   context**, then **Apply suggested coding** to fill the ERP mapping.
+7. In **Close Intelligence**, run sponsor cards and call out `Live` provider
+   badges where keys are configured.
+8. Export ready bills and end on the product line: month one teaches Kira; month
+   two closes faster because Kira remembers.
+
+See [DEMO.md](DEMO.md) for the full runbook and reset commands.
 
 ## What's in here
 
