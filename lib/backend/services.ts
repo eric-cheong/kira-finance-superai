@@ -442,7 +442,7 @@ export function postCapture(id: string) {
     throw new ApiError(409, "REVIEW_REQUIRED", "Low-confidence capture must be reviewed before posting.");
   }
   const existing = state.records.find((record) => record.sourceReceiptId === receipt.id);
-  if (existing) return { receipt, record: existing };
+  if (existing) return { receipt, record: existing, ...ensureCaptureBridge(receipt) };
   ensureAccount(receipt.suggestedAccount);
   ensureTaxCode(receipt.suggestedTaxCode);
   if (receipt.suggestedCostCentre) ensureCostCentre(receipt.suggestedCostCentre);
@@ -469,7 +469,176 @@ export function postCapture(id: string) {
     detail: `Posted record from ${receipt.id}. This is record-keeping only; no payment or settlement occurred.`,
     tier: 1,
   });
-  return { receipt, record };
+  return { receipt, record, ...ensureCaptureBridge(receipt) };
+}
+
+/**
+ * Bridges a posted capture into the downstream workflows so a single invoice can
+ * travel Capture → Transactions (bank match) → AP Close → Approval → export.
+ * Idempotent: returns the already-bridged objects if they exist.
+ */
+function ensureCaptureBridge(receipt: Receipt): {
+  transaction: TransactionEvent;
+  match: Match;
+  closeBookBill: VerifiedBillRecord;
+} {
+  const existingMatch = state.matches.find((item) => item.receiptId === receipt.id);
+  const existingTxn = existingMatch
+    ? state.transactions.find((item) => item.id === existingMatch.transactionId)
+    : undefined;
+  const existingBill = state.closeBookRecords.find(
+    (item) => item.invoiceNumber === receipt.docNo && item.supplierName === receipt.supplier,
+  );
+  if (existingMatch && existingTxn && existingBill) {
+    return { transaction: existingTxn, match: existingMatch, closeBookBill: existingBill };
+  }
+
+  const now = new Date().toISOString();
+
+  const transaction: TransactionEvent = {
+    id: nextId("txn", state.transactions),
+    occurredAt: receipt.docDate,
+    importedAt: now,
+    description: receipt.supplier.toUpperCase(),
+    merchant: receipt.supplier,
+    amountMinor: receipt.totalMinor,
+    currency: receipt.currency,
+    source: "card",
+    sourceRef: "Maybank Biz •• 4417",
+    cardLast4: "4417",
+    status: "needs_review",
+  };
+  state.transactions.unshift(transaction);
+
+  const match: Match = {
+    id: nextId("mat", state.matches),
+    transactionId: transaction.id,
+    receiptId: receipt.id,
+    score: receipt.ocrConfidence,
+    basis: ["amount=exact", "date=0d", "merchant~0.96"],
+    state: "suggested",
+  };
+  state.matches.unshift(match);
+
+  const conf = receipt.ocrConfidence;
+  const closeBookBill: VerifiedBillRecord = {
+    id: nextId("bill", state.closeBookRecords),
+    clientId: "client_laman",
+    status: "needs_review",
+    intake: {
+      id: `intake_${receipt.id}`,
+      channel: receipt.capturedVia === "email" ? "email" : "upload",
+      kind: "invoice",
+      receivedAt: now,
+      from: receipt.capturedVia === "email" ? "inbox@kiraroasters.kira.my" : "client portal upload",
+      filename: `${receipt.docNo ?? receipt.id}.pdf`,
+      storageRef: `local://captures/${receipt.id}.pdf`,
+    },
+    invoiceNumber: receipt.docNo,
+    invoiceDate: receipt.docDate,
+    supplierName: receipt.supplier,
+    supplierTin: `C${String(Math.abs(hashToNumber(receipt.id))).padStart(11, "0").slice(0, 11)}`,
+    subtotalMinor: receipt.totalMinor - receipt.taxMinor,
+    taxMinor: receipt.taxMinor,
+    totalMinor: receipt.totalMinor,
+    currency: receipt.currency,
+    taxTreatment: taxTreatmentFromCode(receipt.suggestedTaxCode),
+    duplicateResolved: true,
+    lines: receipt.lineItems.map((line) => ({
+      description: line.label,
+      quantity: 1,
+      unitAmountMinor: line.amountMinor,
+      netAmountMinor: line.amountMinor,
+      taxAmountMinor: 0,
+      accountCode: receipt.suggestedAccount,
+      costCentre: receipt.suggestedCostCentre,
+      taxCode: receipt.suggestedTaxCode,
+    })),
+    confidence: {
+      supplier: conf,
+      invoiceNumber: conf,
+      invoiceDate: conf,
+      total: conf,
+      currency: conf,
+      taxTreatment: conf,
+      bankMatch: conf,
+    },
+    exceptions: [],
+    bankMatch: {
+      state: "matched",
+      bank: "Maybank",
+      accountRef: "Maybank Biz •• 4417",
+      transactionRef: transaction.id,
+      paidAt: transaction.occurredAt,
+      amountMinor: receipt.totalMinor,
+      currency: receipt.currency,
+      score: conf,
+      basis: ["amount=exact", "supplier exact", "captured invoice bridged to bank line"],
+    },
+    approval: {
+      state: "pending",
+      requestedBy: "Kira Close Agent",
+      requestedAt: now,
+      note: "Captured invoice bridged from the Capture workflow; awaiting export approval.",
+    },
+    erpMapping: {
+      destination: "AutoCount",
+      vendorId: `AC-CAP-${receipt.id}`,
+      apAccountCode: "2100",
+      expenseAccountCode: receipt.suggestedAccount ?? "5010",
+      taxCode: receipt.suggestedTaxCode ?? "OUT",
+      costCentre: receipt.suggestedCostCentre,
+      lhdnClassificationCode: "022",
+    },
+    auditTrail: [
+      {
+        id: confirmationRef(`${receipt.id}|intake`),
+        at: now,
+        actor: "Capture Bridge",
+        action: "intake.received",
+        detail: `Captured invoice ${receipt.docNo ?? receipt.id} bridged into AP Close from the Capture workflow.`,
+      },
+      {
+        id: confirmationRef(`${receipt.id}|ocr`),
+        at: now,
+        actor: "Extraction Agent",
+        action: "ocr.extracted",
+        detail: `Carried OCR fields and ${conf}% confidence across from Capture; bank line bridged for review.`,
+      },
+    ],
+  };
+  state.closeBookRecords.unshift(closeBookBill);
+
+  appendAudit({
+    actor: "Capture Bridge",
+    action: "capture.bridge",
+    target: closeBookBill.id,
+    detail: `Bridged ${receipt.id} into bank match ${match.id} and AP Close bill ${closeBookBill.id}. Record-keeping only; no money moved.`,
+    tier: 1,
+  });
+
+  return { transaction, match, closeBookBill };
+}
+
+function taxTreatmentFromCode(code?: string): VerifiedBillRecord["taxTreatment"] {
+  switch (code) {
+    case "SST-S8":
+      return "sst_8_service";
+    case "SST-EX":
+      return "sst_exempt";
+    case "SST-IMP":
+      return "imported_taxable_service";
+    default:
+      return "out_of_scope";
+  }
+}
+
+function hashToNumber(seed: string): number {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i += 1) {
+    hash = (hash * 31 + seed.charCodeAt(i)) | 0;
+  }
+  return hash;
 }
 
 export function listBookings() {

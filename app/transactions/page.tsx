@@ -15,8 +15,19 @@ import {
   Th,
 } from "@/components/ui";
 import { Thumb } from "@/components/thumb";
+import { TransactionMatchActions } from "@/components/transaction-match-actions";
+import { state as runtime } from "@/lib/backend/state";
 
 export const metadata = { title: "Transactions · Kira" };
+export const dynamic = "force-dynamic";
+
+/** Close-book bill bridged from the same captured invoice, if any (for the AP Close hand-off). */
+function bridgedBillId(rcp?: { docNo?: string; supplier: string }): string | undefined {
+  if (!rcp) return undefined;
+  return runtime.closeBookRecords.find(
+    (bill) => bill.invoiceNumber === rcp.docNo && bill.supplierName === rcp.supplier,
+  )?.id;
+}
 
 const STATUS_DOT: Record<TransactionEvent["status"], string> = {
   matched: "bg-brand/55",
@@ -81,14 +92,19 @@ function TransactionMobileCard({ t, duplicate }: { t: TransactionEvent; duplicat
         </div>
       </div>
       <div className="mt-3 rounded-lg border border-border bg-surface-2/45 px-3 py-2.5">
-        {rcp ? (
-          <div className="flex items-center gap-2">
-            <Thumb hint={rcp.thumbHint} size={28} />
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-[12.5px] font-medium text-ink">{rcp.supplier}</div>
-              <div className="text-[12px] text-muted">Receipt match</div>
+        {rcp && match ? (
+          <div className="space-y-2.5">
+            <div className="flex items-center gap-2">
+              <Thumb hint={rcp.thumbHint} size={28} />
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-[12.5px] font-medium text-ink">{rcp.supplier}</div>
+                <div className="text-[12px] text-muted">Receipt match</div>
+              </div>
+              <Badge variant={match.score >= 90 ? "pos" : "warn"}>{match.score}%</Badge>
             </div>
-            <Badge variant={match!.score >= 90 ? "pos" : "warn"}>{match!.score}%</Badge>
+            {(match.state !== "confirmed" || bridgedBillId(rcp)) && (
+              <TransactionMatchActions matchId={match.id} state={match.state} billId={bridgedBillId(rcp)} />
+            )}
           </div>
         ) : (
           <div className="flex items-center gap-2 text-[12px] text-muted">
@@ -223,7 +239,8 @@ export default function TransactionsPage() {
                 return (
                   <tr
                     key={t.id}
-                    className="transition hover:bg-surface-2/40"
+                    id={t.id}
+                    className="scroll-mt-24 transition target:bg-brand-soft target:ring-4 target:ring-inset target:ring-brand/15 hover:bg-surface-2/40"
                     data-finance-row
                     data-row-id={t.id}
                     data-search={search}
@@ -259,12 +276,17 @@ export default function TransactionsPage() {
                       )}
                     </Td>
                     <Td>
-                      {rcp ? (
-                        <span className="inline-flex items-center gap-2">
-                          <Thumb hint={rcp.thumbHint} size={26} />
-                          <span className="text-[12px] text-ink-2">{rcp.supplier.split(" ")[0]}</span>
-                          <Badge variant={match!.score >= 90 ? "pos" : "warn"}>{match!.score}%</Badge>
-                        </span>
+                      {rcp && match ? (
+                        <div className="space-y-2">
+                          <span className="inline-flex items-center gap-2">
+                            <Thumb hint={rcp.thumbHint} size={26} />
+                            <span className="text-[12px] text-ink-2">{rcp.supplier.split(" ")[0]}</span>
+                            <Badge variant={match.score >= 90 ? "pos" : "warn"}>{match.score}%</Badge>
+                          </span>
+                          {(match.state !== "confirmed" || bridgedBillId(rcp)) && (
+                            <TransactionMatchActions matchId={match.id} state={match.state} billId={bridgedBillId(rcp)} />
+                          )}
+                        </div>
                       ) : (
                         <span className="text-[12px] text-faint">— no receipt</span>
                       )}

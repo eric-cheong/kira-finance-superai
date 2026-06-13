@@ -19,6 +19,7 @@ import {
 import type { IconName } from "@/components/ui/icons";
 import type { ReactNode } from "react";
 import { ErpCloseExportActions } from "@/components/erp-close-actions";
+import { ErpCloseApprove } from "@/components/erp-close-approve";
 import { state } from "@/lib/backend/state";
 import { fmtDate, fmtDateTime, money, relativeTo, shortId } from "@/lib/format";
 import {
@@ -501,6 +502,12 @@ function BillRegister() {
                     <p className="text-[12px] leading-relaxed text-muted">{blockers[0]?.message}</p>
                   </div>
                 )}
+                {record.status !== "exported" &&
+                  record.approval.state !== "approved" &&
+                  blockers.length > 0 &&
+                  blockers.every((blocker) => blocker.code === "approval_required") && (
+                    <ErpCloseApprove billId={record.id} />
+                  )}
               </div>
             </Card>
           );
@@ -541,7 +548,8 @@ function BillRegister() {
               return (
                 <tr
                   key={record.id}
-                  className="transition hover:bg-surface-2/40"
+                  id={record.id}
+                  className="scroll-mt-24 transition target:bg-brand-soft target:ring-4 target:ring-inset target:ring-brand/15 hover:bg-surface-2/40"
                   data-finance-row
                   data-row-id={record.id}
                   data-search={search}
@@ -590,6 +598,12 @@ function BillRegister() {
                     <div className="mt-1 max-w-[220px] truncate text-[12px] text-muted">
                       {blockers[0]?.message ?? `${record.erpMapping?.destination ?? client?.erp} ready`}
                     </div>
+                    {record.status !== "exported" &&
+                      record.approval.state !== "approved" &&
+                      blockers.length > 0 &&
+                      blockers.every((blocker) => blocker.code === "approval_required") && (
+                        <ErpCloseApprove billId={record.id} />
+                      )}
                   </Td>
                   <Td className="whitespace-nowrap text-right">
                     <Amount className="font-semibold text-ink">{formatBillAmount(record)}</Amount>

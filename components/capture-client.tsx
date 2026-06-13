@@ -30,6 +30,7 @@ export function CaptureBox() {
   const [reviewed, setReviewed] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [bridge, setBridge] = useState<{ matchId?: string; transactionId?: string; billId?: string }>({});
   const reviewThreshold = draft?.reviewThreshold ?? 85;
   const needsReview = draft?.needsReview ?? false;
   const canPost = Boolean(draft) && (!needsReview || reviewed);
@@ -100,6 +101,11 @@ export function CaptureBox() {
         throw new Error(payload.error?.message ?? "Post failed.");
       }
       setDraft((current) => (current ? { ...current, receipt: payload.data.receipt, needsReview: false } : current));
+      setBridge({
+        matchId: payload.data.match?.id,
+        transactionId: payload.data.transaction?.id,
+        billId: payload.data.closeBookBill?.id,
+      });
       setStage("confirmed");
       router.refresh();
     } catch (err) {
@@ -114,6 +120,7 @@ export function CaptureBox() {
     setDraft(null);
     setError("");
     setStage("idle");
+    setBridge({});
   }
 
   return (
@@ -199,13 +206,35 @@ export function CaptureBox() {
               </Button>
             </div>
           ) : (
-            <div className="mt-4 flex flex-col items-start gap-2 rounded-lg border border-pos-fg/20 bg-pos-bg px-3.5 py-3 sm:flex-row sm:items-center sm:justify-between">
-              <span className="flex items-center gap-2 text-[13px] font-medium text-ink">
-                <Icon name="check" size={16} className="shrink-0 text-pos-fg" /> Posted to record store · queued for auto-match
-              </span>
-              <Button className="w-full sm:w-auto" variant="ghost" size="sm" onClick={reset}>
-                capture another
-              </Button>
+            <div className="mt-4 space-y-3 rounded-lg border border-pos-fg/20 bg-pos-bg px-3.5 py-3">
+              <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <span className="flex items-center gap-2 text-[13px] font-medium text-ink">
+                  <Icon name="check" size={16} className="shrink-0 text-pos-fg" /> Posted to record store · bridged to bank match and AP Close
+                </span>
+                <Button className="w-full sm:w-auto" variant="ghost" size="sm" onClick={reset}>
+                  capture another
+                </Button>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <Button
+                  className="w-full sm:w-auto"
+                  variant="primary"
+                  size="sm"
+                  icon="check"
+                  href={bridge.transactionId ? `/transactions#${bridge.transactionId}` : "/transactions"}
+                >
+                  Review bank match
+                </Button>
+                <Button
+                  className="w-full sm:w-auto"
+                  variant="outline"
+                  size="sm"
+                  icon="lock"
+                  href={bridge.billId ? `/erp-close#${bridge.billId}` : "/erp-close"}
+                >
+                  Open in AP Close
+                </Button>
+              </div>
             </div>
           )}
           {error && (
