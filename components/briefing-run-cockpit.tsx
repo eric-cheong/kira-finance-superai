@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import type { BriefingRunState } from "@/lib/backend/state";
 import { Badge, Button, Card, CardHeader } from "@/components/ui";
+import { fmtDateTime } from "@/lib/format";
 
 const TOOL_ACTIVITY = [
   { label: "ledger.scan", detail: "transactions + receipts", state: "complete" },
@@ -173,7 +174,7 @@ export function BriefingRunCockpit({
           <p className="mt-2 text-[12px] leading-relaxed text-muted">
             {draftChanged
               ? "Save the edited plan before resuming the run."
-              : `Last control update: ${new Date(runControl.updatedAt).toLocaleString()}.`}
+              : `Last control update: ${fmtDateTime(runControl.updatedAt)} MYT.`}
           </p>
           {error && (
             <p className="mt-2 rounded-lg border border-crit-fg/20 bg-crit-bg px-3 py-2 text-[12px] leading-relaxed text-ink">

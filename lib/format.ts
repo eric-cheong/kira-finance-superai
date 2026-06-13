@@ -8,6 +8,7 @@ const CURRENCY_LOCALE: Record<CurrencyCode, string> = {
   SGD: "en-SG",
   USD: "en-US",
 };
+const DISPLAY_TIME_ZONE = "Asia/Kuala_Lumpur";
 
 /** Format integer minor units as a currency string, e.g. 125050 -> "RM 1,250.50". */
 export function money(
@@ -45,6 +46,7 @@ export function percent(value: number, decimals = 1): string {
 export function fmtDate(iso: string): string {
   const d = new Date(iso);
   return new Intl.DateTimeFormat("en-GB", {
+    timeZone: DISPLAY_TIME_ZONE,
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -54,6 +56,7 @@ export function fmtDate(iso: string): string {
 export function fmtDateShort(iso: string): string {
   const d = new Date(iso);
   return new Intl.DateTimeFormat("en-GB", {
+    timeZone: DISPLAY_TIME_ZONE,
     day: "2-digit",
     month: "short",
   }).format(d);
@@ -62,6 +65,7 @@ export function fmtDateShort(iso: string): string {
 export function fmtTime(iso: string): string {
   const d = new Date(iso);
   return new Intl.DateTimeFormat("en-GB", {
+    timeZone: DISPLAY_TIME_ZONE,
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
