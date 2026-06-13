@@ -21,6 +21,7 @@ Every integration has a live-call seam and deterministic fallback. The fallback 
 ```bash
 BRIGHT_DATA_API_KEY=
 BRIGHT_DATA_ENDPOINT=https://api.brightdata.com/request
+BRIGHT_DATA_ZONE=your_web_unlocker_zone_name
 BRIGHT_DATA_TARGET_URL=https://www.hasil.gov.my/en/e-invoice/
 
 KIMI_API_KEY=
@@ -29,7 +30,7 @@ KIMI_MODEL=kimi-k2.6
 
 TOKENROUTER_API_KEY=
 TOKENROUTER_BASE_URL=https://api.tokenrouter.ai/v1
-TOKENROUTER_MODEL=auto
+TOKENROUTER_MODEL=openai/gpt-5.4-nano
 
 VIDEODB_API_KEY=
 VIDEODB_BASE_URL=https://api.videodb.io
@@ -44,7 +45,7 @@ TERMINAL3_API_KEY=
 TERMINAL3_BASE_URL=https://api.terminal3.io
 ```
 
-If a sponsor gives a different endpoint in their dashboard, use that value. Do not commit `.env.local`.
+If a sponsor gives a different endpoint in their dashboard, use that value. Bright Data also needs an active Web Unlocker zone; set `BRIGHT_DATA_ZONE` to the exact zone name from the Bright Data dashboard. Do not commit `.env.local`.
 
 ## Demo Flow
 

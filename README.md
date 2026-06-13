@@ -82,6 +82,7 @@ MEM0_PROJECT_ID=...     # optional Mem0 project scope
 
 BRIGHT_DATA_API_KEY=...
 BRIGHT_DATA_ENDPOINT=https://api.brightdata.com/request
+BRIGHT_DATA_ZONE=your_web_unlocker_zone_name
 BRIGHT_DATA_TARGET_URL=https://www.hasil.gov.my/en/e-invoice/
 
 KIMI_API_KEY=...
@@ -90,7 +91,7 @@ KIMI_MODEL=kimi-k2.6
 
 TOKENROUTER_API_KEY=...
 TOKENROUTER_BASE_URL=https://api.tokenrouter.ai/v1
-TOKENROUTER_MODEL=auto
+TOKENROUTER_MODEL=openai/gpt-5.4-nano
 
 VIDEODB_API_KEY=...
 VIDEODB_BASE_URL=https://api.videodb.io

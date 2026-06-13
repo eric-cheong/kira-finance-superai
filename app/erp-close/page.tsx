@@ -871,6 +871,13 @@ export default function ErpClosePage() {
         query: `${supplierName} ${record.erpMapping?.taxCode ?? ""} ${record.erpMapping?.expenseAccountCode ?? ""} ${record.erpMapping?.costCentre ?? ""} ${client?.closePeriod ?? ""}`,
       };
     });
+  const closeIntelligenceSuppliers = Array.from(
+    new Map(closeMemoryBills.map((bill) => [bill.supplierId ?? bill.supplierName, {
+      supplierId: bill.supplierId,
+      supplierName: bill.supplierName,
+      query: bill.query,
+    }])).values(),
+  );
   const memoryReadiness = memoryProviderReadiness();
 
   return (
@@ -961,7 +968,11 @@ export default function ErpClosePage() {
             initialBills={closeMemoryBills}
             memoryConfigured={memoryReadiness.configured}
           />
-          <SponsorIntelligencePanel clientId={activeClient.id} closePeriod={activeClient.closePeriod} />
+          <SponsorIntelligencePanel
+            clientId={activeClient.id}
+            closePeriod={activeClient.closePeriod}
+            suppliers={closeIntelligenceSuppliers}
+          />
           <SubmissionGate />
           <Card>
             <CardHeader title="Close blockers" subtitle="Current command summary" icon="alert" />
