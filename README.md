@@ -11,8 +11,9 @@ customer money, no e-money or card issuing, and no placing trades.
 
 This repository is a runnable Next.js MVP with realistic SG/MY SME seed data,
 offline-first state in `.kira-data/`, a working multi-agent orchestration
-engine, Mem0-powered close memory, and sponsored infrastructure integrations for
-the hackathon demo.
+engine, Mem0-powered close memory, and — for the **Agnes AI Hackathon @ SMU** —
+the entire AI layer runs on **Agnes AI's omni-modal API**: text, vision, image,
+and video, all from one OpenAI-compatible provider.
 
 ## Hackathon build
 
@@ -27,22 +28,22 @@ exceptions, and approval history. On the next close, the accountant clicks
 **Recall context**, sees the remembered decisions with confidence scores, and
 applies the suggested ERP mapping instead of re-keying the same fields.
 
-**Close Intelligence, powered by sponsors:** Kira uses sponsored provider seams
-to gather supplier evidence, reason over blockers, validate export safety,
-search operational video context, run heavy anomaly scans, and verify agent
-authority before close actions. Every sponsor integration has a deterministic
-fallback so the MVP is complete and demoable even when a key is missing.
+**Powered by Agnes AI — one omni-modal provider runs the whole close.** Agnes is
+OpenAI-compatible (`https://apihub.agnes-ai.com/v1`), so a single provider serves
+every modality Kira needs. Each modality has a deterministic fallback so the MVP
+is complete and demoable even when the key is missing.
 
-| Sponsor | Kira use in this build |
-|---|---|
-| Mem0 | Month-over-month close memory for supplier coding, exception resolution, and approver history. |
-| Bright Data | Live supplier and regulatory web evidence for vendor checks. |
-| Kimi AI | Long-context reasoning over close blockers and audit history. |
-| TokenRouter | Routed model calls and cache-aware model selection for cost/performance. |
-| VideoDB | Searchable receiving, walkthrough, or approval video evidence. |
-| Daytona | Isolated sandbox validation for ERP export packages. |
-| Nosana | Heavy duplicate, anomaly, and extraction workload scans. |
-| Terminal 3 | Verifiable agent identity before approval-gated close actions. |
+| Agnes modality | Model | Kira use in this build |
+|---|---|---|
+| Text | `agnes-2.0-flash` | The agent brain — reasons over the close, classifies safety/approval tiers, recommends the next action. |
+| Vision | `agnes-2.0-flash` | Real invoice OCR — reads an uploaded receipt image and extracts supplier, date, totals, tax, and line items. |
+| Image | `agnes-image-2.0-flash` | Generates a branded month-end close report cover/infographic for the export pack. |
+| Video | `agnes-video-v2.0` | Renders a short CFO close-briefing clip from the live close numbers. |
+
+Mem0 remains the **Close Memory** layer (month-over-month supplier coding,
+exception resolution, and approver history). See the omni-modal panel live on
+`/erp-close` ("Powered by Agnes AI — Omni-modal"), and Agnes Vision OCR on
+`/capture`.
 
 ## Quick start
 
@@ -66,65 +67,50 @@ username: 123
 password: 123
 ```
 
-Optional live providers in `.env.local`:
+Providers in `.env.local`:
 
 ```bash
-AI_GATEWAY_API_KEY=...        # enables Vercel AI SDK / AI Gateway booking research
-VERCEL_AI_MODEL=alibaba/qwen3.7-plus  # optional override
-OPENAI_API_KEY=...      # enables OpenAI Responses + Agents SDK flows
-OPENAI_MODEL=gpt-5.5   # optional override
-EXA_API_KEY=...         # enables live Exa consumer search for trips/reviews
-OPENAI_REALTIME_MODEL=gpt-realtime-2  # optional voice-session override
+# Agnes AI — the omni-modal provider that powers the whole app.
+# Get a free key (no top-up) at https://platform.agnes-ai.com
+AGNES_API_KEY=sk-...
+AGNES_BASE_URL=https://apihub.agnes-ai.com/v1   # optional (default)
+AGNES_TEXT_MODEL=agnes-2.0-flash                # optional
+AGNES_IMAGE_MODEL=agnes-image-2.0-flash         # optional
+AGNES_VIDEO_MODEL=agnes-video-v2.0              # optional
 
-MEM0_API_KEY=...        # enables hosted Mem0 Close Memory
-MEM0_ORG_ID=...         # optional Mem0 org scope
-MEM0_PROJECT_ID=...     # optional Mem0 project scope
+# Mem0 — Close Memory (optional; local store fallback otherwise)
+MEM0_API_KEY=...
+MEM0_ORG_ID=...
+MEM0_PROJECT_ID=...
 
-BRIGHT_DATA_API_KEY=...
-BRIGHT_DATA_ENDPOINT=https://api.brightdata.com/request
-BRIGHT_DATA_ZONE=your_web_unlocker_zone_name
-BRIGHT_DATA_TARGET_URL=https://www.hasil.gov.my/en/e-invoice/
-
-KIMI_API_KEY=...
-KIMI_BASE_URL=https://api.moonshot.ai/v1
-KIMI_MODEL=kimi-k2.6
-
-TOKENROUTER_API_KEY=...
-TOKENROUTER_BASE_URL=https://api.tokenrouter.ai/v1
-TOKENROUTER_MODEL=openai/gpt-5.4-nano
-
-VIDEODB_API_KEY=...
-VIDEODB_BASE_URL=https://api.videodb.io
-
-DAYTONA_API_KEY=...
-DAYTONA_BASE_URL=https://app.daytona.io/api
-
-NOSANA_API_KEY=...
-NOSANA_BASE_URL=https://api.nosana.io
-
-TERMINAL3_API_KEY=...
-TERMINAL3_BASE_URL=https://api.terminal3.io
+# OpenAI — optional secondary fallback for the agent brain + realtime voice
+OPENAI_API_KEY=...
+OPENAI_MODEL=gpt-5.5
+OPENAI_REALTIME_MODEL=gpt-realtime-2
 ```
 
-Do not commit `.env.local`. If a provider key is missing, Kira uses a local
-fallback and labels the result as fallback in the UI.
+Do not commit `.env.local`. If the Agnes key is missing, Kira uses a deterministic
+fallback for every modality and labels the result as **Fallback** in the UI.
 
 ## Two-minute demo path
 
 1. Sign in at `/login` with `123` / `123`.
-2. Go to `/capture`, forward an invoice, review the low-confidence coding field,
-   and post it.
-3. Go to `/audit` and show the hash-chained trail for extraction, review, and
-   posting.
+2. Go to `/capture`, click **Snap receipt**, and upload a real invoice photo —
+   **Agnes Vision** (`agnes-2.0-flash`) reads it and extracts supplier, totals,
+   tax, and line items. Review and post.
+3. Go to `/audit` and show the hash-chained trail (note the `Agnes Vision OCR`
+   actor on the extraction entry).
 4. Go to `/transactions` and show read-only bank reconciliation evidence.
 5. Go to `/compliance` and show the LHDN MyInvois queue plus approval-gated
    submission.
 6. Go to `/erp-close`, select a supplier in **Close Memory**, click **Recall
    context**, then **Apply suggested coding** to fill the ERP mapping.
-7. In **Close Intelligence**, run sponsor cards and call out `Live` provider
-   badges where keys are configured.
-8. Export ready bills and end on the product line: month one teaches Kira; month
-   two closes faster because Kira remembers.
+7. In **Powered by Agnes AI — Omni-modal**, run all four rows — Text reasoning,
+   Vision OCR, Image close report, and Video CFO briefing — and call out the
+   `Live` badges.
+8. Export ready bills and end on the product line: one omni-modal provider
+   (Agnes AI) powers the whole close, and month two closes faster because Kira
+   remembers.
 
 See [DEMO.md](DEMO.md) for the full runbook and reset commands.
 

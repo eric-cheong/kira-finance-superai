@@ -1,5 +1,12 @@
 import OpenAI from "openai";
 import { OpenAIProvider, setDefaultModelProvider } from "@openai/agents";
+import {
+  DEFAULT_AGNES_BASE_URL,
+  agnesImageModel,
+  agnesProviderReadiness,
+  agnesTextModel,
+  agnesVideoModel,
+} from "./agnes";
 
 export const DEFAULT_OPENAI_MODEL = "gpt-5.5";
 export const DEFAULT_OPENAI_REALTIME_MODEL = "gpt-realtime-2";
@@ -123,83 +130,23 @@ export function memoryProviderReadiness() {
   };
 }
 
-const SPONSOR_ENV = {
-  brightData: {
-    key: "BRIGHT_DATA_API_KEY",
-    endpoint: "BRIGHT_DATA_ENDPOINT",
-    fallbackEndpoint: "https://api.brightdata.com/request",
-    sdk: "Bright Data Web Unlocker API",
-  },
-  kimi: {
-    key: "KIMI_API_KEY",
-    endpoint: "KIMI_BASE_URL",
-    fallbackEndpoint: "https://api.moonshot.ai/v1",
-    sdk: "Kimi OpenAI-compatible API",
-  },
-  tokenRouter: {
-    key: "TOKENROUTER_API_KEY",
-    endpoint: "TOKENROUTER_BASE_URL",
-    fallbackEndpoint: "https://api.tokenrouter.ai/v1",
-    sdk: "TokenRouter OpenAI-compatible API",
-  },
-  videoDb: {
-    key: "VIDEODB_API_KEY",
-    endpoint: "VIDEODB_BASE_URL",
-    fallbackEndpoint: "https://api.videodb.io",
-    sdk: "VideoDB API",
-  },
-  daytona: {
-    key: "DAYTONA_API_KEY",
-    endpoint: "DAYTONA_BASE_URL",
-    fallbackEndpoint: "https://app.daytona.io/api",
-    sdk: "Daytona sandbox API",
-  },
-  nosana: {
-    key: "NOSANA_API_KEY",
-    endpoint: "NOSANA_BASE_URL",
-    fallbackEndpoint: "https://api.nosana.io",
-    sdk: "Nosana job API",
-  },
-  terminal3: {
-    key: "TERMINAL3_API_KEY",
-    endpoint: "TERMINAL3_BASE_URL",
-    fallbackEndpoint: "https://api.terminal3.io",
-    sdk: "Terminal 3 Agent Dev Kit",
-  },
-} as const;
-
-export type SponsorProviderId = keyof typeof SPONSOR_ENV;
-
-export function sponsorProviderReadiness() {
-  return Object.fromEntries(
-    Object.entries(SPONSOR_ENV).map(([id, config]) => {
-      const apiKeyConfigured = Boolean(process.env[config.key]?.trim());
-      const endpoint = process.env[config.endpoint]?.trim() || config.fallbackEndpoint;
-      return [id, {
-        configured: apiKeyConfigured,
-        apiKeyConfigured,
-        endpoint,
-        endpointConfigured: Boolean(process.env[config.endpoint]?.trim()),
-        fallbackReason: apiKeyConfigured ? null : `missing_${config.key.toLowerCase()}`,
-        sdk: config.sdk,
-      }];
-    }),
-  ) as Record<SponsorProviderId, {
-    configured: boolean;
-    apiKeyConfigured: boolean;
-    endpoint: string;
-    endpointConfigured: boolean;
-    fallbackReason: string | null;
-    sdk: string;
-  }>;
-}
-
 export function providerStatus() {
   const openai = openaiProviderReadiness();
   const exaConfigured = hasExaKey();
   const memory = memoryProviderReadiness();
-  const sponsors = sponsorProviderReadiness();
+  const agnes = agnesProviderReadiness();
   return {
+    agnes: {
+      configured: agnes.configured,
+      apiKeyConfigured: agnes.apiKeyConfigured,
+      baseURL: agnes.baseURL ?? DEFAULT_AGNES_BASE_URL,
+      baseURLValid: agnes.baseURLValid,
+      textModel: agnesTextModel(),
+      imageModel: agnesImageModel(),
+      videoModel: agnesVideoModel(),
+      fallbackReason: agnes.fallbackReason,
+      sdk: "openai SDK → Agnes apihub (omni-modal: text · vision · image · video)",
+    },
     openai: {
       configured: openai.configured,
       apiKeyConfigured: openai.apiKeyConfigured,
@@ -223,11 +170,11 @@ export function providerStatus() {
       fallbackReason: memory.fallbackReason,
       sdk: "mem0ai",
     },
-    sponsors,
     assistant: {
       configured: true,
-      provider: openai.configured ? "openai-agents" : "local-fallback",
-      fallbackReason: openai.fallbackReason,
+      provider: agnes.configured ? "agnes" : openai.configured ? "openai-agents" : "local-fallback",
+      model: agnes.configured ? agnesTextModel() : openai.configured ? openaiModel() : null,
+      fallbackReason: agnes.configured ? null : openai.fallbackReason,
       textRoute: "/api/assistant",
       knowledgeBase: "local-kira-knowledge",
     },

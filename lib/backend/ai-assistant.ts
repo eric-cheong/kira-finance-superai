@@ -13,6 +13,7 @@ import {
   openaiRealtimeModel,
   providerStatus,
 } from "./provider-config";
+import { agnesChat, agnesProviderReadiness, agnesTextModel } from "./agnes";
 
 export const assistantRequestSchema = z.object({
   message: z.string().min(1).max(1200),
@@ -66,6 +67,9 @@ export type AssistantOutput = z.infer<typeof assistantOutputSchema>;
 export type AssistantRequest = z.infer<typeof assistantRequestSchema>;
 
 const ASSISTANT_PROVIDER_TIMEOUT_MS = Number(process.env.KIRA_ASSISTANT_PROVIDER_TIMEOUT_MS ?? 12_000);
+// Agnes's shared hackathon endpoint has highly variable latency (observed 2-40s
+// for a single completion), so the Agnes brain gets its own generous timeout.
+const AGNES_ASSISTANT_TIMEOUT_MS = Number(process.env.AGNES_ASSISTANT_TIMEOUT_MS ?? 30_000);
 
 const queryKiraKnowledge = tool({
   name: "query_kira_knowledge",
@@ -88,10 +92,10 @@ const getWorkspaceContext = tool({
   },
 });
 
-function assistantAgent() {
+function assistantAgent(model: string) {
   return new Agent({
     name: "Kira Request Understanding Agent",
-    model: openaiModel(),
+    model,
     instructions: [
       "You are Kira's in-app AI assistant for an APAC SME finance workspace.",
       "First infer what the user is asking for. Ground every answer in the Kira knowledge base or current workspace context.",
@@ -309,6 +313,70 @@ function safetyIdentifier(request?: Request) {
   return createHash("sha256").update(`kira:${client}`).digest("hex").slice(0, 64);
 }
 
+/**
+ * Fast Agnes path: a single grounded chat completion instead of the multi-turn
+ * Agents-SDK tool loop. Agnes's vllm backend makes the multi-round-trip agent
+ * flow brush the request timeout (~11-12s), so for this build we inline the same
+ * knowledge + workspace context and let Agnes write the answer in one call
+ * (~3-5s). The structural fields are derived deterministically, exactly like the
+ * local path, so the response is always schema-valid.
+ */
+async function agnesDirectAnswer(request: AssistantRequest): Promise<AssistantOutput> {
+  const entries = assistantKnowledge(`${request.message} ${request.transcript ?? ""}`, 4);
+  const primary = entries[0] ?? KIRA_KNOWLEDGE_BASE[0];
+  const classification = classifyLocal(request.message);
+  const workspace = assistantWorkspaceContext();
+  const knowledgePrompt = entries
+    .map((entry) => `- ${entry.title} (${entry.route}): ${entry.summary} ${entry.facts.join(" ")}`)
+    .join("\n");
+
+  const completion = await agnesChat(
+    [
+      {
+        role: "system",
+        content: [
+          "You are Kira's in-app AI assistant for an APAC SME finance workspace.",
+          "Answer the user's question in 2-4 concise sentences, grounded ONLY in the provided Kira knowledge and workspace context.",
+          "Never claim Kira moved money, paid, settled, issued cards, executed FX, placed trades, or submitted to a regulator.",
+          "Plain text only — no markdown, no JSON.",
+        ].join(" "),
+      },
+      {
+        role: "user",
+        content: `Kira knowledge:\n${knowledgePrompt}\n\nWorkspace context: ${JSON.stringify(workspace).slice(0, 1500)}\n\nQuestion: ${request.message}`,
+      },
+    ],
+    { model: agnesTextModel(), temperature: 0.3, maxTokens: 300 },
+  );
+
+  const content = completion.choices[0]?.message?.content;
+  const answer = typeof content === "string" ? content.trim() : "";
+  if (!answer) throw new Error("agnes_empty_response");
+
+  const output: AssistantOutput = {
+    understoodRequest: request.transcript || request.message,
+    intent: classification.intent,
+    answer,
+    nextItem: null,
+    routeSuggestion: {
+      label: primary.title,
+      href: primary.route,
+      reason: primary.facts[0] ?? "Relevant Kira knowledge base entry.",
+    },
+    actionClass: classification.actionClass,
+    approvalTier: classification.approvalTier,
+    confidence: 90,
+    sources: entries.map((entry) => ({ title: entry.title, route: entry.route })),
+    trace: [
+      `Agnes ${agnesTextModel()} grounded reasoning`,
+      `Matched ${entries.length} knowledge entries`,
+      `Classified as ${classification.intent}`,
+    ],
+    followUps: ["Open the suggested route", "Ask for the evidence behind this", "Ask what action is safely allowed next"],
+  };
+  return applyNextItemRecommendation(output, request);
+}
+
 export async function runAssistant(requestInput: unknown) {
   const request = assistantRequestSchema.parse(requestInput);
   if (isNextItemRequest(`${request.message} ${request.transcript ?? ""}`)) {
@@ -321,19 +389,48 @@ export async function runAssistant(requestInput: unknown) {
     };
   }
 
+  // Agnes AI is the primary brain for this build: a single fast grounded call.
+  if (agnesProviderReadiness().configured) {
+    try {
+      const output = enforceAssistantSafety(
+        request,
+        normalizeAssistantOutput(
+          await withTimeout(agnesDirectAnswer(request), AGNES_ASSISTANT_TIMEOUT_MS, "agnes_timeout"),
+        ),
+      );
+      return {
+        provider: "agnes" as const,
+        model: agnesTextModel(),
+        output,
+        knowledgeBase: assistantKnowledge(request.message, 6),
+        workspace: assistantWorkspaceContext(),
+      };
+    } catch (error) {
+      const reason = assistantProviderFailureCode(error);
+      return {
+        provider: "local-fallback" as const,
+        model: agnesTextModel(),
+        output: localAssistantAnswer(request, reason),
+        knowledgeBase: assistantKnowledge(request.message, 6),
+        workspace: assistantWorkspaceContext(),
+      };
+    }
+  }
+
+  // Secondary: OpenAI Agents SDK tool loop (only when Agnes is not configured).
   const openai = configureOpenAIAgentsProvider();
   if (!openai.configured) {
     return {
       provider: "local-fallback" as const,
       model: null,
-      output: localAssistantAnswer(request, openai.fallbackReason ?? "openai_provider_unavailable"),
+      output: localAssistantAnswer(request, openai.fallbackReason ?? "provider_unavailable"),
       knowledgeBase: assistantKnowledge(request.message, 6),
       workspace: assistantWorkspaceContext(),
     };
   }
 
   try {
-    const result = await withTimeout(run(assistantAgent(), JSON.stringify({
+    const result = await withTimeout(run(assistantAgent(openaiModel()), JSON.stringify({
       userRequest: request.message,
       transcript: request.transcript,
       mode: request.mode,

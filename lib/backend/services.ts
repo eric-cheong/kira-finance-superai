@@ -26,6 +26,7 @@ import type {
 import { chainHash } from "@/lib/hash";
 import { ApiError } from "./http";
 import { providerStatus } from "./provider-config";
+import type { AgnesOcrResult } from "./agnes-ocr";
 import {
   appendAudit,
   confirmationRef,
@@ -59,15 +60,15 @@ export interface CaptureDraft {
   fields: CaptureField[];
   reviewThreshold: number;
   needsReview: boolean;
+  ocrSource?: "live" | "fallback";
 }
 
 export function health() {
   const providers = providerStatus();
-  const sponsorConfigured = Object.values(providers.sponsors).some((provider) => provider.configured);
-  const liveProviderConfigured = providers.openai.configured
+  const liveProviderConfigured = providers.agnes.configured
+    || providers.openai.configured
     || providers.exa.configured
-    || providers.memory.configured
-    || sponsorConfigured;
+    || providers.memory.configured;
   return {
     status: "ok",
     mode: liveProviderConfigured ? "hybrid-live-ready" : "local-offline",
@@ -366,7 +367,7 @@ export function decideApproval(
   return { approval };
 }
 
-export function createCapture(input: { source?: CaptureSource } = {}): CaptureDraft {
+export function createCapture(input: { source?: CaptureSource; ocr?: AgnesOcrResult } = {}): CaptureDraft {
   if (!input || typeof input !== "object" || Array.isArray(input)) {
     throw new ApiError(400, "INVALID_BODY", "Capture request must be an object.");
   }
@@ -375,35 +376,42 @@ export function createCapture(input: { source?: CaptureSource } = {}): CaptureDr
     throw new ApiError(400, "INVALID_CAPTURE_SOURCE", "Capture source must be mobile, email, or upload.");
   }
   const fields = captureFields();
-  const low = Math.min(...fields.map((field) => field.confidence));
+  const fieldLow = Math.min(...fields.map((field) => field.confidence));
+  // When Agnes Vision returned live OCR, the extraction confidence gates review;
+  // otherwise fall back to the seeded field confidence (deterministic demo path).
+  const ocrLive = input.ocr?.source === "live";
+  const low = input.ocr ? Math.min(fieldLow, input.ocr.confidence) : fieldLow;
+  const extracted = input.ocr?.fields;
   const receipt: Receipt = {
     id: nextId("rcp", state.receipts),
     kind: "invoice",
     capturedAt: new Date().toISOString(),
     capturedVia: source,
-    supplier: "Common Roots Roastery",
-    totalMinor: 128400,
-    taxMinor: 0,
-    currency: "MYR",
-    docDate: "2026-06-09",
-    docNo: `CRR-2026-${String(state.receipts.length + 1).padStart(4, "0")}`,
+    supplier: extracted?.supplier || "Common Roots Roastery",
+    totalMinor: extracted?.totalMinor ?? 128400,
+    taxMinor: extracted?.taxMinor ?? 0,
+    currency: (extracted?.currency as Receipt["currency"]) || "MYR",
+    docDate: extracted?.docDate || "2026-06-09",
+    docNo: extracted?.docNo || `CRR-2026-${String(state.receipts.length + 1).padStart(4, "0")}`,
     ocrConfidence: low,
     suggestedAccount: "5010",
     suggestedTaxCode: "OUT",
     suggestedCostCentre: "CC-TTDI",
     status: low < 85 ? "needs_review" : "extracted",
     thumbHint: "beans",
-    lineItems: [{ label: "Green coffee beans · 30kg", amountMinor: 128400 }],
+    lineItems: extracted?.lineItems?.length
+      ? extracted.lineItems
+      : [{ label: "Green coffee beans · 30kg", amountMinor: 128400 }],
   };
   state.receipts.unshift(receipt);
   appendAudit({
-    actor: "Document AI",
+    actor: ocrLive ? `Agnes Vision OCR (${input.ocr?.model ?? "agnes-2.0-flash"})` : "Document AI",
     action: "capture.extracted",
     target: receipt.id,
-    detail: `Extracted ${receipt.supplier} ${money(receipt.totalMinor, receipt.currency)} via ${source}; lowest field confidence ${low}%.`,
+    detail: `Extracted ${receipt.supplier} ${money(receipt.totalMinor, receipt.currency)} via ${source}${ocrLive ? " using Agnes Vision" : ""}; lowest field confidence ${low}%.`,
     tier: low < 70 ? 4 : low < 85 ? 3 : 1,
   });
-  return captureDraft(receipt);
+  return captureDraft(receipt, input.ocr?.source);
 }
 
 export function reviewCapture(id: string, input: { account?: string; taxCode?: string; costCentre?: string } = {}) {
@@ -1355,7 +1363,7 @@ function captureFields(): CaptureField[] {
   ];
 }
 
-function captureDraft(receipt: Receipt): CaptureDraft {
+function captureDraft(receipt: Receipt, ocrSource?: "live" | "fallback"): CaptureDraft {
   const reviewed = receipt.status !== "needs_review" && receipt.ocrConfidence >= 85;
   const fields = captureFields().map((field) => (
     reviewed && field.confidence < 85 ? { ...field, confidence: receipt.ocrConfidence } : field
@@ -1365,6 +1373,7 @@ function captureDraft(receipt: Receipt): CaptureDraft {
     fields,
     reviewThreshold: 85,
     needsReview: receipt.status === "needs_review" || fields.some((field) => field.confidence < 85),
+    ocrSource,
   };
 }
 

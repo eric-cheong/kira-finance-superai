@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Receipt } from "@/lib/types";
 import { money } from "@/lib/format";
-import { Button, Card, ConfidenceChip, Icon, Notice } from "@/components/ui";
+import { Badge, Button, Card, ConfidenceChip, Icon, Notice } from "@/components/ui";
 import { Thumb } from "@/components/thumb";
 
 type Stage = "idle" | "scanning" | "extracted" | "confirmed";
@@ -21,10 +21,21 @@ interface CaptureDraft {
   fields: CaptureField[];
   reviewThreshold: number;
   needsReview: boolean;
+  ocrSource?: "live" | "fallback";
+}
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error("Could not read the image file."));
+    reader.readAsDataURL(file);
+  });
 }
 
 export function CaptureBox() {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [stage, setStage] = useState<Stage>("idle");
   const [draft, setDraft] = useState<CaptureDraft | null>(null);
   const [reviewed, setReviewed] = useState(false);
@@ -34,6 +45,40 @@ export function CaptureBox() {
   const needsReview = draft?.needsReview ?? false;
   const canPost = Boolean(draft) && (!needsReview || reviewed);
 
+  // "Snap receipt" → real Agnes Vision OCR on an uploaded photo.
+  async function onPickImage(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = ""; // allow re-picking the same file
+    if (!file) return;
+    setBusy(true);
+    setError("");
+    setDraft(null);
+    setReviewed(false);
+    setStage("scanning");
+    try {
+      const imageDataUrl = await readFileAsDataUrl(file);
+      const response = await fetch("/api/capture/ocr", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ source: "upload", imageDataUrl }),
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error?.message ?? "Agnes Vision OCR failed.");
+      }
+      setDraft(payload.data);
+      setReviewed(!payload.data.needsReview);
+      setStage("extracted");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Agnes Vision OCR failed.");
+      setStage("idle");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // "Forward invoice" → deterministic seeded capture (offline-safe demo path).
   async function snap(source: CaptureSource) {
     setBusy(true);
     setError("");
@@ -125,16 +170,25 @@ export function CaptureBox() {
           </span>
           <div>
             <p className="text-[14px] font-medium text-ink">Capture a receipt or invoice</p>
-            <p className="mt-0.5 text-[12.5px] text-muted">Snap a photo, or forward to inbox@kiraroasters.kira.my</p>
+            <p className="mt-0.5 text-[12.5px] text-muted">Snap a photo for Agnes Vision OCR, or forward to inbox@kiraroasters.kira.my</p>
           </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={onPickImage}
+          />
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-            <Button className="w-full sm:w-auto" variant="primary" icon="capture" disabled={busy} onClick={() => snap("mobile")}>
-              {busy ? "Capturing" : "Snap receipt"}
+            <Button className="w-full sm:w-auto" variant="primary" icon="capture" disabled={busy} onClick={() => fileInputRef.current?.click()}>
+              {busy ? "Reading…" : "Snap receipt"}
             </Button>
             <Button className="w-full sm:w-auto" variant="outline" icon="doc" disabled={busy} onClick={() => snap("email")}>
               Forward invoice
             </Button>
           </div>
+          <p className="text-[11.5px] text-faint">Snap runs Agnes Vision (agnes-2.0-flash) · Forward uses the seeded demo invoice</p>
           {error && <p className="text-[12.5px] text-crit-fg">{error}</p>}
         </div>
       )}
@@ -164,6 +218,13 @@ export function CaptureBox() {
               <p className="text-[12.5px] text-muted">
                 {draft.receipt.docNo} · {draft.receipt.docDate} · captured via {draft.receipt.capturedVia}
               </p>
+              {draft.ocrSource && (
+                <div className="mt-1.5">
+                  <Badge variant={draft.ocrSource === "live" ? "brand" : "neutral"}>
+                    {draft.ocrSource === "live" ? "Agnes Vision · Live" : "Agnes Vision · Fallback"}
+                  </Badge>
+                </div>
+              )}
             </div>
           </div>
 

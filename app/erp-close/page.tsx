@@ -20,7 +20,7 @@ import type { IconName } from "@/components/ui/icons";
 import type { ReactNode } from "react";
 import { CloseMemoryPanel } from "@/components/close-memory-panel";
 import { ErpCloseExportActions } from "@/components/erp-close-actions";
-import { SponsorIntelligencePanel } from "@/components/sponsor-intelligence-panel";
+import { AgnesOmnimodalPanel } from "@/components/agnes-omnimodal-panel";
 import { state } from "@/lib/backend/state";
 import { memoryProviderReadiness } from "@/lib/backend/provider-config";
 import { fmtDate, fmtDateTime, money, relativeTo, shortId } from "@/lib/format";
@@ -871,13 +871,6 @@ export default function ErpClosePage() {
         query: `${supplierName} ${record.erpMapping?.taxCode ?? ""} ${record.erpMapping?.expenseAccountCode ?? ""} ${record.erpMapping?.costCentre ?? ""} ${client?.closePeriod ?? ""}`,
       };
     });
-  const closeIntelligenceSuppliers = Array.from(
-    new Map(closeMemoryBills.map((bill) => [bill.supplierId ?? bill.supplierName, {
-      supplierId: bill.supplierId,
-      supplierName: bill.supplierName,
-      query: bill.query,
-    }])).values(),
-  );
   const memoryReadiness = memoryProviderReadiness();
 
   return (
@@ -968,11 +961,7 @@ export default function ErpClosePage() {
             initialBills={closeMemoryBills}
             memoryConfigured={memoryReadiness.configured}
           />
-          <SponsorIntelligencePanel
-            clientId={activeClient.id}
-            closePeriod={activeClient.closePeriod}
-            suppliers={closeIntelligenceSuppliers}
-          />
+          <AgnesOmnimodalPanel clientId={activeClient.id} />
           <SubmissionGate />
           <Card>
             <CardHeader title="Close blockers" subtitle="Current command summary" icon="alert" />

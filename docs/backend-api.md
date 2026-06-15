@@ -66,13 +66,10 @@ and file-backed for development. It persists mutable demo state to
 | `/api/erp-close/bills/:id/resolve-exception` | `POST` | Resolve a close-book exception with audit trail. |
 | `/api/erp-close/export/evidence-pack` | `POST` | Create a local evidence-pack export reference. |
 | `/api/erp-close/export/ready-bills` | `POST` | Export eligible bill records; blocked records stay blocked. |
-| `/api/sponsors/bright-data/vendor-intel` | `POST` | Run Bright Data supplier web intelligence with fallback evidence. |
-| `/api/sponsors/kimi/close-reasoning` | `POST` | Run Kimi close-book blocker reasoning with local fallback. |
-| `/api/sponsors/tokenrouter/route-model` | `POST` | Run TokenRouter model-routing proof with local fallback. |
-| `/api/sponsors/videodb/search-evidence` | `POST` | Run VideoDB receiving/approval video evidence search with local fallback. |
-| `/api/sponsors/daytona/validate-export` | `POST` | Run Daytona sandbox-style ERP export validation with local fallback. |
-| `/api/sponsors/nosana/anomaly-scan` | `POST` | Run Nosana duplicate/anomaly scan proof with local fallback. |
-| `/api/sponsors/terminal3/verify-agent` | `POST` | Run Terminal 3 agent identity verification proof with local fallback. |
+| `/api/capture/ocr` | `POST` | Agnes Vision invoice OCR — extract fields from an uploaded receipt image (`agnes-2.0-flash`), with deterministic fallback. |
+| `/api/agnes/image` | `POST` | Agnes Image — generate a branded close report cover (`agnes-image-2.0-flash`), with inline-SVG fallback. |
+| `/api/agnes/video` | `POST` | Agnes Video — start a CFO close-briefing render (`agnes-video-v2.0`); returns a `taskId`, with storyboard fallback. |
+| `/api/agnes/video/:taskId` | `GET` | Poll an Agnes video render task for `status` / `videoUrl`. |
 
 ## Read Models
 
@@ -112,11 +109,12 @@ and file-backed for development. It persists mutable demo state to
 - `OPENAI_REALTIME_MODEL` overrides the realtime model; default is
   `gpt-realtime-2`.
 - `EXA_API_KEY` enables live Exa search for vendor enrichment and reviews.
-- Sponsor hackathon integrations are surfaced in `/erp-close` Close Intelligence
-  and configured by `BRIGHT_DATA_API_KEY`, `KIMI_API_KEY`,
-  `TOKENROUTER_API_KEY`, `VIDEODB_API_KEY`,
-  `DAYTONA_API_KEY`, `NOSANA_API_KEY`, and `TERMINAL3_API_KEY`.
-  Optional `*_BASE_URL` / endpoint variables can override provider defaults.
+- Agnes AI is the omni-modal provider for the whole app, configured by
+  `AGNES_API_KEY` (free at platform.agnes-ai.com). Optional `AGNES_BASE_URL`
+  (default `https://apihub.agnes-ai.com/v1`), `AGNES_TEXT_MODEL`,
+  `AGNES_IMAGE_MODEL`, and `AGNES_VIDEO_MODEL` override the defaults. The agent
+  brain prefers Agnes (`agnes-2.0-flash`) when the key is set; vision OCR, image,
+  and video are surfaced on `/capture` and the `/erp-close` Agnes omni-modal panel.
 - The assistant remains usable without OpenAI keys via local knowledge-base
   matching. Its concrete next-item recommendation is always local/state-derived
   and works whether the OpenAI agent succeeds or falls back. Browser voice
