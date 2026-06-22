@@ -19,12 +19,15 @@ import type {
   CountryConfig,
   EInvoice,
   ForecastBucket,
+  IntakeEvent,
   Match,
   NewsItem,
   Organization,
   Position,
   Receipt,
   RecordEntry,
+  SourceDocument,
+  WebhookEventReceipt,
   TaxCode,
   TransactionEvent,
   User,
@@ -118,6 +121,9 @@ export interface BackendState {
   forecastRuns: ForecastRun[];
   workflowRuns: WorkflowRun[];
   briefingRuns: BriefingRunState[];
+  sourceDocuments: SourceDocument[];
+  intakeEvents: IntakeEvent[];
+  webhookEvents: WebhookEventReceipt[];
   closeBookClients: CloseBookClient[];
   closeBookSuppliers: CloseBookSupplier[];
   closeBookRecords: VerifiedBillRecord[];
@@ -169,7 +175,11 @@ function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
 }
 
-function initialState(): RuntimeState {
+function demoSeedEnabled() {
+  return process.env.KIRA_DEMO_SEED !== "false";
+}
+
+export function createInitialStateForMode({ demoSeed = demoSeedEnabled() }: { demoSeed?: boolean } = {}): RuntimeState {
   const state: BackendState = {
     schemaVersion: 1,
     org: clone(seed.ORG),
@@ -178,31 +188,38 @@ function initialState(): RuntimeState {
     accounts: clone(seed.ACCOUNTS),
     taxCodes: clone(seed.TAX_CODES),
     costCentres: clone(seed.COST_CENTRES),
-    transactions: clone(seed.TRANSACTIONS),
-    receipts: clone(seed.RECEIPTS),
-    matches: clone(seed.MATCHES),
-    einvoices: clone(seed.EINVOICES),
-    records: clone(seed.RECORDS),
-    syncRefs: clone(seed.SYNC_REFS),
-    approvals: clone(seed.APPROVALS),
-    positions: clone(seed.POSITIONS),
-    news: clone(seed.NEWS),
+    transactions: demoSeed ? clone(seed.TRANSACTIONS) : [],
+    receipts: demoSeed ? clone(seed.RECEIPTS) : [],
+    matches: demoSeed ? clone(seed.MATCHES) : [],
+    einvoices: demoSeed ? clone(seed.EINVOICES) : [],
+    records: demoSeed ? clone(seed.RECORDS) : [],
+    syncRefs: demoSeed ? clone(seed.SYNC_REFS) : [],
+    approvals: demoSeed ? clone(seed.APPROVALS) : [],
+    positions: demoSeed ? clone(seed.POSITIONS) : [],
+    news: demoSeed ? clone(seed.NEWS) : [],
     preferences: clone(seed.PREFERENCES),
     countryConfigs: clone(seed.COUNTRY_CONFIGS),
-    vendors: clone(seed.VENDORS),
-    forecastBuckets: clone(seed.FORECAST_BUCKETS),
+    vendors: demoSeed ? clone(seed.VENDORS) : [],
+    forecastBuckets: demoSeed ? clone(seed.FORECAST_BUCKETS) : [],
     forecastRuns: [],
     workflowRuns: [],
     briefingRuns: [defaultBriefingRunState()],
+    sourceDocuments: [],
+    intakeEvents: [],
+    webhookEvents: [],
     closeBookClients: clone(CLOSE_BOOK_CLIENTS),
     closeBookSuppliers: clone(CLOSE_BOOK_SUPPLIERS),
-    closeBookRecords: clone(VERIFIED_BILL_RECORDS),
+    closeBookRecords: demoSeed ? clone(VERIFIED_BILL_RECORDS) : [],
     exportBatches: [],
     connectors: clone(INITIAL_CONNECTORS),
-    rawAudit: clone(seed.RAW_AUDIT),
+    rawAudit: demoSeed ? clone(seed.RAW_AUDIT) : [],
     onboardingRuns: [],
   };
   return { ...state, audit: materializeAudit(state.rawAudit) };
+}
+
+function initialState(): RuntimeState {
+  return createInitialStateForMode();
 }
 
 function readSnapshot(): RuntimeState | null {
@@ -235,6 +252,9 @@ function readSnapshot(): RuntimeState | null {
       forecastRuns: parsed.forecastRuns ?? fallback.forecastRuns,
       workflowRuns: parsed.workflowRuns ?? fallback.workflowRuns,
       briefingRuns: parsed.briefingRuns ?? fallback.briefingRuns,
+      sourceDocuments: parsed.sourceDocuments ?? fallback.sourceDocuments,
+      intakeEvents: parsed.intakeEvents ?? fallback.intakeEvents,
+      webhookEvents: parsed.webhookEvents ?? fallback.webhookEvents,
       closeBookClients: parsed.closeBookClients ?? fallback.closeBookClients,
       closeBookSuppliers: parsed.closeBookSuppliers ?? fallback.closeBookSuppliers,
       closeBookRecords: parsed.closeBookRecords ?? fallback.closeBookRecords,
@@ -283,6 +303,9 @@ export function resetState() {
   replaceArray(state.forecastRuns, next.forecastRuns);
   replaceArray(state.workflowRuns, next.workflowRuns);
   replaceArray(state.briefingRuns, next.briefingRuns);
+  replaceArray(state.sourceDocuments, next.sourceDocuments);
+  replaceArray(state.intakeEvents, next.intakeEvents);
+  replaceArray(state.webhookEvents, next.webhookEvents);
   replaceArray(state.closeBookClients, next.closeBookClients);
   replaceArray(state.closeBookSuppliers, next.closeBookSuppliers);
   replaceArray(state.closeBookRecords, next.closeBookRecords);

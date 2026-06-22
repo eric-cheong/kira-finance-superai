@@ -262,11 +262,16 @@ export function CaptureBox() {
           ) : (
             <div className="mt-4 flex flex-col items-start gap-2 rounded-lg border border-pos-fg/20 bg-pos-bg px-3.5 py-3 sm:flex-row sm:items-center sm:justify-between">
               <span className="flex items-center gap-2 text-[13px] font-medium text-ink">
-                <Icon name="check" size={16} className="shrink-0 text-pos-fg" /> Posted to record store · queued for auto-match
+                <Icon name="check" size={16} className="shrink-0 text-pos-fg" /> Posted to record store · linked to Invoice Inbox
               </span>
-              <Button className="w-full sm:w-auto" variant="ghost" size="sm" onClick={reset}>
-                capture another
-              </Button>
+              <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+                <Button className="w-full sm:w-auto" variant="primary" size="sm" href="/inbox">
+                  Open inbox workflow
+                </Button>
+                <Button className="w-full sm:w-auto" variant="ghost" size="sm" onClick={reset}>
+                  capture another
+                </Button>
+              </div>
             </div>
           )}
           {error && (

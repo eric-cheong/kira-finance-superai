@@ -9,9 +9,11 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test tests/**/*.test.ts",
     "seed:mem0": "node --conditions react-server --import tsx scripts/seed-mem0.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1071.0",
     "@openai/agents": "^0.11.6",
     "ai": "^6.0.199",
     "exa-js": "^2.13.0",

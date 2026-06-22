@@ -40,6 +40,7 @@ const NAV: { group: string; items: NavItem[] }[] = [
       { href: "/", label: "Daily Briefing", icon: "briefing" },
       { href: "/erp-foundation", label: "ERP Foundation", icon: "database" },
       { href: "/capture", label: "Capture", icon: "capture" },
+      { href: "/inbox", label: "Invoice Inbox", icon: "doc" },
       { href: "/approvals", label: "Approvals", icon: "approvals" },
       { href: "/transactions", label: "Transactions", icon: "transactions" },
       { href: "/erp-close", label: "AP Close", icon: "closeBooks" },

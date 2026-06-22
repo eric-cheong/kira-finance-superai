@@ -27,6 +27,7 @@ import { chainHash } from "@/lib/hash";
 import { ApiError } from "./http";
 import { providerStatus } from "./provider-config";
 import type { AgnesOcrResult } from "./agnes-ocr";
+import { linkReceiptToInvoiceInbox } from "./capture-to-inbox";
 import {
   appendAudit,
   confirmationRef,
@@ -79,6 +80,8 @@ export function health() {
       users: state.users.length,
       transactions: state.transactions.length,
       receipts: state.receipts.length,
+      sourceDocuments: state.sourceDocuments.length,
+      intakeEvents: state.intakeEvents.length,
       approvals: state.approvals.length,
       auditEntries: state.audit.length,
     },
@@ -463,6 +466,7 @@ export function postCapture(id: string) {
   };
   state.records.push(record);
   receipt.status = "confirmed";
+  const inboxBill = linkReceiptToInvoiceInbox(receipt);
   appendAudit({
     actor: state.currentUserId,
     action: "record.post",
@@ -470,7 +474,7 @@ export function postCapture(id: string) {
     detail: `Posted record from ${receipt.id}. This is record-keeping only; no payment or settlement occurred.`,
     tier: 1,
   });
-  return { receipt, record };
+  return { receipt, record, inboxBill };
 }
 
 export function aiProviderStatus() {

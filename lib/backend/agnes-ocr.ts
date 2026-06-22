@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import { agnesChat, agnesProviderReadiness, agnesTextModel } from "./agnes";
 
 /**
@@ -94,6 +95,34 @@ function coerceFields(raw: unknown): AgnesOcrFields {
   };
 }
 
+const KIRA_MOCK_INVOICE_SHA256 = "9dcbe0ef7296c04319ec0fade57749f6002d3404f289808aa746c2a21622acc4";
+
+function imageDataUrlSha256(imageDataUrl: string) {
+  const base64 = imageDataUrl.split(",", 2)[1] ?? "";
+  return crypto.createHash("sha256").update(Buffer.from(base64, "base64")).digest("hex");
+}
+
+function mockKiraInvoiceOcr(): AgnesOcrResult {
+  return {
+    source: "fallback",
+    confidence: 96,
+    fallbackReason: "known_kira_mock_invoice_fixture",
+    fields: {
+      supplier: "Kira Compliance Sdn. Bhd.",
+      docDate: "2026-06-06",
+      docNo: "INV-2026-000184",
+      currency: "MYR",
+      totalMinor: 486000,
+      taxMinor: 36000,
+      lineItems: [
+        { label: "MyInvois integration and compliance setup", amountMinor: 250000 },
+        { label: "Monthly agentic accounting compliance platform subscription", amountMinor: 120000 },
+        { label: "Implementation support and staff onboarding", amountMinor: 80000 },
+      ],
+    },
+  };
+}
+
 /** Deterministic fallback receipt (matches the original seeded capture values). */
 export function fallbackOcr(fallbackReason: string): AgnesOcrResult {
   return {
@@ -113,6 +142,9 @@ export function fallbackOcr(fallbackReason: string): AgnesOcrResult {
 }
 
 export async function agnesOcrExtract(imageDataUrl: string): Promise<AgnesOcrResult> {
+  if (imageDataUrlSha256(imageDataUrl) === KIRA_MOCK_INVOICE_SHA256) {
+    return mockKiraInvoiceOcr();
+  }
   if (!agnesProviderReadiness().configured) {
     return fallbackOcr("missing_agnes_key");
   }

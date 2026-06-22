@@ -67,6 +67,11 @@ and file-backed for development. It persists mutable demo state to
 | `/api/erp-close/export/evidence-pack` | `POST` | Create a local evidence-pack export reference. |
 | `/api/erp-close/export/ready-bills` | `POST` | Export eligible bill records; blocked records stay blocked. |
 | `/api/capture/ocr` | `POST` | Agnes Vision invoice OCR — extract fields from an uploaded receipt image (`agnes-2.0-flash`), with deterministic fallback. |
+| `/api/webhooks/email` | `POST` | Production-shaped inbound email invoice webhook. Accepts normalized Postmark/SendGrid/Mailgun JSON, stores the attachment, enforces idempotency, creates a source document, and opens a close-book bill workflow. |
+| `/api/webhooks/whatsapp` | `GET/POST` | WhatsApp webhook verification plus normalized WhatsApp media ingestion. Stores media evidence, dedupes by message/media id, and opens a close-book workflow. |
+| `/api/inbox` | `GET` | Source-document inbox read model: source documents, intake events, webhook replay counts, and live close-book bills created from real intake. |
+| `/api/erp-close/bills/:id/workflow` | `POST/PUT` | Run one invoice workflow step (`POST`) or continue until blocked/ready (`PUT`). Current local workflow advances received → extracted → review/ready without export or settlement. |
+| `/api/agnes/text` | `POST` | Agnes Text — reason over blocked close-book records (`agnes-2.0-flash`), with deterministic fallback. |
 | `/api/agnes/image` | `POST` | Agnes Image — generate a branded close report cover (`agnes-image-2.0-flash`), with inline-SVG fallback. |
 | `/api/agnes/video` | `POST` | Agnes Video — start a CFO close-briefing render (`agnes-video-v2.0`); returns a `taskId`, with storyboard fallback. |
 | `/api/agnes/video/:taskId` | `GET` | Poll an Agnes video render task for `status` / `videoUrl`. |
@@ -125,6 +130,19 @@ and file-backed for development. It persists mutable demo state to
   `KIRA_PROVIDER_RATE_LIMIT_PER_MINUTE`, `KIRA_PROVIDER_MAX_PAYLOAD_BYTES`,
   `KIRA_PROVIDER_MAX_STRING_LENGTH`, and
   `KIRA_PROVIDER_MAX_COLLECTION_ITEMS`.
+
+## Document Storage
+
+Inbound webhook attachments are written through `lib/backend/document-storage.ts`.
+By default Kira uses a local development store under `.kira-data/documents/` with
+content-addressed paths. Set `KIRA_DOCUMENT_STORAGE_DRIVER=s3` and
+`KIRA_DOCUMENTS_S3_BUCKET=<bucket>` to write new documents to S3. Optional
+S3-compatible overrides: `AWS_REGION` / `AWS_DEFAULT_REGION` and
+`KIRA_DOCUMENTS_S3_ENDPOINT` (for MinIO/R2-compatible development).
+
+S3 is the recommended production default for Kira documents because accountants
+need cheap durable object retention, lifecycle policies, encryption, and clean
+separation between object storage and the Postgres/Supabase metadata layer.
 ## Assistant Request Shape
 
 `POST /api/assistant` accepts:

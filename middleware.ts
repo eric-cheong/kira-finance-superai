@@ -8,6 +8,8 @@ const PUBLIC_API_PATHS = new Set([
   "/api/auth/login",
   "/api/auth/logout",
   "/api/health",
+  "/api/webhooks/email",
+  "/api/webhooks/whatsapp",
 ]);
 
 function requestOrigin(request: NextRequest) {

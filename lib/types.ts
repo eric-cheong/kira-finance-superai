@@ -160,6 +160,62 @@ export interface Match {
   state: "auto" | "suggested" | "confirmed";
 }
 
+// ── Production-shaped source-document intake ────────────────────────────────
+
+export type IntakeSourceChannel = "email" | "whatsapp" | "upload";
+export type SourceDocumentStatus =
+  | "received"
+  | "stored"
+  | "workflow_created"
+  | "duplicate"
+  | "failed";
+
+export interface SourceDocument {
+  id: string;
+  clientId: string;
+  channel: IntakeSourceChannel;
+  kind: "invoice" | "receipt" | "supplier_statement" | "bank_evidence" | "unknown";
+  receivedAt: string;
+  from: string;
+  subject?: string;
+  message?: string;
+  filename?: string;
+  contentType: string;
+  sizeBytes: number;
+  sha256: string;
+  storageRef: string;
+  status: SourceDocumentStatus;
+  provider: string;
+  providerEventId: string;
+  idempotencyKey: string;
+  linkedBillId?: string;
+}
+
+export interface IntakeEvent {
+  id: string;
+  sourceDocumentId: string;
+  clientId: string;
+  channel: IntakeSourceChannel;
+  provider: string;
+  providerEventId: string;
+  idempotencyKey: string;
+  receivedAt: string;
+  from: string;
+  summary: string;
+}
+
+export interface WebhookEventReceipt {
+  id: string;
+  provider: string;
+  providerEventId: string;
+  idempotencyKey: string;
+  firstSeenAt: string;
+  lastSeenAt: string;
+  sourceDocumentId: string;
+  intakeEventId: string;
+  replayCount: number;
+}
+
 // ── Approvals & workflow ────────────────────────────────────────────────────
 
 export interface ApprovalStep {
