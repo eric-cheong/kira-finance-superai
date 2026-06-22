@@ -38,7 +38,7 @@ Expected hosted output:
 
 If the output says `"source": "local"`, the live app still works, but do not pitch it as the Mem0-hosted path.
 
-**Agnes AI powers the whole app.** Add your free Agnes key to `.env.local` as `AGNES_API_KEY=sk-...` (get one at https://platform.agnes-ai.com — no top-up). With it set, all four Agnes modalities (text, vision, image, video) run **Live**; without it, every modality shows a deterministic **Fallback** so the demo still runs end-to-end.
+**Agnes AI powers the whole app.** Add your free Agnes key to `.env.local` as `AGNES_API_KEY=sk-...` (get one at https://platform.agnes-ai.com — no top-up). With it set, Agnes Text, Vision, Image, and Video run **Live** across the demo; without it, every modality shows a deterministic **Fallback** so the demo still runs end-to-end.
 
 ---
 
@@ -111,11 +111,11 @@ If the output says `"source": "local"`, the live app still works, but do not pit
    - Confidence score
 6. Click **Apply suggested coding** and explain what changed: Kira PATCHes the Bill Record with the remembered ERP mapping, so the accountant does not re-key vendor, AP, expense, tax, cost centre, or LHDN classification fields.
 7. Say the product line: **"Kira is not just extracting this invoice. It remembers how this client closes this supplier month after month."**
-8. In **Powered by Agnes AI — Omni-modal**, run all four rows. Call out the **Live** badge on each (or **Fallback** if the key is missing — the demo still works).
+8. In **Powered by Agnes AI — Omni-modal**, choose the company you want to inquire about, then run the three ERP-close rows. Call out the **Live** badge on each (or **Fallback** if the key is missing — the demo still works).
 9. Agnes omni-modal narration — one provider, every modality:
-   - **Agnes Text** (`agnes-2.0-flash`) reasons over the close and recommends the safest next action.
-   - **Agnes Vision** (`agnes-2.0-flash`) reads the receipt image and extracts supplier, totals, and tax (also live on `/capture` → **Snap receipt**).
-   - **Agnes Image** (`agnes-image-2.0-flash`) generates the branded close report cover.
+   - **Agnes Text** (`agnes-2.0-flash`) reasons over blocked close records and recommends the safest next action.
+   - **Agnes Vision** (`agnes-2.0-flash`) already ran on `/capture` → **Snap receipt**, where it reads invoice images and extracts supplier, totals, and tax.
+   - **Agnes Image** (`agnes-image-2.0-flash`) generates a visual close report cover while Kira renders exact finance text in the UI.
    - **Agnes Video** (`agnes-video-v2.0`) renders a short CFO close briefing (storyboard while it processes).
 10. Click **Evidence pack** → returns a file ref (the LHDN support bundle).
 11. Click **Export Ready Bills** → **"Exported 2; blocked 0."**
@@ -157,4 +157,4 @@ If Next starts on another port, replace `localhost:3000` in the curl commands wi
 | 4 Reconcile | `/transactions` | (read) |
 | 5 E-invoice | `/compliance` | (read) |
 | 6 LHDN submit | `/approvals` | Approve apr_01 |
-| 7 ERP + Agnes finale | `/erp-close` | Recall context → Apply suggested coding → Run all 4 Agnes omni-modal rows → Evidence pack → Export Ready Bills |
+| 7 ERP + Agnes finale | `/erp-close` | Recall context → Apply suggested coding → Pick company → Run Agnes Text/Image/Video rows → Evidence pack → Export Ready Bills |

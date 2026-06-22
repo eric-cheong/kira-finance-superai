@@ -1,0 +1,151 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1600" viewBox="0 0 1200 1600">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#06101f"/>
+      <stop offset="0.58" stop-color="#0b1a2c"/>
+      <stop offset="1" stop-color="#111827"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fde68a"/>
+      <stop offset="0.55" stop-color="#f59e0b"/>
+      <stop offset="1" stop-color="#fb923c"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="14" stdDeviation="16" flood-color="#000" flood-opacity="0.34"/>
+    </filter>
+    <style>
+      .title{font-family:Inter,Arial,Helvetica,sans-serif;font-weight:900;fill:#f8fafc;letter-spacing:-1.5px}
+      .h2{font-family:Inter,Arial,Helvetica,sans-serif;font-weight:850;fill:#f8fafc}
+      .h3{font-family:Inter,Arial,Helvetica,sans-serif;font-weight:820;fill:#f8fafc}
+      .body{font-family:Inter,Arial,Helvetica,sans-serif;font-weight:560;fill:#dbeafe}
+      .muted{font-family:Inter,Arial,Helvetica,sans-serif;font-weight:520;fill:#94a3b8}
+      .tiny{font-family:Inter,Arial,Helvetica,sans-serif;font-weight:650;fill:#cbd5e1}
+      .dark{font-family:Inter,Arial,Helvetica,sans-serif;font-weight:850;fill:#06101f}
+    </style>
+  </defs>
+
+  <rect width="1200" height="1600" fill="url(#bg)"/>
+  <circle cx="955" cy="185" r="310" fill="#0ea5e9" opacity="0.13"/>
+  <circle cx="160" cy="1420" r="360" fill="#f59e0b" opacity="0.10"/>
+  <path d="M0 1280 C180 1190 330 1230 520 1160 C760 1070 960 1130 1200 1020 L1200 1600 L0 1600 Z" fill="#020617" opacity="0.55"/>
+
+  <!-- badges -->
+  <g transform="translate(70 54)">
+    <rect x="0" y="0" width="250" height="48" rx="24" fill="url(#gold)"/>
+    <text x="24" y="32" class="dark" font-size="22">AGNES AI HACKATHON</text>
+    <rect x="275" y="0" width="270" height="48" rx="24" fill="#172554" stroke="#38bdf8"/>
+    <text x="299" y="32" class="tiny" font-size="22">Omni-modal finance AI</text>
+  </g>
+
+  <!-- hero -->
+  <g transform="translate(70 190)">
+    <text x="0" y="0" class="title" font-size="96">Kira</text>
+    <text x="0" y="76" class="title" font-size="52">AI Close-Book Operator</text>
+    <text x="0" y="130" class="body" font-size="28">Month-end ERP close for Malaysia + Singapore SMEs</text>
+    <text x="0" y="170" class="muted" font-size="24">Invoices → approvals → reconciliation → e-invoicing → ERP export → audit trail</text>
+  </g>
+
+  <!-- insight -->
+  <g filter="url(#shadow)">
+    <rect x="70" y="395" width="1060" height="172" rx="34" fill="#020617" stroke="#334155" stroke-width="2"/>
+    <text x="105" y="447" class="h2" font-size="34">The insight</text>
+    <text x="105" y="492" class="body" font-size="27">Accounting close is not a one-off extraction problem.</text>
+    <text x="105" y="531" class="body" font-size="27">It is a repeat-decision memory problem across suppliers, taxes,</text>
+    <text x="105" y="562" class="body" font-size="27">approvers, exceptions, compliance evidence, and ERP coding.</text>
+  </g>
+
+  <!-- criteria cards -->
+  <g transform="translate(70 618)" filter="url(#shadow)">
+    <rect x="0" y="0" width="330" height="258" rx="30" fill="#0b1220" stroke="#f59e0b" stroke-width="2"/>
+    <circle cx="42" cy="46" r="22" fill="#f59e0b"/>
+    <text x="78" y="55" class="h3" font-size="26">Innovation 30%</text>
+    <text x="32" y="106" class="body" font-size="21">Close Memory recalls how</text>
+    <text x="32" y="137" class="body" font-size="21">each client closes each</text>
+    <text x="32" y="168" class="body" font-size="21">supplier every month:</text>
+    <text x="32" y="209" class="tiny" font-size="19">account, tax code, cost</text>
+    <text x="32" y="236" class="tiny" font-size="19">centre, class, approvals.</text>
+
+    <rect x="365" y="0" width="330" height="258" rx="30" fill="#0b1220" stroke="#22c55e" stroke-width="2"/>
+    <circle cx="407" cy="46" r="22" fill="#22c55e"/>
+    <text x="443" y="55" class="h3" font-size="26">Value 30%</text>
+    <text x="397" y="106" class="body" font-size="21">For accounting firms and</text>
+    <text x="397" y="137" class="body" font-size="21">APAC SMEs: faster close,</text>
+    <text x="397" y="168" class="body" font-size="21">less re-keying, fewer</text>
+    <text x="397" y="199" class="body" font-size="21">compliance mistakes, and</text>
+    <text x="397" y="230" class="body" font-size="21">auditor-ready evidence.</text>
+
+    <rect x="730" y="0" width="330" height="258" rx="30" fill="#0b1220" stroke="#38bdf8" stroke-width="2"/>
+    <circle cx="772" cy="46" r="22" fill="#38bdf8"/>
+    <text x="808" y="55" class="h3" font-size="26">Agnes AI 40%</text>
+    <text x="762" y="106" class="body" font-size="21">One provider powers the</text>
+    <text x="762" y="137" class="body" font-size="21">whole close: reasoning,</text>
+    <text x="762" y="168" class="body" font-size="21">invoice vision, report</text>
+    <text x="762" y="199" class="body" font-size="21">images, and CFO briefing</text>
+    <text x="762" y="230" class="body" font-size="21">video generation.</text>
+  </g>
+
+  <!-- workflow -->
+  <g transform="translate(70 925)" filter="url(#shadow)">
+    <rect x="0" y="0" width="1060" height="290" rx="36" fill="#0b1220" stroke="#334155" stroke-width="2"/>
+    <text x="35" y="58" class="h2" font-size="34">Close Memory loop</text>
+    <text x="35" y="96" class="muted" font-size="22">Month one teaches Kira. Month two closes faster.</text>
+
+    <g transform="translate(45 135)">
+      <rect x="0" y="0" width="205" height="90" rx="24" fill="#082f49" stroke="#38bdf8" stroke-width="2"/>
+      <text x="25" y="39" class="h3" font-size="25">1 Capture</text>
+      <text x="25" y="68" class="muted" font-size="18">Agnes Vision OCR</text>
+      <path d="M218 45 L268 45" stroke="#64748b" stroke-width="5"/>
+      <polygon points="268,32 294,45 268,58" fill="#64748b"/>
+
+      <rect x="305" y="0" width="205" height="90" rx="24" fill="#422006" stroke="#f59e0b" stroke-width="2"/>
+      <text x="330" y="39" class="h3" font-size="25">2 Review</text>
+      <text x="330" y="68" class="muted" font-size="18">Approval gates</text>
+      <path d="M523 45 L573 45" stroke="#64748b" stroke-width="5"/>
+      <polygon points="573,32 599,45 573,58" fill="#64748b"/>
+
+      <rect x="610" y="0" width="205" height="90" rx="24" fill="#052e16" stroke="#22c55e" stroke-width="2"/>
+      <text x="635" y="39" class="h3" font-size="25">3 Recall</text>
+      <text x="635" y="68" class="muted" font-size="18">Supplier coding</text>
+      <path d="M828 45 L878 45" stroke="#64748b" stroke-width="5"/>
+      <polygon points="878,32 904,45 878,58" fill="#64748b"/>
+
+      <rect x="915" y="0" width="100" height="90" rx="24" fill="#312e81" stroke="#818cf8" stroke-width="2"/>
+      <text x="939" y="39" class="h3" font-size="24">4</text>
+      <text x="936" y="68" class="muted" font-size="18">Export</text>
+    </g>
+
+    <rect x="35" y="244" width="990" height="2" fill="#1e293b"/>
+    <text x="35" y="274" class="tiny" font-size="20">Guardrail: Kira orchestrates and records — it never settles, stores, or moves money.</text>
+  </g>
+
+  <!-- Agnes modalities -->
+  <g transform="translate(70 1260)" filter="url(#shadow)">
+    <rect x="0" y="0" width="1060" height="220" rx="36" fill="#020617" stroke="#67e8f9" stroke-width="2"/>
+    <text x="35" y="55" class="h2" font-size="34">Deep Agnes AI integration</text>
+    <text x="35" y="90" class="muted" font-size="21">OpenAI-compatible Agnes APIs used across the live MVP</text>
+
+    <g transform="translate(35 118)">
+      <rect x="0" y="0" width="230" height="70" rx="20" fill="#082f49" stroke="#38bdf8"/>
+      <text x="22" y="30" class="h3" font-size="22">Text</text>
+      <text x="22" y="56" class="muted" font-size="17">agnes-2.0-flash</text>
+
+      <rect x="250" y="0" width="230" height="70" rx="20" fill="#052e16" stroke="#22c55e"/>
+      <text x="272" y="30" class="h3" font-size="22">Vision</text>
+      <text x="272" y="56" class="muted" font-size="17">invoice OCR</text>
+
+      <rect x="500" y="0" width="230" height="70" rx="20" fill="#422006" stroke="#f59e0b"/>
+      <text x="522" y="30" class="h3" font-size="22">Image</text>
+      <text x="522" y="56" class="muted" font-size="17">report visuals</text>
+
+      <rect x="750" y="0" width="240" height="70" rx="20" fill="#312e81" stroke="#818cf8"/>
+      <text x="772" y="30" class="h3" font-size="22">Video</text>
+      <text x="772" y="56" class="muted" font-size="17">CFO briefing</text>
+    </g>
+  </g>
+
+  <!-- footer -->
+  <g transform="translate(70 1530)">
+    <rect x="0" y="0" width="1060" height="44" rx="22" fill="url(#gold)"/>
+    <text x="36" y="30" class="dark" font-size="21">Runnable Next.js MVP · SG/MY SME data · hash-chained audit trail · offline fallback</text>
+  </g>
+</svg>

@@ -961,7 +961,15 @@ export default function ErpClosePage() {
             initialBills={closeMemoryBills}
             memoryConfigured={memoryReadiness.configured}
           />
-          <AgnesOmnimodalPanel clientId={activeClient.id} />
+          <AgnesOmnimodalPanel
+            clientId={activeClient.id}
+            companies={state.closeBookClients.map((client) => ({
+              id: client.id,
+              tradingName: client.tradingName,
+              closePeriod: client.closePeriod,
+              erp: client.erp,
+            }))}
+          />
           <SubmissionGate />
           <Card>
             <CardHeader title="Close blockers" subtitle="Current command summary" icon="alert" />

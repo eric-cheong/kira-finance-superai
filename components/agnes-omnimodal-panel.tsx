@@ -5,16 +5,41 @@ import { Badge, Button, Card, CardHeader, Notice } from "@/components/ui";
 
 type Source = "live" | "fallback";
 
-type RowKey = "text" | "vision" | "image" | "video";
+type RowKey = "text" | "image" | "video";
 
 interface RowResult {
   source: Source;
   headline: string;
   detail?: string;
+  summary?: {
+    legalName?: string;
+    tradingName: string;
+    closePeriod: string;
+    erp?: string;
+    tin?: string;
+    msic?: string;
+    msicDescription?: string;
+    total: number;
+    exportable?: number;
+    ready: number;
+    blocked: number;
+    approved?: number;
+    exported?: number;
+    topSupplier: string;
+    blockedSuppliers?: string[];
+    blockerMessages?: string[];
+  };
   imageUrl?: string;
   videoUrl?: string;
   storyboard?: { scene: number; caption: string }[];
   fallbackReason?: string;
+}
+
+interface AgnesCompanyOption {
+  id: string;
+  tradingName: string;
+  closePeriod: string;
+  erp: string;
 }
 
 type PanelState =
@@ -24,9 +49,8 @@ type PanelState =
   | { status: "error"; message: string };
 
 const ROWS: { key: RowKey; label: string; modality: string; detail: string }[] = [
-  { key: "text", label: "Agnes Text", modality: "agnes-2.0-flash", detail: "Reason over the close and recommend the safest next action." },
-  { key: "vision", label: "Agnes Vision", modality: "agnes-2.0-flash", detail: "Read a receipt image and extract supplier, totals, and tax." },
-  { key: "image", label: "Agnes Image", modality: "agnes-image-2.0-flash", detail: "Generate a branded month-end close report cover." },
+  { key: "text", label: "Agnes Text", modality: "agnes-2.0-flash", detail: "Reason over the blocked close and recommend the safest next action." },
+  { key: "image", label: "Agnes Image", modality: "agnes-image-2.0-flash", detail: "Generate a visual close-report cover; exact text is rendered by Kira." },
   { key: "video", label: "Agnes Video", modality: "agnes-video-v2.0", detail: "Render a short CFO close briefing clip." },
 ];
 
@@ -52,48 +76,17 @@ async function getJson(path: string) {
   return payload?.data ?? payload;
 }
 
-/** Render a small, readable receipt to a canvas so Agnes Vision has a real image to OCR. */
-function sampleReceiptDataUrl(): string {
-  const canvas = document.createElement("canvas");
-  canvas.width = 520;
-  canvas.height = 640;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return "";
-  ctx.fillStyle = "#ffffff";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = "#111111";
-  ctx.textBaseline = "top";
-  const line = (text: string, x: number, y: number, size = 22, bold = false) => {
-    ctx.font = `${bold ? "bold " : ""}${size}px Arial, sans-serif`;
-    ctx.fillText(text, x, y);
-  };
-  line("BERAS MURNI TRADING SDN BHD", 40, 36, 24, true);
-  line("No. 12 Jalan Pasar, 50000 Kuala Lumpur", 40, 70, 16);
-  line("SST Reg: W10-1808-31000123", 40, 92, 16);
-  line("TAX INVOICE", 40, 140, 20, true);
-  line("Invoice No : BMT-2026-0337", 40, 176, 18);
-  line("Date       : 2026-06-11", 40, 202, 18);
-  ctx.strokeStyle = "#999999";
-  ctx.beginPath(); ctx.moveTo(40, 240); ctx.lineTo(480, 240); ctx.stroke();
-  line("Jasmine rice 5% broken x 40 sack", 40, 256, 18);
-  line("RM 2,640.00", 320, 256, 18);
-  line("Delivery surcharge", 40, 286, 18);
-  line("RM 60.00", 320, 286, 18);
-  ctx.beginPath(); ctx.moveTo(40, 326); ctx.lineTo(480, 326); ctx.stroke();
-  line("Subtotal", 40, 342, 18);
-  line("RM 2,700.00", 320, 342, 18);
-  line("SST 0%", 40, 372, 18);
-  line("RM 0.00", 320, 372, 18);
-  line("TOTAL", 40, 410, 22, true);
-  line("RM 2,700.00", 300, 410, 22, true);
-  line("Thank you for your business", 40, 470, 16);
-  return canvas.toDataURL("image/png");
-}
-
-export function AgnesOmnimodalPanel({ clientId }: { clientId: string }) {
+export function AgnesOmnimodalPanel({
+  clientId,
+  companies,
+}: {
+  clientId: string;
+  companies: AgnesCompanyOption[];
+}) {
   const [state, setState] = useState<PanelState>({ status: "idle" });
   const [results, setResults] = useState<Partial<Record<RowKey, RowResult>>>({});
   const [configured, setConfigured] = useState<boolean | null>(null);
+  const [selectedClientId, setSelectedClientId] = useState(clientId);
 
   useEffect(() => {
     getJson("/api/ai/status")
@@ -101,11 +94,19 @@ export function AgnesOmnimodalPanel({ clientId }: { clientId: string }) {
       .catch(() => setConfigured(null));
   }, []);
 
+  useEffect(() => {
+    setSelectedClientId(clientId);
+    setResults({});
+    setState({ status: "idle" });
+  }, [clientId]);
+
   const liveCount = useMemo(
     () => Object.values(results).filter((result) => result?.source === "live").length,
     [results],
   );
   const busyKey = state.status === "loading" ? state.key : null;
+  const selectedCompany = companies.find((company) => company.id === selectedClientId) ?? companies[0];
+  const activeClientId = selectedCompany?.id ?? selectedClientId;
 
   function record(key: RowKey, result: RowResult) {
     setResults((current) => ({ ...current, [key]: result }));
@@ -113,48 +114,36 @@ export function AgnesOmnimodalPanel({ clientId }: { clientId: string }) {
   }
 
   async function runText() {
-    const data = await postJson("/api/assistant", {
-      message: "Explain how Kira treats SST-exempt suppliers during the month-end close.",
-      mode: "text",
-    });
-    const live = typeof data?.provider === "string" && data.provider.startsWith("agnes");
+    const data = await postJson("/api/agnes/text", { clientId: activeClientId });
     record("text", {
-      source: live ? "live" : "fallback",
-      headline: live ? `Agnes reasoned via ${data.model}` : "Local fallback reasoning",
-      detail: data?.output?.answer,
-      fallbackReason: live ? undefined : data?.provider,
-    });
-  }
-
-  async function runVision() {
-    const imageDataUrl = sampleReceiptDataUrl();
-    const data = await postJson("/api/capture/ocr", { source: "upload", imageDataUrl });
-    const live = data?.ocrSource === "live";
-    record("vision", {
-      source: live ? "live" : "fallback",
-      headline: `${data?.receipt?.supplier ?? "Receipt"} · ${(data?.receipt?.totalMinor ?? 0) / 100} ${data?.receipt?.currency ?? "MYR"}`,
-      detail: `Doc ${data?.receipt?.docNo || "—"} · ${data?.receipt?.docDate ?? ""} · confidence ${data?.receipt?.ocrConfidence ?? "—"}%`,
-      fallbackReason: live ? undefined : "agnes_vision_fallback",
+      source: data?.source ?? "fallback",
+      headline: data?.source === "live" ? `Agnes reasoned via ${data.model}` : "Deterministic close reasoning",
+      detail: data?.answer,
+      fallbackReason: data?.fallbackReason,
     });
   }
 
   async function runImage() {
-    const data = await postJson("/api/agnes/image", { clientId });
+    const data = await postJson("/api/agnes/image", { clientId: activeClientId });
     record("image", {
       source: data?.source ?? "fallback",
-      headline: data?.source === "live" ? "Generated by agnes-image-2.0-flash" : "Deterministic SVG fallback",
+      headline: data?.source === "live" ? "Generated visual by agnes-image-2.0-flash" : "Deterministic SVG fallback",
+      detail: data?.summary
+        ? `${data.summary.tradingName} · ${data.summary.closePeriod} · ${data.summary.exportable ?? data.summary.ready} exportable / ${data.summary.blocked} held`
+        : undefined,
+      summary: data?.summary,
       imageUrl: data?.imageUrl,
       fallbackReason: data?.fallbackReason,
     });
   }
 
   async function runVideo() {
-    let data = await postJson("/api/agnes/video", { clientId });
+    let data = await postJson("/api/agnes/video", { clientId: activeClientId });
     // Poll up to ~60s for an async render before falling back to the storyboard.
     let attempts = 0;
     while (data?.source === "live" && data?.status === "processing" && !data?.videoUrl && attempts < 15) {
       await new Promise((resolve) => setTimeout(resolve, 4000));
-      data = await getJson(`/api/agnes/video/${data.taskId}?clientId=${encodeURIComponent(clientId)}`);
+      data = await getJson(`/api/agnes/video/${data.taskId}?clientId=${encodeURIComponent(activeClientId)}`);
       attempts += 1;
     }
     const ready = Boolean(data?.videoUrl);
@@ -173,7 +162,6 @@ export function AgnesOmnimodalPanel({ clientId }: { clientId: string }) {
 
   const RUNNERS: Record<RowKey, () => Promise<void>> = {
     text: runText,
-    vision: runVision,
     image: runImage,
     video: runVideo,
   };
@@ -191,7 +179,7 @@ export function AgnesOmnimodalPanel({ clientId }: { clientId: string }) {
     <Card>
       <CardHeader
         title="Powered by Agnes AI — Omni-modal"
-        subtitle="One provider runs the whole close: text reasoning, vision OCR, image report, and video briefing."
+        subtitle="One provider runs close reasoning, visual report generation, and video briefing. Vision OCR lives in Capture."
         icon="spark"
         right={
           <Badge variant={liveCount > 0 ? "brand" : "neutral"}>
@@ -207,6 +195,26 @@ export function AgnesOmnimodalPanel({ clientId }: { clientId: string }) {
           </Badge>
         </div>
       )}
+
+      <label className="mb-3 block">
+        <span className="text-[11px] font-semibold uppercase tracking-wide text-faint">Company</span>
+        <select
+          className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 text-[13px] font-medium text-ink outline-none transition focus:border-brand"
+          value={activeClientId}
+          disabled={state.status === "loading"}
+          onChange={(event) => {
+            setSelectedClientId(event.target.value);
+            setResults({});
+            setState({ status: "idle" });
+          }}
+        >
+          {companies.map((company) => (
+            <option key={company.id} value={company.id}>
+              {company.tradingName} · {company.closePeriod} · {company.erp}
+            </option>
+          ))}
+        </select>
+      </label>
 
       <div className="space-y-2">
         {ROWS.map((row) => {
@@ -240,12 +248,53 @@ export function AgnesOmnimodalPanel({ clientId }: { clientId: string }) {
                   <p className="text-[12.5px] font-medium leading-relaxed text-ink">{result.headline}</p>
                   {result.detail && <p className="text-[12px] leading-relaxed text-muted">{result.detail}</p>}
                   {result.imageUrl && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={result.imageUrl}
-                      alt="Agnes close report"
-                      className="w-full rounded-md border border-border"
-                    />
+                    <div className="space-y-2">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={result.imageUrl}
+                        alt="Agnes close report"
+                        className="w-full rounded-md border border-border"
+                      />
+                      {result.summary && (
+                        <div className="rounded-md border border-border bg-surface px-3 py-2.5">
+                          <div className="text-[11px] font-semibold uppercase tracking-wide text-faint">Exact company data rendered by Kira</div>
+                          <div className="mt-2 grid grid-cols-2 gap-2 text-[12px]">
+                            <div>
+                              <div className="text-faint">Company</div>
+                              <div className="font-medium text-ink">{result.summary.tradingName}</div>
+                            </div>
+                            <div>
+                              <div className="text-faint">Period / ERP</div>
+                              <div className="font-medium text-ink">{result.summary.closePeriod} · {result.summary.erp ?? "ERP"}</div>
+                            </div>
+                            <div>
+                              <div className="text-faint">TIN / MSIC</div>
+                              <div className="font-medium text-ink">{result.summary.tin ?? "—"} · {result.summary.msic ?? "—"}</div>
+                            </div>
+                            <div>
+                              <div className="text-faint">Bills</div>
+                              <div className="font-medium text-ink">{result.summary.exportable ?? result.summary.ready} exportable · {result.summary.blocked} held</div>
+                            </div>
+                            <div className="col-span-2">
+                              <div className="text-faint">Top supplier</div>
+                              <div className="font-medium text-ink">{result.summary.topSupplier}</div>
+                            </div>
+                            {result.summary.blockerMessages && result.summary.blockerMessages.length > 0 && (
+                              <div className="col-span-2">
+                                <div className="text-faint">Current blockers</div>
+                                <div className="mt-1 space-y-1">
+                                  {result.summary.blockerMessages.slice(0, 2).map((message) => (
+                                    <div key={message} className="rounded border border-border bg-surface-2/60 px-2 py-1 text-muted">
+                                      {message}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   )}
                   {result.videoUrl && (
                     <video controls className="w-full rounded-md border border-border" src={result.videoUrl} />

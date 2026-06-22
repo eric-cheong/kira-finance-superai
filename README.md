@@ -105,9 +105,10 @@ fallback for every modality and labels the result as **Fallback** in the UI.
    submission.
 6. Go to `/erp-close`, select a supplier in **Close Memory**, click **Recall
    context**, then **Apply suggested coding** to fill the ERP mapping.
-7. In **Powered by Agnes AI — Omni-modal**, run all four rows — Text reasoning,
-   Vision OCR, Image close report, and Video CFO briefing — and call out the
-   `Live` badges.
+7. In **Powered by Agnes AI — Omni-modal**, choose the company to inquire about,
+   then run the ERP-close rows — Text reasoning over blockers, Image close report
+   visual, and Video CFO briefing — and call out the `Live` badges. Vision OCR is
+   already shown in `/capture`.
 8. Export ready bills and end on the product line: one omni-modal provider
    (Agnes AI) powers the whole close, and month two closes faster because Kira
    remembers.
