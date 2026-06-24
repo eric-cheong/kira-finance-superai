@@ -10,6 +10,7 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test tests/**/*.test.ts",
+    "demo:email-webhook": "node scripts/demo-email-webhook.mjs",
     "seed:mem0": "node --conditions react-server --import tsx scripts/seed-mem0.ts"
   },
   "dependencies": {

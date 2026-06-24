@@ -11,6 +11,20 @@ const CHANNEL_VARIANT = {
   upload: "neutral",
 } as const;
 
+const WORKFLOW_STAGES = [
+  { key: "received", label: "1 Received" },
+  { key: "extracted", label: "2 Extracted" },
+  { key: "needs_review", label: "3 Verify" },
+  { key: "ready", label: "4 Ready" },
+] as const;
+
+function stageVariant(stage: string, status: string) {
+  if (stage === status) return status === "needs_review" ? "warn" : "brand";
+  const order = WORKFLOW_STAGES.findIndex((item) => item.key === stage);
+  const current = WORKFLOW_STAGES.findIndex((item) => item.key === status);
+  return current > order ? "pos" : "neutral";
+}
+
 export default function InboxPage() {
   const sourceDocuments = state.sourceDocuments;
   const bills = state.closeBookRecords.filter((record) => record.id.startsWith("bill_live"));
@@ -89,6 +103,13 @@ export default function InboxPage() {
                       </td>
                       <td className="px-4 py-3">
                         <Badge variant={bill.status === "needs_review" ? "warn" : bill.status === "ready" ? "pos" : "neutral"}>{bill.status}</Badge>
+                        <div className="mt-2 flex max-w-[360px] flex-wrap gap-1.5">
+                          {WORKFLOW_STAGES.map((stage) => (
+                            <Badge key={stage.key} variant={stageVariant(stage.key, bill.status)} className="text-[10.5px]">
+                              {stage.label}
+                            </Badge>
+                          ))}
+                        </div>
                         {bill.exceptions.length > 0 && <div className="mt-1 text-[12px] text-crit-fg">{bill.exceptions[0].message}</div>}
                       </td>
                       <td className="px-4 py-3 text-ink">{formatBillAmount(bill)}</td>
